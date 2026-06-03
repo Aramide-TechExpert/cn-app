@@ -1,0 +1,29 @@
+name: clustez
+description: "Clustez — native mobile news intelligence (Flutter/Dart)."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # State management
+  flutter_riverpod: ^2.5.1
+  # Navigation (5-tab shell + detail routes)
+  go_router: ^14.2.7
+  # Auth + direct RLS data (channel 1 of the hybrid backend)
+  supabase_flutter: ^2.6.0
+  # /api/v1 client (channel 2)
+  dio: ^5.7.0
+  # Images with caching + monogram fallback
+  cached_network_image: ^3.4.1
+  # Link-out in-app browser
+  url_launcher: ^6.3.1
+
+dev_dependencies:
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

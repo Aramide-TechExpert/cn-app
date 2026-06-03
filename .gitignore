@@ -1,0 +1,31 @@
+# Miscellaneous
+*.class
+*.log
+*.swp
+.DS_Store
+
+# IntelliJ / VS Code
+*.iml
+.idea/
+.vscode/
+
+# Flutter/Dart/Pub
+**/doc/api/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+.packages
+
+# Generated code
+*.g.dart
+*.freezed.dart
+
+# Secrets — runtime config (anon key is client-safe but stays out of git)
+env.json
+
+# Symbolication / obfuscation
+app.*.symbols
+app.*.map.json
