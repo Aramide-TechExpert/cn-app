@@ -1,6 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../data/auth_controller.dart';
+import '../../../data/engagement_controller.dart';
 import '../../../models/article.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/tokens.dart';
@@ -165,13 +169,27 @@ class _SourceRow extends StatelessWidget {
   }
 }
 
-class _Footer extends StatelessWidget {
+class _Footer extends ConsumerWidget {
   const _Footer({required this.article});
   final Article article;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
+    final dbId = article.dbId;
+    final canEngage = dbId != null;
+    final eng = ref.watch(engagementProvider).valueOrNull;
+    final liked = canEngage && (eng?.liked.contains(dbId) ?? false);
+    final marked = canEngage && (eng?.bookmarked.contains(dbId) ?? false);
+
+    void act(Future<void> Function(String) toggle) {
+      if (ref.read(currentUserProvider) == null) {
+        context.push('/sign-in');
+        return;
+      }
+      toggle(dbId!);
+    }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -190,9 +208,49 @@ class _Footer extends StatelessWidget {
                 style: AppText.caption.copyWith(color: c.textSecondary)),
           ],
         ),
-        Text(readTime(article.readingMinutes),
-            style: AppText.caption.copyWith(color: c.textFaint)),
+        Row(
+          children: [
+            Text(readTime(article.readingMinutes),
+                style: AppText.caption.copyWith(color: c.textFaint)),
+            if (canEngage) ...[
+              const SizedBox(width: AppSpace.md),
+              _IconBtn(
+                icon: marked ? Icons.bookmark : Icons.bookmark_outline,
+                color: marked ? c.brand : c.textFaint,
+                onTap: () => act(
+                    ref.read(engagementProvider.notifier).toggleBookmark),
+              ),
+              const SizedBox(width: AppSpace.sm),
+              _IconBtn(
+                icon: liked ? Icons.favorite : Icons.favorite_outline,
+                color: liked ? c.accent : c.textFaint,
+                onTap: () =>
+                    act(ref.read(engagementProvider.notifier).toggleLike),
+              ),
+            ],
+          ],
+        ),
       ],
+    );
+  }
+}
+
+class _IconBtn extends StatelessWidget {
+  const _IconBtn(
+      {required this.icon, required this.color, required this.onTap});
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkResponse(
+      onTap: onTap,
+      radius: 22,
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: Icon(icon, size: 20, color: color),
+      ),
     );
   }
 }
