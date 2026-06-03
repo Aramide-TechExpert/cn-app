@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'features/auth/sign_in_page.dart';
 import 'features/feed/home_page.dart';
 import 'features/shell/placeholder_page.dart';
 import 'features/shell/scaffold_with_nav.dart';
+import 'features/you/you_page.dart';
 
 /// App routes: a 5-tab stateful shell (Home · Discover · Watch · Saved · You).
 /// Detail routes (/cluster/:id, /topic/:slug) and /sign-in land in follow-ups.
@@ -61,19 +63,11 @@ final router = GoRouter(
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(
-              path: '/you',
-              builder: (_, __) => const PlaceholderPage(
-                icon: Icons.person_outline,
-                title: 'You',
-                subtitle:
-                    'Interests, daily briefing, alerts, and settings. Sign in to sync.',
-                phase: 'NEXT',
-              ),
-            ),
+            GoRoute(path: '/you', builder: (_, __) => const YouPage()),
           ],
         ),
       ],
     ),
+    GoRoute(path: '/sign-in', builder: (_, __) => const SignInPage()),
   ],
 );
