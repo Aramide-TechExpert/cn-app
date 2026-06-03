@@ -37,6 +37,26 @@ class DiscoverPage extends ConsumerWidget {
                       .copyWith(color: c.brand, letterSpacing: 1.2)),
               const SizedBox(height: 2),
               Text('Discover', style: AppText.display.copyWith(color: c.text)),
+              const SizedBox(height: AppSpace.lg),
+              InkWell(
+                borderRadius: BorderRadius.circular(AppRadii.md),
+                onTap: () => context.push('/search'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpace.lg, vertical: AppSpace.md),
+                  decoration: BoxDecoration(
+                    color: c.bgInset,
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                    border: Border.all(color: c.border),
+                  ),
+                  child: Row(children: [
+                    Icon(Icons.search, size: 20, color: c.textFaint),
+                    const SizedBox(width: AppSpace.sm),
+                    Text('Search news, topics, sources',
+                        style: AppText.body.copyWith(color: c.textFaint)),
+                  ]),
+                ),
+              ),
               const SizedBox(height: AppSpace.xl),
 
               // Trending

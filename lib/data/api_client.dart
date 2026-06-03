@@ -73,6 +73,20 @@ class ApiClient {
         .toList();
   }
 
+  /// Full-text search. Empty for queries under 2 chars.
+  Future<List<Article>> search(String query, {int limit = 20}) async {
+    final q = query.trim();
+    if (q.length < 2) return const [];
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/search',
+      queryParameters: {'q': q, 'limit': limit},
+    );
+    final list = (res.data?['results'] as List?) ?? const [];
+    return list
+        .map((e) => Article.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   /// One page of a category feed (used by the topic screen). No cursor yet.
   Future<List<Article>> categoryFeed(String slug, {int limit = 20}) async {
     final page = await feed(category: slug, limit: limit);
