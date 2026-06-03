@@ -5,8 +5,8 @@ import 'auth_controller.dart';
 import 'engagement_controller.dart';
 import 'feed_controller.dart' show apiClientProvider;
 
-/// The signed-in user's bookmarked articles. Resolves each bookmarked dbId via
-/// `/api/v1/articles/:id`. Rebuilds when the bookmark set changes.
+/// The signed-in user's bookmarked articles. Resolves all bookmarked dbIds in
+/// one batch request (`/api/v1/articles?ids=`). Rebuilds when bookmarks change.
 final savedArticlesProvider =
     FutureProvider.autoDispose<List<Article>>((ref) async {
   final user = ref.watch(currentUserProvider);
@@ -16,7 +16,5 @@ final savedArticlesProvider =
   final ids = engagement.bookmarked.toList();
   if (ids.isEmpty) return const [];
 
-  final api = ref.read(apiClientProvider);
-  final results = await Future.wait(ids.map((id) => api.article(id)));
-  return results.whereType<Article>().toList();
+  return ref.read(apiClientProvider).articlesByIds(ids);
 });

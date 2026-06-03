@@ -78,4 +78,17 @@ class ApiClient {
     final page = await feed(category: slug, limit: limit);
     return page.items;
   }
+
+  /// Batch fetch by DB uuid (used by Saved) — one request for all bookmarks.
+  Future<List<Article>> articlesByIds(List<String> ids) async {
+    if (ids.isEmpty) return const [];
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/articles',
+      queryParameters: {'ids': ids.join(',')},
+    );
+    final list = (res.data?['articles'] as List?) ?? const [];
+    return list
+        .map((e) => Article.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
 }
