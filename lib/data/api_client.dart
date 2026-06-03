@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../config.dart';
 import '../models/article.dart';
+import '../models/cluster.dart';
 
 /// Typed client for the Clustez mobile backend (`/api/v1`) — channel 2 of the
 /// hybrid model (public feed + secret-backed aggregates). User-owned writes go
@@ -41,5 +42,40 @@ class ApiClient {
     final res = await _dio.get<Map<String, dynamic>>('/articles/$id');
     final data = res.data?['article'];
     return data == null ? null : Article.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<List<StoryCluster>> clusters() async {
+    final res = await _dio.get<Map<String, dynamic>>('/clusters');
+    final list = (res.data?['clusters'] as List?) ?? const [];
+    return list
+        .map((e) => StoryCluster.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<ClusterDetail?> cluster(String id) async {
+    final res = await _dio.get<Map<String, dynamic>>('/clusters/$id');
+    final data = res.data;
+    if (data == null || data['cluster'] == null) return null;
+    final articles = (data['articles'] as List?) ?? const [];
+    return ClusterDetail(
+      cluster: StoryCluster.fromJson(data['cluster'] as Map<String, dynamic>),
+      articles: articles
+          .map((e) => Article.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Future<List<TrendingTopic>> trending() async {
+    final res = await _dio.get<Map<String, dynamic>>('/right-rail');
+    final list = (res.data?['trending'] as List?) ?? const [];
+    return list
+        .map((e) => TrendingTopic.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// One page of a category feed (used by the topic screen). No cursor yet.
+  Future<List<Article>> categoryFeed(String slug, {int limit = 20}) async {
+    final page = await feed(category: slug, limit: limit);
+    return page.items;
   }
 }

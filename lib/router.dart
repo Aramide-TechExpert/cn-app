@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'features/auth/sign_in_page.dart';
+import 'features/discover/cluster_detail_page.dart';
+import 'features/discover/discover_page.dart';
+import 'features/discover/topic_page.dart';
 import 'features/feed/home_page.dart';
 import 'features/shell/placeholder_page.dart';
 import 'features/shell/scaffold_with_nav.dart';
@@ -21,16 +24,7 @@ final router = GoRouter(
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(
-              path: '/discover',
-              builder: (_, __) => const PlaceholderPage(
-                icon: Icons.explore_outlined,
-                title: 'Discover',
-                subtitle:
-                    'Topics, story clusters, and search — full coverage across sources.',
-                phase: 'NEXT',
-              ),
-            ),
+            GoRoute(path: '/discover', builder: (_, __) => const DiscoverPage()),
           ],
         ),
         StatefulShellBranch(
@@ -69,5 +63,16 @@ final router = GoRouter(
       ],
     ),
     GoRoute(path: '/sign-in', builder: (_, __) => const SignInPage()),
+    GoRoute(
+      path: '/cluster/:id',
+      builder: (_, s) => ClusterDetailPage(id: s.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/topic/:slug',
+      builder: (_, s) => TopicPage(
+        slug: s.pathParameters['slug']!,
+        name: s.uri.queryParameters['name'],
+      ),
+    ),
   ],
 );
