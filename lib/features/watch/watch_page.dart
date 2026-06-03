@@ -34,7 +34,7 @@ class WatchPage extends ConsumerWidget {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(
                   AppSpace.lg, AppSpace.sm, AppSpace.lg, AppSpace.x3),
-              itemCount: items.length + 1,
+              itemCount: items.isEmpty ? 2 : items.length + 1,
               separatorBuilder: (_, __) => const SizedBox(height: AppSpace.lg),
               itemBuilder: (context, i) {
                 if (i == 0) {
