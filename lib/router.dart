@@ -6,8 +6,9 @@ import 'features/discover/cluster_detail_page.dart';
 import 'features/discover/discover_page.dart';
 import 'features/discover/topic_page.dart';
 import 'features/feed/home_page.dart';
-import 'features/shell/placeholder_page.dart';
+import 'features/saved/saved_page.dart';
 import 'features/shell/scaffold_with_nav.dart';
+import 'features/watch/watch_page.dart';
 import 'features/you/you_page.dart';
 
 /// App routes: a 5-tab stateful shell (Home · Discover · Watch · Saved · You).
@@ -29,30 +30,12 @@ final router = GoRouter(
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(
-              path: '/watch',
-              builder: (_, __) => const PlaceholderPage(
-                icon: Icons.play_circle_outline,
-                title: 'Watch',
-                subtitle:
-                    'A swipeable video feed — inline players, link-out for the rest.',
-                phase: 'LATER',
-              ),
-            ),
+            GoRoute(path: '/watch', builder: (_, __) => const WatchPage()),
           ],
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(
-              path: '/saved',
-              builder: (_, __) => const PlaceholderPage(
-                icon: Icons.bookmark_outline,
-                title: 'Saved',
-                subtitle:
-                    'Bookmarks, watchlists, and history — available offline.',
-                phase: 'LATER',
-              ),
-            ),
+            GoRoute(path: '/saved', builder: (_, __) => const SavedPage()),
           ],
         ),
         StatefulShellBranch(
