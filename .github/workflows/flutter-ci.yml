@@ -25,7 +25,9 @@ jobs:
           channel: stable
 
       # Platform folders aren't committed; generate them so pub get resolves.
-      - run: flutter create --platforms=android,ios .
+      # --org sets a real package id (app.clustez.clustez), distinct from the
+      # RN app (app.clustez.mobile) so both can coexist on a device.
+      - run: flutter create --platforms=android,ios --org app.clustez .
       - run: flutter pub get
 
       # ── Cheap validation on EVERY push ──────────────────────────────────────

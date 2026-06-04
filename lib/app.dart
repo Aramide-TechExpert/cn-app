@@ -10,7 +10,9 @@ class ClustezApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Clustez',
-      debugShowCheckedModeBanner: false,
+      // Show the red DEBUG ribbon on debug builds — an unmistakable tell that
+      // this is the Flutter build (RN had none). Auto-hidden in release.
+      debugShowCheckedModeBanner: true,
       theme: buildClustezTheme(Brightness.light),
       darkTheme: buildClustezTheme(Brightness.dark),
       themeMode: ThemeMode.system,
