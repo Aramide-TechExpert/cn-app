@@ -19,6 +19,15 @@
 build/
 .packages
 
+# Native platform folders — generated in CI (and locally) via
+# `flutter create --platforms=android,ios .`; not committed.
+/android/
+/ios/
+/web/
+/macos/
+/linux/
+/windows/
+
 # Generated code
 *.g.dart
 *.freezed.dart
