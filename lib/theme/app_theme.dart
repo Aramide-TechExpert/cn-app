@@ -62,6 +62,8 @@ abstract class AppText {
     letterSpacing: -0.2,
   );
   static const body = TextStyle(fontSize: 15, height: 1.4);
+  static const bodyStrong =
+      TextStyle(fontSize: 15, height: 1.4, fontWeight: FontWeight.w600);
   static const callout =
       TextStyle(fontSize: 14, height: 1.35, fontWeight: FontWeight.w500);
   static const caption =
