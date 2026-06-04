@@ -55,17 +55,14 @@ class _HomePageState extends ConsumerState<HomePage> {
             _ErrorView(message: e.toString(), onRetry: controller.refresh),
         data: (items) {
           final withImage = items.where((a) => a.hasImage).toList();
-          final spotlight = withImage.take(4).toList();
-          final rail = withImage.skip(4).take(8).toList();
+          final spotlight = withImage.take(5).toList();
+          final rail = withImage.skip(5).take(6).toList();
           final used = {
             ...spotlight.map((a) => a.id),
             ...rail.map((a) => a.id),
           };
-          final bento = items
-              .where((a) => a.hasImage && !used.contains(a.id))
-              .take(4)
-              .toList();
-          used.addAll(bento.map((a) => a.id));
+          // Everything else flows into the interleaved feed (magazine / overlay
+          // / row) so the varied cards are the bulk of Home, not a grid block.
           final rest = items.where((a) => !used.contains(a.id)).toList();
 
           return RefreshIndicator.adaptive(
@@ -160,36 +157,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ),
                 ],
 
-                // Bento grid — "Top Stories" 2×2 of full-bleed features.
-                if (bento.isNotEmpty) ...[
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                          AppSpace.lg, AppSpace.lg, AppSpace.lg, AppSpace.md),
-                      child: Text('Top stories',
-                          style: AppText.headline.copyWith(color: c.text)),
-                    ),
-                  ),
-                  SliverPadding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: AppSpace.lg),
-                    sliver: SliverGrid.builder(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: AppSpace.md,
-                        crossAxisSpacing: AppSpace.md,
-                        childAspectRatio: 0.78,
-                      ),
-                      itemCount: bento.length,
-                      itemBuilder: (_, i) => ClipRect(
-                        child: OverlayCard(
-                            article: bento[i], height: double.infinity),
-                      ),
-                    ),
-                  ),
-                ],
-
                 if (rest.isNotEmpty)
                   SliverToBoxAdapter(
                     child: Padding(
@@ -200,7 +167,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ),
 
-                // Latest — interleaved magazine / overlay / row for rhythm.
+                // Main feed — frequent magazine / overlay features interleaved
+                // with rows so all card styles show as you scroll.
                 SliverList.builder(
                   itemCount: rest.length + 1,
                   itemBuilder: (context, i) {
@@ -215,10 +183,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                       );
                     }
                     final a = rest[i];
-                    if (i % 6 == 0 && a.hasImage) {
+                    if (i % 4 == 0 && a.hasImage) {
                       return MagazineCard(article: a);
                     }
-                    if (i % 6 == 3 && a.hasImage) {
+                    if (i % 4 == 2 && a.hasImage) {
                       return Padding(
                         padding:
                             const EdgeInsets.symmetric(vertical: AppSpace.xs),
