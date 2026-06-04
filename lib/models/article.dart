@@ -74,6 +74,27 @@ class Article {
       commentCount: (j['commentCount'] as num?)?.toInt() ?? 0,
     );
   }
+
+  /// Compact JSON for local persistence (reading history) — the fields cards
+  /// need to render without a refetch.
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'dbId': dbId,
+        'title': title,
+        'excerpt': excerpt,
+        'image': image,
+        'source': source,
+        'sourceUrl': sourceUrl,
+        'publishedAt': publishedAt,
+        'readingMinutes': readingMinutes,
+        'categories': categories,
+        'impact': impact,
+        'isBreaking': isBreaking,
+        'summary': summary,
+        'topics': topics,
+        'likeCount': likeCount,
+        'commentCount': commentCount,
+      };
 }
 
 /// Cursor-paginated feed page from `GET /feed`.

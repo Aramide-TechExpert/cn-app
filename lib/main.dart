@@ -4,9 +4,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
 import 'config.dart';
+import 'data/reading_history.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await ReadingHistory.init();
 
   // Supabase = channel 1 (auth + direct RLS data). Only the anon key is used
   // here; RLS is the security boundary. Skipped gracefully if unconfigured.

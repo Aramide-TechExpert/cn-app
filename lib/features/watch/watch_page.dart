@@ -195,7 +195,7 @@ class _PreviewSheet extends StatelessWidget {
                   child: FilledButton.icon(
                     onPressed: () {
                       Navigator.pop(context);
-                      openArticle(article.sourceUrl);
+                      openArticle(article.sourceUrl, track: article);
                     },
                     style: FilledButton.styleFrom(
                       backgroundColor: c.brand,

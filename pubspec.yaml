@@ -25,6 +25,8 @@ dependencies:
   share_plus: ^10.1.2
   # Swipe actions on cards (Saved: swipe-to-remove)
   flutter_slidable: ^3.1.1
+  # Local reading history ("Continue reading")
+  shared_preferences: ^2.3.3
   # NOTE: inline YouTube (youtube_player_iframe/_flutter) parked — the webview
   # errored on-device; Watch uses poster + link-out for now.
 

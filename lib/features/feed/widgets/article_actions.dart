@@ -61,7 +61,7 @@ Future<void> showArticleActions(
               label: 'Open story',
               onTap: () {
                 Navigator.pop(sheetCtx);
-                openArticle(article.sourceUrl);
+                openArticle(article.sourceUrl, track: article);
               },
             ),
             if (dbId != null)

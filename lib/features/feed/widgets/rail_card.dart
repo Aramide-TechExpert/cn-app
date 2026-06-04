@@ -25,7 +25,7 @@ class RailCard extends ConsumerWidget {
     return SizedBox(
       width: width,
       child: InkWell(
-        onTap: () => openArticle(article.sourceUrl),
+        onTap: () => openArticle(article.sourceUrl, track: article),
         onLongPress: () => showArticleActions(context, ref, article),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

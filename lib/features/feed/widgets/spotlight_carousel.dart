@@ -72,7 +72,7 @@ class _Spotlight extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     return InkWell(
-      onTap: () => openArticle(article.sourceUrl),
+      onTap: () => openArticle(article.sourceUrl, track: article),
       child: Stack(
         fit: StackFit.expand,
         children: [

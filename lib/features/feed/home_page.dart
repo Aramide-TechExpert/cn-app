@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/feed_controller.dart';
+import '../../data/reading_history.dart';
+import '../../models/article.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import 'widgets/article_card.dart';
@@ -95,6 +97,42 @@ class _HomePageState extends ConsumerState<HomePage> {
                       child: SpotlightCarousel(articles: spotlight),
                     ),
                   ),
+
+                // Continue reading (local history).
+                SliverToBoxAdapter(
+                  child: ValueListenableBuilder<List<Article>>(
+                    valueListenable: ReadingHistory.items,
+                    builder: (context, history, _) {
+                      final items =
+                          history.where((a) => a.hasImage).take(10).toList();
+                      if (items.isEmpty) return const SizedBox.shrink();
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(AppSpace.lg,
+                                AppSpace.sm, AppSpace.lg, AppSpace.md),
+                            child: Text('Continue reading',
+                                style:
+                                    AppText.headline.copyWith(color: c.text)),
+                          ),
+                          SizedBox(
+                            height: 232,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpace.lg),
+                              itemCount: items.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(width: AppSpace.lg),
+                              itemBuilder: (_, i) => RailCard(article: items[i]),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
 
                 // Horizontal "Trending now" rail.
                 if (rail.isNotEmpty) ...[

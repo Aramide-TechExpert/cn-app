@@ -24,7 +24,7 @@ class OverlayCard extends ConsumerWidget {
     final hue = hueFromString(article.source).toDouble();
 
     return InkWell(
-      onTap: () => openArticle(article.sourceUrl),
+      onTap: () => openArticle(article.sourceUrl, track: article),
       onLongPress: () => showArticleActions(context, ref, article),
       child: SizedBox(
         height: height,
