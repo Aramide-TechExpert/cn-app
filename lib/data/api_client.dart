@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../config.dart';
 import '../models/article.dart';
+import '../models/briefing.dart';
 import '../models/cluster.dart';
 
 /// Typed client for the Clustez mobile backend (`/api/v1`) — channel 2 of the
@@ -63,6 +64,12 @@ class ApiClient {
           .map((e) => Article.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
+  }
+
+  Future<DailyBriefing?> briefing() async {
+    final res = await _dio.get<Map<String, dynamic>>('/briefing');
+    final b = res.data?['briefing'];
+    return b == null ? null : DailyBriefing.fromJson(b as Map<String, dynamic>);
   }
 
   Future<List<TrendingTopic>> trending() async {

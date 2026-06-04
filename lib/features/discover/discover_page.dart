@@ -23,6 +23,7 @@ class DiscoverPage extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(clustersProvider);
           ref.invalidate(trendingProvider);
+          ref.invalidate(briefingProvider);
         },
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(
@@ -37,36 +38,44 @@ class DiscoverPage extends ConsumerWidget {
                   style: AppText.title.copyWith(color: c.text)),
             ),
 
-            // Material 3 search bar (read-only → full search screen).
+            // Search (simple tappable field → full search screen).
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
                     AppSpace.lg, 0, AppSpace.lg, AppSpace.lg),
-                child: SearchBar(
-                  hintText: 'Search news, topics, sources',
-                  leading: Icon(Icons.search, color: c.textFaint),
-                  backgroundColor: WidgetStatePropertyAll(c.bgInset),
-                  elevation: const WidgetStatePropertyAll(0),
-                  shape: WidgetStatePropertyAll(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadii.md),
-                      side: BorderSide(color: c.border),
-                    ),
-                  ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(AppRadii.md),
                   onTap: () => context.push('/search'),
-                  onChanged: (_) => context.push('/search'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpace.lg, vertical: AppSpace.md),
+                    decoration: BoxDecoration(
+                      color: c.bgInset,
+                      borderRadius: BorderRadius.circular(AppRadii.md),
+                      border: Border.all(color: c.border),
+                    ),
+                    child: Row(children: [
+                      Icon(Icons.search, size: 20, color: c.textFaint),
+                      const SizedBox(width: AppSpace.sm),
+                      Text('Search news, topics, sources',
+                          style: AppText.body.copyWith(color: c.textFaint)),
+                    ]),
+                  ),
                 ),
               ),
             ),
 
-            // Trending chips.
-            const SliverToBoxAdapter(child: _SectionHeader(label: 'Trending')),
+            // Daily briefing entry.
+            SliverToBoxAdapter(child: _BriefingCard()),
+
+            // Trending.
+            const SliverToBoxAdapter(child: _SectionHeader('Trending')),
             SliverToBoxAdapter(
               child: trending.when(
                 loading: () => const _InlineLoader(),
-                error: (_, __) => const SizedBox.shrink(),
+                error: (_, __) => const _InlineNote('Trending unavailable.'),
                 data: (topics) => topics.isEmpty
-                    ? const SizedBox.shrink()
+                    ? const _InlineNote('Nothing trending yet.')
                     : SizedBox(
                         height: 44,
                         child: ListView.separated(
@@ -82,15 +91,16 @@ class DiscoverPage extends ConsumerWidget {
               ),
             ),
 
-            // Full coverage clusters.
-            const SliverToBoxAdapter(
-                child: _SectionHeader(label: 'Full coverage')),
+            // Full coverage.
+            const SliverToBoxAdapter(child: _SectionHeader('Full coverage')),
             clusters.when(
               loading: () => const SliverToBoxAdapter(child: _InlineLoader()),
-              error: (_, __) =>
-                  const SliverToBoxAdapter(child: SizedBox.shrink()),
+              error: (_, __) => const SliverToBoxAdapter(
+                  child: _InlineNote("Couldn't load clusters.")),
               data: (list) => list.isEmpty
-                  ? SliverToBoxAdapter(child: _EmptyCoverage())
+                  ? const SliverToBoxAdapter(
+                      child: _InlineNote(
+                          'No multi-source stories are clustered right now.'))
                   : SliverPadding(
                       padding: const EdgeInsets.fromLTRB(
                           AppSpace.lg, 0, AppSpace.lg, AppSpace.x3),
@@ -102,6 +112,7 @@ class DiscoverPage extends ConsumerWidget {
                       ),
                     ),
             ),
+            const SliverToBoxAdapter(child: SizedBox(height: AppSpace.x2)),
           ],
         ),
       ),
@@ -109,8 +120,53 @@ class DiscoverPage extends ConsumerWidget {
   }
 }
 
+class _BriefingCard extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.colors;
+    final b = ref.watch(briefingProvider).valueOrNull;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpace.lg, 0, AppSpace.lg, AppSpace.sm),
+      child: Material(
+        color: c.brandSoft,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          onTap: () => context.push('/briefing'),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpace.lg),
+            child: Row(children: [
+              Icon(Icons.newspaper, color: c.brand),
+              const SizedBox(width: AppSpace.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Daily Briefing',
+                        style: AppText.bodyStrong.copyWith(color: c.text)),
+                    Text(
+                        b?.title.isNotEmpty == true
+                            ? b!.title
+                            : "Today's top stories, in brief",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style:
+                            AppText.caption.copyWith(color: c.textSecondary)),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: c.textFaint),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.label});
+  const _SectionHeader(this.label);
   final String label;
   @override
   Widget build(BuildContext context) {
@@ -130,6 +186,20 @@ class _InlineLoader extends StatelessWidget {
         padding: EdgeInsets.symmetric(vertical: AppSpace.lg),
         child: Center(child: CircularProgressIndicator.adaptive()),
       );
+}
+
+class _InlineNote extends StatelessWidget {
+  const _InlineNote(this.text);
+  final String text;
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
+      child: Text(text,
+          style: AppText.body.copyWith(color: context.colors.textSecondary)),
+    );
+  }
 }
 
 class _TopicChip extends StatelessWidget {
@@ -198,29 +268,6 @@ class _ClusterCard extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyCoverage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          AppSpace.lg, 0, AppSpace.lg, AppSpace.x3),
-      child: Container(
-        padding: const EdgeInsets.all(AppSpace.x2),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadii.lg),
-          border: Border.all(color: c.border),
-        ),
-        child: Text(
-          'No multi-source stories are clustered right now. Check back as coverage develops.',
-          textAlign: TextAlign.center,
-          style: AppText.body.copyWith(color: c.textSecondary),
         ),
       ),
     );

@@ -159,15 +159,17 @@ class _Card extends StatelessWidget {
 }
 
 class _MenuItem {
-  const _MenuItem(this.icon, this.label, this.hint);
+  const _MenuItem(this.icon, this.label, this.hint, {this.route});
   final IconData icon;
   final String label;
   final String hint;
+  final String? route;
 }
 
 const _menu = [
+  _MenuItem(Icons.newspaper_outlined, 'Daily briefing', '', route: '/briefing'),
+  _MenuItem(Icons.search, 'Search', '', route: '/search'),
   _MenuItem(Icons.auto_awesome_outlined, 'Your interests', 'Next'),
-  _MenuItem(Icons.newspaper_outlined, 'Daily briefing', 'Next'),
   _MenuItem(Icons.notifications_outlined, 'Alerts', 'Later'),
   _MenuItem(Icons.settings_outlined, 'Settings', 'Next'),
 ];
@@ -179,21 +181,34 @@ class _MenuRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpace.sm),
-      padding: const EdgeInsets.all(AppSpace.lg),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(color: c.border),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpace.sm),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          onTap: item.route == null ? null : () => context.push(item.route!),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpace.lg),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadii.md),
+              border: Border.all(color: c.border),
+            ),
+            child: Row(children: [
+              Icon(item.icon, size: 20, color: c.textSecondary),
+              const SizedBox(width: AppSpace.md),
+              Expanded(
+                  child: Text(item.label,
+                      style: AppText.body.copyWith(color: c.text))),
+              if (item.hint.isNotEmpty)
+                Text(item.hint,
+                    style: AppText.micro.copyWith(color: c.textFaint))
+              else if (item.route != null)
+                Icon(Icons.chevron_right, size: 18, color: c.textFaint),
+            ]),
+          ),
+        ),
       ),
-      child: Row(children: [
-        Icon(item.icon, size: 20, color: c.textSecondary),
-        const SizedBox(width: AppSpace.md),
-        Expanded(
-            child: Text(item.label,
-                style: AppText.body.copyWith(color: c.text))),
-        Text(item.hint, style: AppText.micro.copyWith(color: c.textFaint)),
-      ]),
     );
   }
 }

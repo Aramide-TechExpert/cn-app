@@ -2,7 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../../data/watch_controller.dart';
 import '../../models/article.dart';
@@ -164,45 +163,13 @@ void _openPreview(BuildContext context, Article article) {
   );
 }
 
-class _PreviewSheet extends StatefulWidget {
+class _PreviewSheet extends StatelessWidget {
   const _PreviewSheet({required this.article});
   final Article article;
 
   @override
-  State<_PreviewSheet> createState() => _PreviewSheetState();
-}
-
-class _PreviewSheetState extends State<_PreviewSheet> {
-  YoutubePlayerController? _yt;
-
-  @override
-  void initState() {
-    super.initState();
-    final url = widget.article.sourceUrl;
-    final id = (url != null && url.isNotEmpty)
-        ? YoutubePlayerController.convertUrlToId(url)
-        : null;
-    if (id != null) {
-      _yt = YoutubePlayerController.fromVideoId(
-        videoId: id,
-        autoPlay: true,
-        params: const YoutubePlayerParams(showFullscreenButton: false),
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    _yt?.close();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final article = widget.article;
-    final inline = _yt != null;
-
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -213,9 +180,7 @@ class _PreviewSheetState extends State<_PreviewSheet> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(AppRadii.lg),
-              child: inline
-                  ? YoutubePlayer(controller: _yt!, aspectRatio: 16 / 9)
-                  : _Poster(article: article),
+              child: _Poster(article: article),
             ),
             const SizedBox(height: AppSpace.md),
             Text(article.title,
@@ -233,17 +198,12 @@ class _PreviewSheetState extends State<_PreviewSheet> {
                       openArticle(article.sourceUrl);
                     },
                     style: FilledButton.styleFrom(
-                      backgroundColor: inline ? c.bgInset : c.brand,
-                      foregroundColor: inline ? c.text : c.onBrand,
+                      backgroundColor: c.brand,
                       minimumSize: const Size.fromHeight(48),
                     ),
-                    icon: Icon(inline ? Icons.open_in_new : Icons.play_arrow),
-                    label: Text(
-                        inline
-                            ? 'Open on ${article.source}'
-                            : 'Watch on ${article.source}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
+                    icon: const Icon(Icons.play_arrow),
+                    label: Text('Watch on ${article.source}',
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
                   ),
                 ),
                 const SizedBox(width: AppSpace.sm),

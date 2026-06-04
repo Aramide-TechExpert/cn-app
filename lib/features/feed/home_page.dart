@@ -6,6 +6,7 @@ import '../../data/feed_controller.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import 'widgets/article_card.dart';
+import 'widgets/overlay_card.dart';
 import 'widgets/spotlight_carousel.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -45,15 +46,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Scaffold(
       backgroundColor: c.bg,
       body: feed.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator.adaptive(),
-        ),
-        error: (e, _) => _ErrorView(
-          message: e.toString(),
-          onRetry: controller.refresh,
-        ),
+        loading: () => const Center(child: CircularProgressIndicator.adaptive()),
+        error: (e, _) =>
+            _ErrorView(message: e.toString(), onRetry: controller.refresh),
         data: (items) {
-          // Top image stories become the swipeable spotlight; the rest list.
           final withImage = items.where((a) => a.hasImage).toList();
           final spotlight = withImage.take(5).toList();
           final spotIds = spotlight.map((a) => a.id).toSet();
@@ -84,62 +80,40 @@ class _HomePageState extends ConsumerState<HomePage> {
                 if (spotlight.isNotEmpty)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpace.md),
+                      padding: const EdgeInsets.only(bottom: AppSpace.sm),
                       child: SpotlightCarousel(articles: spotlight),
                     ),
                   ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                        AppSpace.lg, AppSpace.sm, AppSpace.lg, AppSpace.md),
-                    child: Text('Latest',
-                        style: AppText.headline.copyWith(color: c.text)),
-                  ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
-                  sliver: SliverList.separated(
-                    itemCount: rest.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: AppSpace.lg),
-                    itemBuilder: (context, i) => _Reveal(
-                      child: ArticleCard(article: rest[i]),
-                    ),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpace.xl),
-                    child: controller.hasMore
-                        ? const Center(child: CircularProgressIndicator.adaptive())
-                        : const SizedBox(height: AppSpace.x3),
-                  ),
+                SliverList.builder(
+                  itemCount: rest.length + 1,
+                  itemBuilder: (context, i) {
+                    if (i == rest.length) {
+                      return Padding(
+                        padding:
+                            const EdgeInsets.symmetric(vertical: AppSpace.xl),
+                        child: controller.hasMore
+                            ? const Center(
+                                child: CircularProgressIndicator.adaptive())
+                            : const SizedBox(height: AppSpace.lg),
+                      );
+                    }
+                    final a = rest[i];
+                    // Every 6th item is a full-bleed feature for rhythm.
+                    if (i % 6 == 5 && a.hasImage) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: AppSpace.xs),
+                        child: OverlayCard(article: a),
+                      );
+                    }
+                    return ArticleCard(article: a);
+                  },
                 ),
               ],
             ),
           );
         },
       ),
-    );
-  }
-}
-
-/// One-shot fade + slide-up as an item scrolls into view (subtle native motion).
-class _Reveal extends StatelessWidget {
-  const _Reveal({required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 280),
-      curve: Curves.easeOut,
-      builder: (context, t, child) => Opacity(
-        opacity: t,
-        child: Transform.translate(offset: Offset(0, (1 - t) * 12), child: child),
-      ),
-      child: child,
     );
   }
 }

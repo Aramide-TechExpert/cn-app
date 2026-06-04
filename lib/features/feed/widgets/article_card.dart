@@ -13,169 +13,14 @@ import '../../../utils/format.dart';
 import '../../../utils/link_out.dart';
 import 'article_actions.dart';
 
-/// Primary feed card. Tap link-outs to the publisher (content model);
+/// Compact, edge-to-edge row card (mirrors the web `row` variant): square
+/// thumbnail + title + meta, full-width with a hairline divider. Tap link-outs;
 /// long-press opens the native action sheet.
 class ArticleCard extends ConsumerWidget {
-  const ArticleCard({super.key, required this.article});
+  const ArticleCard({super.key, required this.article, this.showDivider = true});
 
   final Article article;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final c = context.colors;
-    final blurb = article.blurb;
-
-    return Material(
-      color: c.bgElevated,
-      borderRadius: BorderRadius.circular(AppRadii.lg),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => openArticle(article.sourceUrl),
-        onLongPress: () => showArticleActions(context, ref, article),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadii.lg),
-            border: Border.all(color: c.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _Cover(article: article),
-              Padding(
-                padding: const EdgeInsets.all(AppSpace.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _SourceRow(article: article),
-                    const SizedBox(height: AppSpace.sm),
-                    Text(
-                      article.title,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.headline.copyWith(color: c.text),
-                    ),
-                    if (blurb != null) ...[
-                      const SizedBox(height: AppSpace.sm),
-                      Text(
-                        blurb,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppText.body.copyWith(color: c.textSecondary),
-                      ),
-                    ],
-                    const SizedBox(height: AppSpace.md),
-                    _Footer(article: article),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Cover extends StatelessWidget {
-  const _Cover({required this.article});
-  final Article article;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (article.hasImage)
-            CachedNetworkImage(
-              imageUrl: article.image,
-              fit: BoxFit.cover,
-              placeholder: (_, __) => Container(color: c.bgInset),
-              errorWidget: (_, __, ___) => _Monogram(source: article.source),
-            )
-          else
-            _Monogram(source: article.source),
-          if (article.isBreaking)
-            Positioned(
-              top: AppSpace.md,
-              left: AppSpace.md,
-              child: _Pill(label: 'BREAKING', color: c.breaking),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Monogram extends StatelessWidget {
-  const _Monogram({required this.source});
-  final String source;
-
-  @override
-  Widget build(BuildContext context) {
-    final hue = hueFromString(source).toDouble();
-    final color = HSLColor.fromAHSL(1, hue, 0.5, 0.38).toColor();
-    return Container(
-      color: color,
-      alignment: Alignment.center,
-      child: Text(
-        initialOf(source),
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 44,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-}
-
-class _SourceRow extends StatelessWidget {
-  const _SourceRow({required this.article});
-  final Article article;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    final hue = hueFromString(article.source).toDouble();
-    final avatarColor = HSLColor.fromAHSL(1, hue, 0.55, 0.45).toColor();
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 10,
-          backgroundColor: avatarColor,
-          child: Text(
-            initialOf(article.source),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ),
-        const SizedBox(width: 7),
-        Flexible(
-          child: Text(
-            article.source,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppText.caption
-                .copyWith(color: c.text, fontWeight: FontWeight.w700),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text('· ${timeAgo(article.publishedAt)}',
-            style: AppText.caption.copyWith(color: c.textFaint)),
-      ],
-    );
-  }
-}
-
-class _Footer extends ConsumerWidget {
-  const _Footer({required this.article});
-  final Article article;
+  final bool showDivider;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -195,47 +40,146 @@ class _Footer extends ConsumerWidget {
       toggle(dbId!);
     }
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
       children: [
-        Row(
-          children: [
-            Container(
-              width: 7,
-              height: 7,
-              decoration: BoxDecoration(
-                color: c.impact(article.impact),
-                shape: BoxShape.circle,
+        InkWell(
+          onTap: () => openArticle(article.sourceUrl),
+          onLongPress: () => showArticleActions(context, ref, article),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpace.lg, vertical: AppSpace.md),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _Thumb(article: article),
+                const SizedBox(width: AppSpace.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: c.impact(article.impact),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(article.source,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppText.caption.copyWith(
+                                  color: c.textSecondary,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                        Text(' · ${timeAgo(article.publishedAt)}',
+                            style:
+                                AppText.caption.copyWith(color: c.textFaint)),
+                      ]),
+                      const SizedBox(height: 4),
+                      Text(article.title,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.bodyStrong
+                              .copyWith(color: c.text, height: 1.3)),
+                      const SizedBox(height: 6),
+                      Row(children: [
+                        Text(readTime(article.readingMinutes),
+                            style:
+                                AppText.caption.copyWith(color: c.textFaint)),
+                        const Spacer(),
+                        if (canEngage) ...[
+                          _IconBtn(
+                            icon: marked
+                                ? Icons.bookmark
+                                : Icons.bookmark_outline,
+                            color: marked ? c.brand : c.textFaint,
+                            onTap: () => act(ref
+                                .read(engagementProvider.notifier)
+                                .toggleBookmark),
+                          ),
+                          const SizedBox(width: AppSpace.md),
+                          _IconBtn(
+                            icon:
+                                liked ? Icons.favorite : Icons.favorite_outline,
+                            color: liked ? c.accent : c.textFaint,
+                            onTap: () => act(ref
+                                .read(engagementProvider.notifier)
+                                .toggleLike),
+                          ),
+                        ],
+                      ]),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (showDivider) Divider(height: 1, thickness: 1, color: c.border),
+      ],
+    );
+  }
+}
+
+class _Thumb extends StatelessWidget {
+  const _Thumb({required this.article});
+  final Article article;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return SizedBox(
+      width: 112,
+      height: 84,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (article.hasImage)
+            CachedNetworkImage(
+              imageUrl: article.image,
+              fit: BoxFit.cover,
+              placeholder: (_, __) => Container(color: c.bgInset),
+              errorWidget: (_, __, ___) => _Monogram(source: article.source),
+            )
+          else
+            _Monogram(source: article.source),
+          if (article.isBreaking)
+            Positioned(
+              top: 4,
+              left: 4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                color: c.breaking,
+                child: const Text('LIVE',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800)),
               ),
             ),
-            const SizedBox(width: 5),
-            Text(article.impact,
-                style: AppText.caption.copyWith(color: c.textSecondary)),
-          ],
-        ),
-        Row(
-          children: [
-            Text(readTime(article.readingMinutes),
-                style: AppText.caption.copyWith(color: c.textFaint)),
-            if (canEngage) ...[
-              const SizedBox(width: AppSpace.md),
-              _IconBtn(
-                icon: marked ? Icons.bookmark : Icons.bookmark_outline,
-                color: marked ? c.brand : c.textFaint,
-                onTap: () => act(
-                    ref.read(engagementProvider.notifier).toggleBookmark),
-              ),
-              const SizedBox(width: AppSpace.sm),
-              _IconBtn(
-                icon: liked ? Icons.favorite : Icons.favorite_outline,
-                color: liked ? c.accent : c.textFaint,
-                onTap: () =>
-                    act(ref.read(engagementProvider.notifier).toggleLike),
-              ),
-            ],
-          ],
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+}
+
+class _Monogram extends StatelessWidget {
+  const _Monogram({required this.source});
+  final String source;
+
+  @override
+  Widget build(BuildContext context) {
+    final hue = hueFromString(source).toDouble();
+    return Container(
+      color: HSLColor.fromAHSL(1, hue, 0.5, 0.4).toColor(),
+      alignment: Alignment.center,
+      child: Text(initialOf(source),
+          style: const TextStyle(
+              color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800)),
     );
   }
 }
@@ -251,30 +195,8 @@ class _IconBtn extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkResponse(
       onTap: onTap,
-      radius: 22,
-      child: Padding(
-        padding: const EdgeInsets.all(2),
-        child: Icon(icon, size: 20, color: color),
-      ),
-    );
-  }
-}
-
-class _Pill extends StatelessWidget {
-  const _Pill({required this.label, required this.color});
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm, vertical: 3),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-      ),
-      child: Text(label,
-          style: AppText.micro.copyWith(color: Colors.white)),
+      radius: 20,
+      child: Icon(icon, size: 18, color: color),
     );
   }
 }

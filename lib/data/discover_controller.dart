@@ -1,11 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/article.dart';
+import '../models/briefing.dart';
 import '../models/cluster.dart';
 import 'feed_controller.dart' show apiClientProvider;
 
 final clustersProvider = FutureProvider.autoDispose<List<StoryCluster>>(
   (ref) => ref.read(apiClientProvider).clusters(),
+);
+
+final briefingProvider = FutureProvider.autoDispose<DailyBriefing?>(
+  (ref) => ref.read(apiClientProvider).briefing(),
 );
 
 final trendingProvider = FutureProvider.autoDispose<List<TrendingTopic>>(

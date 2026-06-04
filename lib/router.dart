@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import 'features/auth/sign_in_page.dart';
+import 'features/briefing/briefing_page.dart';
 import 'features/discover/cluster_detail_page.dart';
 import 'features/discover/discover_page.dart';
 import 'features/discover/topic_page.dart';
@@ -47,6 +48,7 @@ final router = GoRouter(
     ),
     GoRoute(path: '/sign-in', builder: (_, __) => const SignInPage()),
     GoRoute(path: '/search', builder: (_, __) => const SearchPage()),
+    GoRoute(path: '/briefing', builder: (_, __) => const BriefingPage()),
     GoRoute(
       path: '/cluster/:id',
       builder: (_, s) => ClusterDetailPage(id: s.pathParameters['id']!),
