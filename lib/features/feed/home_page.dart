@@ -6,7 +6,9 @@ import '../../data/feed_controller.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import 'widgets/article_card.dart';
+import 'widgets/magazine_card.dart';
 import 'widgets/overlay_card.dart';
+import 'widgets/rail_card.dart';
 import 'widgets/spotlight_carousel.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -52,8 +54,12 @@ class _HomePageState extends ConsumerState<HomePage> {
         data: (items) {
           final withImage = items.where((a) => a.hasImage).toList();
           final spotlight = withImage.take(5).toList();
-          final spotIds = spotlight.map((a) => a.id).toSet();
-          final rest = items.where((a) => !spotIds.contains(a.id)).toList();
+          final rail = withImage.skip(5).take(10).toList();
+          final railIds = {
+            ...spotlight.map((a) => a.id),
+            ...rail.map((a) => a.id),
+          };
+          final rest = items.where((a) => !railIds.contains(a.id)).toList();
 
           return RefreshIndicator.adaptive(
             onRefresh: controller.refresh,
@@ -80,10 +86,46 @@ class _HomePageState extends ConsumerState<HomePage> {
                 if (spotlight.isNotEmpty)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpace.sm),
+                      padding: const EdgeInsets.only(bottom: AppSpace.md),
                       child: SpotlightCarousel(articles: spotlight),
                     ),
                   ),
+
+                // Horizontal "Trending now" rail.
+                if (rail.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                          AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
+                      child: Text('Trending now',
+                          style: AppText.headline.copyWith(color: c.text)),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 232,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+                        itemCount: rail.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(width: AppSpace.lg),
+                        itemBuilder: (_, i) => RailCard(article: rail[i]),
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                          AppSpace.lg, AppSpace.lg, AppSpace.lg, AppSpace.sm),
+                      child: Text('Latest',
+                          style: AppText.headline.copyWith(color: c.text)),
+                    ),
+                  ),
+                ],
+
+                // Latest — interleaved magazine / overlay / row for rhythm.
                 SliverList.builder(
                   itemCount: rest.length + 1,
                   itemBuilder: (context, i) {
@@ -98,11 +140,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                       );
                     }
                     final a = rest[i];
-                    // Every 6th item is a full-bleed feature for rhythm.
-                    if (i % 6 == 5 && a.hasImage) {
+                    if (i % 6 == 0 && a.hasImage) {
+                      return MagazineCard(article: a);
+                    }
+                    if (i % 6 == 3 && a.hasImage) {
                       return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: AppSpace.xs),
+                        padding:
+                            const EdgeInsets.symmetric(vertical: AppSpace.xs),
                         child: OverlayCard(article: a),
                       );
                     }
