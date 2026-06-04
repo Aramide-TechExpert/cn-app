@@ -27,8 +27,10 @@ dependencies:
   flutter_slidable: ^3.1.1
   # Local reading history ("Continue reading")
   shared_preferences: ^2.3.3
-  # NOTE: inline YouTube (youtube_player_iframe/_flutter) parked — the webview
-  # errored on-device; Watch uses poster + link-out for now.
+  # Inline video — official webview loads a YouTube nocookie embed URL
+  # (avoids flutter_inappwebview's Gradle break + the iframe player runtime
+  # error). Falls back to poster + link-out for non-YouTube / load failures.
+  webview_flutter: ^4.10.0
 
 dev_dependencies:
   flutter_test:

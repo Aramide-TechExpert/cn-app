@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../data/watch_controller.dart';
 import '../../models/article.dart';
@@ -9,6 +10,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../utils/format.dart';
 import '../../utils/link_out.dart';
+import '../../utils/video.dart';
 
 class WatchPage extends ConsumerWidget {
   const WatchPage({super.key});
@@ -163,13 +165,49 @@ void _openPreview(BuildContext context, Article article) {
   );
 }
 
-class _PreviewSheet extends StatelessWidget {
+class _PreviewSheet extends StatefulWidget {
   const _PreviewSheet({required this.article});
   final Article article;
 
   @override
+  State<_PreviewSheet> createState() => _PreviewSheetState();
+}
+
+class _PreviewSheetState extends State<_PreviewSheet> {
+  WebViewController? _wc;
+  bool _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final id = youtubeIdFor(widget.article.sourceUrl);
+    if (id != null) {
+      _wc = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setBackgroundColor(Colors.black)
+        ..setNavigationDelegate(NavigationDelegate(
+          onWebResourceError: (_) {
+            if (mounted) setState(() => _failed = true);
+          },
+        ))
+        ..loadRequest(Uri.parse(
+            'https://www.youtube-nocookie.com/embed/$id?autoplay=1&playsinline=1&rel=0'));
+    }
+  }
+
+  @override
+  void dispose() {
+    // Stop playback/audio when the sheet closes.
+    _wc?.loadRequest(Uri.parse('about:blank'));
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final article = widget.article;
+    final inline = _wc != null && !_failed;
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -180,7 +218,12 @@ class _PreviewSheet extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(AppRadii.lg),
-              child: _Poster(article: article),
+              child: inline
+                  ? AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: WebViewWidget(controller: _wc!),
+                    )
+                  : _Poster(article: article),
             ),
             const SizedBox(height: AppSpace.md),
             Text(article.title,
