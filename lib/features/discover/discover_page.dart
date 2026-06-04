@@ -7,6 +7,7 @@ import '../../models/cluster.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../utils/format.dart';
+import '../feed/widgets/rail_card.dart';
 
 class DiscoverPage extends ConsumerWidget {
   const DiscoverPage({super.key});
@@ -16,6 +17,8 @@ class DiscoverPage extends ConsumerWidget {
     final c = context.colors;
     final clusters = ref.watch(clustersProvider);
     final trending = ref.watch(trendingProvider);
+    final topTopics =
+        trending.valueOrNull?.take(3).toList() ?? const <TrendingTopic>[];
 
     return Scaffold(
       backgroundColor: c.bg,
@@ -89,6 +92,11 @@ class DiscoverPage extends ConsumerWidget {
                         ),
                       ),
               ),
+            ),
+
+            // Your topics — a rail of articles per top trending topic.
+            ...topTopics.map(
+              (t) => SliverToBoxAdapter(child: _TopicSection(topic: t)),
             ),
 
             // Full coverage.
@@ -198,6 +206,57 @@ class _InlineNote extends StatelessWidget {
           AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
       child: Text(text,
           style: AppText.body.copyWith(color: context.colors.textSecondary)),
+    );
+  }
+}
+
+/// "Your topics" — a horizontal rail of a trending topic's articles. Hidden
+/// until its feed loads (avoids empty sections).
+class _TopicSection extends ConsumerWidget {
+  const _TopicSection({required this.topic});
+  final TrendingTopic topic;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.colors;
+    final articles = ref.watch(topicFeedProvider(topic.slug)).valueOrNull;
+    if (articles == null) return const SizedBox.shrink();
+    final items = articles.where((a) => a.hasImage).take(8).toList();
+    if (items.isEmpty) return const SizedBox.shrink();
+    final name = topic.topic;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpace.lg, AppSpace.lg, AppSpace.sm, AppSpace.md),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(name,
+                    style: AppText.headline.copyWith(color: c.text)),
+              ),
+              TextButton(
+                onPressed: () => context.push(
+                    '/topic/${topic.slug}?name=${Uri.encodeComponent(name)}'),
+                child: Text('See all',
+                    style: AppText.callout.copyWith(color: c.brand)),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 232,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(width: AppSpace.lg),
+            itemBuilder: (_, i) => RailCard(article: items[i]),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -53,13 +53,18 @@ class _HomePageState extends ConsumerState<HomePage> {
             _ErrorView(message: e.toString(), onRetry: controller.refresh),
         data: (items) {
           final withImage = items.where((a) => a.hasImage).toList();
-          final spotlight = withImage.take(5).toList();
-          final rail = withImage.skip(5).take(10).toList();
-          final railIds = {
+          final spotlight = withImage.take(4).toList();
+          final rail = withImage.skip(4).take(8).toList();
+          final used = {
             ...spotlight.map((a) => a.id),
             ...rail.map((a) => a.id),
           };
-          final rest = items.where((a) => !railIds.contains(a.id)).toList();
+          final bento = items
+              .where((a) => a.hasImage && !used.contains(a.id))
+              .take(4)
+              .toList();
+          used.addAll(bento.map((a) => a.id));
+          final rest = items.where((a) => !used.contains(a.id)).toList();
 
           return RefreshIndicator.adaptive(
             onRefresh: controller.refresh,
@@ -115,6 +120,39 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ),
                   ),
+                ],
+
+                // Bento grid — "Top Stories" 2×2 of full-bleed features.
+                if (bento.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                          AppSpace.lg, AppSpace.lg, AppSpace.lg, AppSpace.md),
+                      child: Text('Top stories',
+                          style: AppText.headline.copyWith(color: c.text)),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+                    sliver: SliverGrid.builder(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: AppSpace.md,
+                        crossAxisSpacing: AppSpace.md,
+                        childAspectRatio: 0.78,
+                      ),
+                      itemCount: bento.length,
+                      itemBuilder: (_, i) => ClipRect(
+                        child: OverlayCard(
+                            article: bento[i], height: double.infinity),
+                      ),
+                    ),
+                  ),
+                ],
+
+                if (rest.isNotEmpty)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(
@@ -123,7 +161,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                           style: AppText.headline.copyWith(color: c.text)),
                     ),
                   ),
-                ],
 
                 // Latest — interleaved magazine / overlay / row for rhythm.
                 SliverList.builder(

@@ -19,7 +19,8 @@ class FeedController extends AsyncNotifier<List<Article>> {
 
   @override
   Future<List<Article>> build() async {
-    final page = await ref.read(apiClientProvider).feed(limit: 12);
+    // Larger first page so Home can fill hero + rail + bento + latest.
+    final page = await ref.read(apiClientProvider).feed(limit: 24);
     _cursor = page.nextCursor;
     _hasMore = page.nextCursor != null;
     return page.items;
