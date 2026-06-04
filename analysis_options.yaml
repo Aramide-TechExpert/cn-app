@@ -1,6 +1,5 @@
 include: package:flutter_lints/flutter.yaml
 
-linter:
-  rules:
-    prefer_single_quotes: true
-    require_trailing_commas: true
+# Using the flutter_lints recommended set as-is. (We deliberately don't enable
+# require_trailing_commas — `dart format` handles commas; the lint just adds
+# noise. Re-add stricter rules here later if desired.)

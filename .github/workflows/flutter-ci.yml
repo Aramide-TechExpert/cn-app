@@ -1,9 +1,10 @@
 name: Flutter CI
 
 # Flutter runs entirely in CI — subosito/flutter-action pulls the SDK from git,
-# so no local SDK is needed (matches the embedded-finance approach). On every
-# push to main: analyze + test + build per-ABI debug APKs, capture diagnostics
-# as artifacts, and publish the APKs to a rolling `flutter-latest` Release.
+# so no local SDK is needed (matches the embedded-finance approach).
+# Every push: analyze + test (~2-3 min). The expensive ~9-min APK build runs
+# ONLY on a manual run or a commit message containing [apk], then publishes to
+# the rolling `flutter-latest` Release.
 on:
   push:
     branches: [main]
@@ -27,9 +28,9 @@ jobs:
       - run: flutter create --platforms=android,ios .
       - run: flutter pub get
 
-      # Capture each step's output to a file so it's readable as an artifact
-      # regardless of log retention. continue-on-error so all steps run + report.
+      # ── Cheap validation on EVERY push ──────────────────────────────────────
       - name: Analyze
+        id: analyze
         continue-on-error: true
         run: flutter analyze 2>&1 | tee analyze.txt
 
@@ -37,7 +38,10 @@ jobs:
         continue-on-error: true
         run: flutter test 2>&1 | tee test.txt
 
+      # ── Expensive APK build only on demand ([apk] in commit msg, or manual) ──
       - name: Build debug APK (per-ABI = smaller downloads)
+        id: build
+        if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[apk]')
         continue-on-error: true
         run: |
           flutter build apk --debug --split-per-abi \
@@ -55,6 +59,7 @@ jobs:
             analyze.txt
             test.txt
             build.txt
+          if-no-files-found: ignore
 
       - name: Upload APKs (if built)
         if: always()
@@ -66,25 +71,30 @@ jobs:
 
       # Publish to a rolling Release so there's always a current download link.
       - name: Publish APK to rolling Release
-        if: github.ref == 'refs/heads/main' && hashFiles('build/app/outputs/flutter-apk/*-debug.apk') != ''
+        if: steps.build.outcome == 'success' && hashFiles('build/app/outputs/flutter-apk/*-debug.apk') != ''
         uses: softprops/action-gh-release@v2
         with:
           tag_name: flutter-latest
           name: Clustez — Flutter APK (latest)
           body: |
-            Auto-built debug APKs from `main` (per-architecture for smaller downloads).
-            Most phones: **app-arm64-v8a-debug.apk** (~50MB). Older 32-bit devices:
+            Auto-built debug APKs (per-architecture for smaller downloads).
+            Most phones: **app-arm64-v8a-debug.apk**. Older 32-bit devices:
             app-armeabi-v7a-debug.apk. Emulators: app-x86_64-debug.apk.
           files: build/app/outputs/flutter-apk/*-debug.apk
 
-      # Gate: fail only on real analyze ERRORS (not info/warning lints) or a
-      # missing APK — so info-level nits don't block the build.
+      # Gate: analyze errors + test failures fail EVERY run; a missing APK only
+      # fails runs that actually attempted a build. Info/warning lints don't block.
       - name: Gate
         run: |
+          fail=0
           if grep -q "error •" analyze.txt; then
-            echo "::error::flutter analyze reported errors:"; grep "error •" analyze.txt; exit 1
+            echo "::error::flutter analyze reported errors:"; grep "error •" analyze.txt; fail=1
           fi
-          if ! ls build/app/outputs/flutter-apk/*-debug.apk >/dev/null 2>&1; then
-            echo "::error::APK was not produced — see build.txt"; exit 1
+          if grep -qiE "Some tests failed|[1-9][0-9]* failed" test.txt; then
+            echo "::error::test failures — see diagnostics"; fail=1
           fi
-          echo "Analyze clean (errors). APK built. Info-level lints (if any) are non-blocking."
+          if [ "${{ steps.build.outcome }}" != "skipped" ] && ! ls build/app/outputs/flutter-apk/*-debug.apk >/dev/null 2>&1; then
+            echo "::error::APK build was requested but produced nothing — see build.txt"; fail=1
+          fi
+          [ "$fail" = "0" ] && echo "OK: analyze clean + tests pass."
+          exit $fail
