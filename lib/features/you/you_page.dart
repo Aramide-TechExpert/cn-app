@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/auth_controller.dart';
+import '../../data/reading_history.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../utils/format.dart';
@@ -41,6 +42,7 @@ class YouPage extends ConsumerWidget {
                   )
                 else
                   _SignInCard(onSignIn: () => context.push('/sign-in')),
+                const _StreakBadge(),
                 const SizedBox(height: AppSpace.xl),
                 ..._menu.map((m) => _MenuRow(item: m)),
               ],
@@ -210,6 +212,40 @@ class _MenuRow extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Reading streak chip (consecutive days reading). Hidden at 0.
+class _StreakBadge extends StatelessWidget {
+  const _StreakBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return ValueListenableBuilder<int>(
+      valueListenable: ReadingHistory.streak,
+      builder: (context, streak, _) {
+        if (streak <= 0) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(top: AppSpace.md),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpace.lg, vertical: AppSpace.md),
+            decoration: BoxDecoration(
+              color: c.bgInset,
+              borderRadius: BorderRadius.circular(AppRadii.md),
+              border: Border.all(color: c.border),
+            ),
+            child: Row(children: [
+              const Text('🔥', style: TextStyle(fontSize: 20)),
+              const SizedBox(width: AppSpace.md),
+              Text('$streak-day reading streak',
+                  style: AppText.bodyStrong.copyWith(color: c.text)),
+            ]),
+          ),
+        );
+      },
     );
   }
 }
