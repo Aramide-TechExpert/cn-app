@@ -4,6 +4,7 @@ import '../models/article.dart';
 import '../models/briefing.dart';
 import '../models/cluster.dart';
 import '../models/stats.dart';
+import '../models/widgets_data.dart';
 import 'feed_controller.dart' show apiClientProvider;
 
 final clustersProvider = FutureProvider.autoDispose<List<StoryCluster>>(
@@ -12,6 +13,10 @@ final clustersProvider = FutureProvider.autoDispose<List<StoryCluster>>(
 
 final statsProvider = FutureProvider.autoDispose<CorpusStats>(
   (ref) => ref.read(apiClientProvider).stats(),
+);
+
+final widgetsDataProvider = FutureProvider.autoDispose<WidgetsData>(
+  (ref) => ref.read(apiClientProvider).widgets(),
 );
 
 final briefingProvider = FutureProvider.autoDispose<DailyBriefing?>(

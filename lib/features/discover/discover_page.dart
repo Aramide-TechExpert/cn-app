@@ -8,6 +8,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../utils/format.dart';
 import '../feed/widgets/rail_card.dart';
+import 'markets_weather_section.dart';
 
 class DiscoverPage extends ConsumerWidget {
   const DiscoverPage({super.key});
@@ -27,6 +28,7 @@ class DiscoverPage extends ConsumerWidget {
           ref.invalidate(clustersProvider);
           ref.invalidate(trendingProvider);
           ref.invalidate(briefingProvider);
+          ref.invalidate(widgetsDataProvider);
         },
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(
@@ -98,6 +100,9 @@ class DiscoverPage extends ConsumerWidget {
             ...topTopics.map(
               (t) => SliverToBoxAdapter(child: _TopicSection(topic: t)),
             ),
+
+            // Markets + weather data widgets.
+            const SliverToBoxAdapter(child: MarketsWeatherSection()),
 
             // Full coverage.
             const SliverToBoxAdapter(child: _SectionHeader('Full coverage')),
