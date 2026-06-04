@@ -18,25 +18,35 @@ class YouPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: c.bg,
-      body: SafeArea(
-        bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpace.lg, AppSpace.xl, AppSpace.lg, AppSpace.x3),
-          children: [
-            Text('You', style: AppText.display.copyWith(color: c.text)),
-            const SizedBox(height: AppSpace.lg),
-            if (user != null)
-              _AccountCard(
-                email: email,
-                onSignOut: () => ref.read(authServiceProvider).signOut(),
-              )
-            else
-              _SignInCard(onSignIn: () => context.push('/sign-in')),
-            const SizedBox(height: AppSpace.xl),
-            ..._menu.map((m) => _MenuRow(item: m)),
-          ],
+      body: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
         ),
+        slivers: [
+          SliverAppBar.large(
+            backgroundColor: c.bg,
+            surfaceTintColor: Colors.transparent,
+            pinned: true,
+            title: Text('You', style: AppText.title.copyWith(color: c.text)),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpace.lg, 0, AppSpace.lg, AppSpace.x3),
+            sliver: SliverList.list(
+              children: [
+                if (user != null)
+                  _AccountCard(
+                    email: email,
+                    onSignOut: () => ref.read(authServiceProvider).signOut(),
+                  )
+                else
+                  _SignInCard(onSignIn: () => context.push('/sign-in')),
+                const SizedBox(height: AppSpace.xl),
+                ..._menu.map((m) => _MenuRow(item: m)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../data/watch_controller.dart';
 import '../../models/article.dart';
@@ -19,60 +20,66 @@ class WatchPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: c.bg,
-      body: SafeArea(
-        bottom: false,
-        child: watch.when(
-          loading: () => Center(child: CircularProgressIndicator(color: c.brand)),
-          error: (_, __) => Center(
-            child: Text("Couldn't load videos.",
-                style: AppText.body.copyWith(color: c.textSecondary)),
+      body: RefreshIndicator.adaptive(
+        onRefresh: () async => ref.invalidate(watchFeedProvider),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
           ),
-          data: (items) => RefreshIndicator(
-            color: c.brand,
-            onRefresh: () async => ref.invalidate(watchFeedProvider),
-            child: ListView.separated(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(
-                  AppSpace.lg, AppSpace.sm, AppSpace.lg, AppSpace.x3),
-              itemCount: items.isEmpty ? 2 : items.length + 1,
-              separatorBuilder: (_, __) => const SizedBox(height: AppSpace.lg),
-              itemBuilder: (context, i) {
-                if (i == 0) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('CLUSTEZ',
-                          style: AppText.micro
-                              .copyWith(color: c.brand, letterSpacing: 1.2)),
-                      const SizedBox(height: 2),
-                      Text('Watch',
-                          style: AppText.display.copyWith(color: c.text)),
-                      const SizedBox(height: AppSpace.sm),
-                    ],
-                  );
-                }
-                if (items.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.only(top: AppSpace.x4),
-                    child: Center(
-                      child: Text('No videos right now.',
-                          style:
-                              AppText.body.copyWith(color: c.textSecondary)),
-                    ),
-                  );
-                }
-                return _VideoCard(article: items[i - 1]);
-              },
+          slivers: [
+            SliverAppBar.large(
+              backgroundColor: c.bg,
+              surfaceTintColor: Colors.transparent,
+              pinned: true,
+              title:
+                  Text('Watch', style: AppText.title.copyWith(color: c.text)),
             ),
-          ),
+            watch.when(
+              loading: () => const SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(child: CircularProgressIndicator.adaptive()),
+              ),
+              error: (_, __) => SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Text("Couldn't load videos.",
+                      style: AppText.body.copyWith(color: c.textSecondary)),
+                ),
+              ),
+              data: (items) => items.isEmpty
+                  ? SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Text('No videos right now.',
+                            style:
+                                AppText.body.copyWith(color: c.textSecondary)),
+                      ),
+                    )
+                  : SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(
+                          AppSpace.lg, 0, AppSpace.lg, AppSpace.x3),
+                      sliver: SliverGrid.builder(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: AppSpace.md,
+                          crossAxisSpacing: AppSpace.md,
+                          childAspectRatio: 0.74,
+                        ),
+                        itemCount: items.length,
+                        itemBuilder: (_, i) => _VideoTile(article: items[i]),
+                      ),
+                    ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _VideoCard extends StatelessWidget {
-  const _VideoCard({required this.article});
+class _VideoTile extends StatelessWidget {
+  const _VideoTile({required this.article});
   final Article article;
 
   @override
@@ -83,12 +90,12 @@ class _VideoCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppRadii.lg),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => openArticle(article.sourceUrl),
+        onTap: () => _openPreview(context, article),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AspectRatio(
-              aspectRatio: 16 / 9,
+              aspectRatio: 1,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -106,31 +113,31 @@ class _VideoCard extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.center,
                         end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Colors.black54],
+                        colors: [Colors.transparent, Colors.black45],
                       ),
                     ),
                   ),
                   const Center(
                     child: Icon(Icons.play_circle_fill,
-                        size: 56, color: Colors.white),
+                        size: 40, color: Colors.white),
                   ),
                 ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(AppSpace.lg),
+              padding: const EdgeInsets.all(AppSpace.sm),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(article.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: AppText.headline.copyWith(color: c.text)),
-                  const SizedBox(height: AppSpace.sm),
-                  Text(
-                    '${article.source} · ${timeAgo(article.publishedAt)}',
-                    style: AppText.caption.copyWith(color: c.textFaint),
-                  ),
+                      style: AppText.callout.copyWith(color: c.text)),
+                  const SizedBox(height: 4),
+                  Text(article.source,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.caption.copyWith(color: c.textFaint)),
                 ],
               ),
             ),
@@ -139,4 +146,95 @@ class _VideoCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Animated in-app preview sheet — large poster + play (link-out) + share.
+/// (True inline playback would need a video-player package.)
+void _openPreview(BuildContext context, Article article) {
+  final c = context.colors;
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: c.bgElevated,
+    isScrollControlled: true,
+    showDragHandle: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.xl)),
+    ),
+    builder: (sheetCtx) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+            AppSpace.lg, 0, AppSpace.lg, AppSpace.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (article.hasImage)
+                      CachedNetworkImage(imageUrl: article.image, fit: BoxFit.cover)
+                    else
+                      Container(color: c.bgInset),
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.center,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, Colors.black54],
+                        ),
+                      ),
+                    ),
+                    const Center(
+                      child: Icon(Icons.play_circle_fill,
+                          size: 64, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpace.md),
+            Text(article.title,
+                style: AppText.headline.copyWith(color: c.text)),
+            const SizedBox(height: 4),
+            Text('${article.source} · ${timeAgo(article.publishedAt)}',
+                style: AppText.caption.copyWith(color: c.textFaint)),
+            const SizedBox(height: AppSpace.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.pop(sheetCtx);
+                      openArticle(article.sourceUrl);
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: c.brand,
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                    icon: const Icon(Icons.play_arrow),
+                    label: Text('Watch on ${article.source}',
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
+                ),
+                const SizedBox(width: AppSpace.sm),
+                IconButton.filledTonal(
+                  onPressed: () {
+                    final url = article.sourceUrl;
+                    if (url != null && url.isNotEmpty) {
+                      Share.share('${article.title}\n$url');
+                    }
+                  },
+                  icon: const Icon(Icons.ios_share),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
