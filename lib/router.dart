@@ -6,6 +6,7 @@ import 'features/discover/cluster_detail_page.dart';
 import 'features/discover/discover_page.dart';
 import 'features/discover/topic_page.dart';
 import 'features/feed/home_page.dart';
+import 'features/insights/insights_page.dart';
 import 'features/saved/saved_page.dart';
 import 'features/search/search_page.dart';
 import 'features/shell/scaffold_with_nav.dart';
@@ -49,6 +50,7 @@ final router = GoRouter(
     GoRoute(path: '/sign-in', builder: (_, __) => const SignInPage()),
     GoRoute(path: '/search', builder: (_, __) => const SearchPage()),
     GoRoute(path: '/briefing', builder: (_, __) => const BriefingPage()),
+    GoRoute(path: '/insights', builder: (_, __) => const InsightsPage()),
     GoRoute(
       path: '/cluster/:id',
       builder: (_, s) => ClusterDetailPage(id: s.pathParameters['id']!),

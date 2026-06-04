@@ -168,6 +168,7 @@ class _MenuItem {
 
 const _menu = [
   _MenuItem(Icons.newspaper_outlined, 'Daily briefing', '', route: '/briefing'),
+  _MenuItem(Icons.insights_outlined, 'Insights', '', route: '/insights'),
   _MenuItem(Icons.search, 'Search', '', route: '/search'),
   _MenuItem(Icons.auto_awesome_outlined, 'Your interests', 'Next'),
   _MenuItem(Icons.notifications_outlined, 'Alerts', 'Later'),

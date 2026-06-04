@@ -3,6 +3,7 @@ import '../config.dart';
 import '../models/article.dart';
 import '../models/briefing.dart';
 import '../models/cluster.dart';
+import '../models/stats.dart';
 
 /// Typed client for the Clustez mobile backend (`/api/v1`) — channel 2 of the
 /// hybrid model (public feed + secret-backed aggregates). User-owned writes go
@@ -64,6 +65,12 @@ class ApiClient {
           .map((e) => Article.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
+  }
+
+  Future<CorpusStats> stats() async {
+    final res = await _dio.get<Map<String, dynamic>>('/stats');
+    return CorpusStats.fromJson(
+        (res.data?['stats'] as Map<String, dynamic>?) ?? const {});
   }
 
   Future<DailyBriefing?> briefing() async {
