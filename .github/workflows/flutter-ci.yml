@@ -76,8 +76,8 @@ jobs:
           path: build/app/outputs/flutter-apk/*-debug.apk
           if-no-files-found: ignore
 
-      # Publish to a rolling Release so there's always a current download link.
-      - name: Publish APK to rolling Release
+      # Rolling Release on THIS (private) repo — for the team.
+      - name: Publish APK to rolling Release (private)
         if: steps.build.outcome == 'success' && hashFiles('build/app/outputs/flutter-apk/*-debug.apk') != ''
         uses: softprops/action-gh-release@v2
         with:
@@ -87,6 +87,20 @@ jobs:
             Auto-built debug APKs (per-architecture for smaller downloads).
             Most phones: **app-arm64-v8a-debug.apk**. Older 32-bit devices:
             app-armeabi-v7a-debug.apk. Emulators: app-x86_64-debug.apk.
+          files: build/app/outputs/flutter-apk/*-debug.apk
+
+      # Mirror to the PUBLIC dist repo so testers can download without a login.
+      - name: Publish APK to public dist
+        if: steps.build.outcome == 'success' && hashFiles('build/app/outputs/flutter-apk/*-debug.apk') != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: Aramide-TechExpert/clustez-flutter-dist
+          token: ${{ secrets.DIST_TOKEN }}
+          tag_name: flutter-latest
+          name: Clustez — Flutter APK (latest)
+          body: |
+            Public Android downloads. Most phones: **app-arm64-v8a-debug.apk**.
+            Older 32-bit: app-armeabi-v7a-debug.apk. Emulators: app-x86_64-debug.apk.
           files: build/app/outputs/flutter-apk/*-debug.apk
 
       # Gate: analyze errors + test failures fail EVERY run; a missing APK only

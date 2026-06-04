@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import '../../data/watch_controller.dart';
 import '../../models/article.dart';
@@ -148,8 +149,7 @@ class _VideoTile extends StatelessWidget {
   }
 }
 
-/// Animated in-app preview sheet — large poster + play (link-out) + share.
-/// (True inline playback would need a video-player package.)
+/// In-app preview sheet — plays YouTube INLINE; otherwise poster + link-out.
 void _openPreview(BuildContext context, Article article) {
   final c = context.colors;
   showModalBottomSheet<void>(
@@ -160,7 +160,49 @@ void _openPreview(BuildContext context, Article article) {
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.xl)),
     ),
-    builder: (sheetCtx) => SafeArea(
+    builder: (_) => _PreviewSheet(article: article),
+  );
+}
+
+class _PreviewSheet extends StatefulWidget {
+  const _PreviewSheet({required this.article});
+  final Article article;
+
+  @override
+  State<_PreviewSheet> createState() => _PreviewSheetState();
+}
+
+class _PreviewSheetState extends State<_PreviewSheet> {
+  YoutubePlayerController? _yt;
+
+  @override
+  void initState() {
+    super.initState();
+    final url = widget.article.sourceUrl;
+    final id = (url != null && url.isNotEmpty)
+        ? YoutubePlayer.convertUrlToId(url)
+        : null;
+    if (id != null) {
+      _yt = YoutubePlayerController(
+        initialVideoId: id,
+        flags: const YoutubePlayerFlags(autoPlay: true, mute: false),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _yt?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final article = widget.article;
+    final inline = _yt != null;
+
+    return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
             AppSpace.lg, 0, AppSpace.lg, AppSpace.lg),
@@ -170,31 +212,13 @@ void _openPreview(BuildContext context, Article article) {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(AppRadii.lg),
-              child: AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    if (article.hasImage)
-                      CachedNetworkImage(imageUrl: article.image, fit: BoxFit.cover)
-                    else
-                      Container(color: c.bgInset),
-                    const DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.center,
-                          end: Alignment.bottomCenter,
-                          colors: [Colors.transparent, Colors.black54],
-                        ),
-                      ),
-                    ),
-                    const Center(
-                      child: Icon(Icons.play_circle_fill,
-                          size: 64, color: Colors.white),
-                    ),
-                  ],
-                ),
-              ),
+              child: inline
+                  ? YoutubePlayer(
+                      controller: _yt!,
+                      showVideoProgressIndicator: true,
+                      progressIndicatorColor: c.brand,
+                    )
+                  : _Poster(article: article),
             ),
             const SizedBox(height: AppSpace.md),
             Text(article.title,
@@ -208,16 +232,21 @@ void _openPreview(BuildContext context, Article article) {
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: () {
-                      Navigator.pop(sheetCtx);
+                      Navigator.pop(context);
                       openArticle(article.sourceUrl);
                     },
                     style: FilledButton.styleFrom(
-                      backgroundColor: c.brand,
+                      backgroundColor: inline ? c.bgInset : c.brand,
+                      foregroundColor: inline ? c.text : c.onBrand,
                       minimumSize: const Size.fromHeight(48),
                     ),
-                    icon: const Icon(Icons.play_arrow),
-                    label: Text('Watch on ${article.source}',
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                    icon: Icon(inline ? Icons.open_in_new : Icons.play_arrow),
+                    label: Text(
+                        inline
+                            ? 'Open on ${article.source}'
+                            : 'Watch on ${article.source}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
                   ),
                 ),
                 const SizedBox(width: AppSpace.sm),
@@ -235,6 +264,41 @@ void _openPreview(BuildContext context, Article article) {
           ],
         ),
       ),
-    ),
-  );
+    );
+  }
+}
+
+class _Poster extends StatelessWidget {
+  const _Poster({required this.article});
+  final Article article;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (article.hasImage)
+            CachedNetworkImage(imageUrl: article.image, fit: BoxFit.cover)
+          else
+            Container(color: c.bgInset),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.center,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black54],
+              ),
+            ),
+          ),
+          const Center(
+            child:
+                Icon(Icons.play_circle_fill, size: 64, color: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
 }

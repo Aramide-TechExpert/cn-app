@@ -23,6 +23,10 @@ dependencies:
   url_launcher: ^6.3.1
   # Native OS share sheet (article actions)
   share_plus: ^10.1.2
+  # Inline YouTube playback in Watch
+  youtube_player_flutter: ^9.1.1
+  # Swipe actions on cards (Saved: swipe-to-remove)
+  flutter_slidable: ^3.1.1
 
 dev_dependencies:
   flutter_test:

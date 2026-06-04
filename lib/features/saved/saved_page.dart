@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/auth_controller.dart';
+import '../../data/engagement_controller.dart';
 import '../../data/saved_controller.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
@@ -59,7 +61,32 @@ class SavedPage extends ConsumerWidget {
                   itemCount: items.length,
                   separatorBuilder: (_, __) =>
                       const SizedBox(height: AppSpace.lg),
-                  itemBuilder: (_, i) => ArticleCard(article: items[i]),
+                  itemBuilder: (_, i) {
+                    final a = items[i];
+                    final dbId = a.dbId;
+                    if (dbId == null) return ArticleCard(article: a);
+                    return Slidable(
+                      key: ValueKey(dbId),
+                      endActionPane: ActionPane(
+                        motion: const DrawerMotion(),
+                        extentRatio: 0.3,
+                        children: [
+                          SlidableAction(
+                            onPressed: (_) => ref
+                                .read(engagementProvider.notifier)
+                                .toggleBookmark(dbId),
+                            backgroundColor: c.critical,
+                            foregroundColor: Colors.white,
+                            icon: Icons.bookmark_remove,
+                            label: 'Remove',
+                            borderRadius:
+                                BorderRadius.circular(AppRadii.lg),
+                          ),
+                        ],
+                      ),
+                      child: ArticleCard(article: a),
+                    );
+                  },
                 ),
               ),
           ],
