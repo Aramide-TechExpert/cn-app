@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../../data/watch_controller.dart';
 import '../../models/article.dart';
@@ -180,19 +180,20 @@ class _PreviewSheetState extends State<_PreviewSheet> {
     super.initState();
     final url = widget.article.sourceUrl;
     final id = (url != null && url.isNotEmpty)
-        ? YoutubePlayer.convertUrlToId(url)
+        ? YoutubePlayerController.convertUrlToId(url)
         : null;
     if (id != null) {
-      _yt = YoutubePlayerController(
-        initialVideoId: id,
-        flags: const YoutubePlayerFlags(autoPlay: true, mute: false),
+      _yt = YoutubePlayerController.fromVideoId(
+        videoId: id,
+        autoPlay: true,
+        params: const YoutubePlayerParams(showFullscreenButton: false),
       );
     }
   }
 
   @override
   void dispose() {
-    _yt?.dispose();
+    _yt?.close();
     super.dispose();
   }
 
@@ -213,11 +214,7 @@ class _PreviewSheetState extends State<_PreviewSheet> {
             ClipRRect(
               borderRadius: BorderRadius.circular(AppRadii.lg),
               child: inline
-                  ? YoutubePlayer(
-                      controller: _yt!,
-                      showVideoProgressIndicator: true,
-                      progressIndicatorColor: c.brand,
-                    )
+                  ? YoutubePlayer(controller: _yt!, aspectRatio: 16 / 9)
                   : _Poster(article: article),
             ),
             const SizedBox(height: AppSpace.md),
