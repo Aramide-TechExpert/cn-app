@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,15 +11,17 @@ import '../../../theme/app_theme.dart';
 import '../../../theme/tokens.dart';
 import '../../../utils/format.dart';
 import '../../../utils/link_out.dart';
+import 'article_actions.dart';
 
-/// Primary feed card. Tapping link-outs to the publisher (content model).
-class ArticleCard extends StatelessWidget {
+/// Primary feed card. Tap link-outs to the publisher (content model);
+/// long-press opens the native action sheet.
+class ArticleCard extends ConsumerWidget {
   const ArticleCard({super.key, required this.article});
 
   final Article article;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
     final blurb = article.blurb;
 
@@ -28,6 +31,7 @@ class ArticleCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => openArticle(article.sourceUrl),
+        onLongPress: () => showArticleActions(context, ref, article),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadii.lg),
@@ -187,6 +191,7 @@ class _Footer extends ConsumerWidget {
         context.push('/sign-in');
         return;
       }
+      HapticFeedback.selectionClick();
       toggle(dbId!);
     }
 

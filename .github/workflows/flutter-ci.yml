@@ -15,6 +15,11 @@ on:
 permissions:
   contents: write
 
+# Cancel a superseded run when iterating quickly on the same ref.
+concurrency:
+  group: flutter-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze-test-build:
     runs-on: ubuntu-latest
