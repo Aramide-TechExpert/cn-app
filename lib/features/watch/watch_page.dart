@@ -66,7 +66,7 @@ class WatchPage extends ConsumerWidget {
                           crossAxisCount: 2,
                           mainAxisSpacing: AppSpace.md,
                           crossAxisSpacing: AppSpace.md,
-                          childAspectRatio: 0.74,
+                          childAspectRatio: 0.62,
                         ),
                         itemCount: items.length,
                         itemBuilder: (_, i) => _VideoTile(article: items[i]),
@@ -96,8 +96,7 @@ class _VideoTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AspectRatio(
-              aspectRatio: 1,
+            Expanded(
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -129,6 +128,7 @@ class _VideoTile extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(AppSpace.sm),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(article.title,
