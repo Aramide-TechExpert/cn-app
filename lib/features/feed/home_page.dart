@@ -8,6 +8,7 @@ import '../../models/article.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import 'widgets/article_card.dart';
+import 'widgets/card_variants.dart';
 import 'widgets/magazine_card.dart';
 import 'widgets/overlay_card.dart';
 import 'widgets/rail_card.dart';
@@ -57,9 +58,11 @@ class _HomePageState extends ConsumerState<HomePage> {
           final withImage = items.where((a) => a.hasImage).toList();
           final spotlight = withImage.take(5).toList();
           final rail = withImage.skip(5).take(6).toList();
+          final shorts = withImage.skip(11).take(8).toList();
           final used = {
             ...spotlight.map((a) => a.id),
             ...rail.map((a) => a.id),
+            ...shorts.map((a) => a.id),
           };
           // Everything else flows into the interleaved feed (magazine / overlay
           // / row) so the varied cards are the bulk of Home, not a grid block.
@@ -131,19 +134,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ),
                 ),
 
-                // Horizontal "Trending now" rail.
+                // Horizontal "Trending now" rail — compact cards with signals.
                 if (rail.isNotEmpty) ...[
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                          AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
-                      child: Text('Trending now',
-                          style: AppText.headline.copyWith(color: c.text)),
-                    ),
-                  ),
+                  _railHeader(context, 'Trending now'),
                   SliverToBoxAdapter(
                     child: SizedBox(
-                      height: 232,
+                      height: 184,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         padding:
@@ -151,7 +147,28 @@ class _HomePageState extends ConsumerState<HomePage> {
                         itemCount: rail.length,
                         separatorBuilder: (_, __) =>
                             const SizedBox(width: AppSpace.lg),
-                        itemBuilder: (_, i) => RailCard(article: rail[i]),
+                        itemBuilder: (_, i) =>
+                            CompactCard(article: rail[i], width: 220),
+                      ),
+                    ),
+                  ),
+                ],
+
+                // Horizontal "Shorts" rail — 9:16 reels cards.
+                if (shorts.isNotEmpty) ...[
+                  _railHeader(context, 'Shorts'),
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 270,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+                        itemCount: shorts.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(width: AppSpace.md),
+                        itemBuilder: (_, i) =>
+                            VerticalCard(article: shorts[i], width: 152),
                       ),
                     ),
                   ),
@@ -182,18 +199,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             : const SizedBox(height: AppSpace.lg),
                       );
                     }
-                    final a = rest[i];
-                    if (i % 4 == 0 && a.hasImage) {
-                      return MagazineCard(article: a);
-                    }
-                    if (i % 4 == 2 && a.hasImage) {
-                      return Padding(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: AppSpace.xs),
-                        child: OverlayCard(article: a),
-                      );
-                    }
-                    return ArticleCard(article: a);
+                    return _feedCard(i, rest[i]);
                   },
                 ),
               ],
@@ -202,6 +208,44 @@ class _HomePageState extends ConsumerState<HomePage> {
         },
       ),
     );
+  }
+}
+
+/// Section header for a horizontal rail.
+Widget _railHeader(BuildContext context, String title) => SliverToBoxAdapter(
+      child: Padding(
+        padding:
+            const EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
+        child: Text(title,
+            style: AppText.headline.copyWith(color: context.colors.text)),
+      ),
+    );
+
+/// Cycles the "Latest" feed through every full-width variant so each card style
+/// surfaces as you scroll. Falls back to a text variant when an article has no
+/// image (so image-led variants never render an empty box).
+Widget _feedCard(int i, Article a) {
+  Widget overlay() => Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpace.xs),
+        child: OverlayCard(article: a),
+      );
+  switch (i % 8) {
+    case 0:
+      return a.hasImage ? WideCard(article: a) : FeaturedCard(article: a);
+    case 1:
+      return a.hasImage ? DefaultCard(article: a) : ListCard(article: a);
+    case 2:
+      return ListCard(article: a);
+    case 3:
+      return a.hasImage ? overlay() : ArticleCard(article: a);
+    case 4:
+      return a.hasImage ? MagazineCard(article: a) : ListCard(article: a);
+    case 5:
+      return FeaturedCard(article: a);
+    case 6:
+      return a.hasImage ? VideoCard(article: a) : ListCard(article: a);
+    default:
+      return ArticleCard(article: a);
   }
 }
 
