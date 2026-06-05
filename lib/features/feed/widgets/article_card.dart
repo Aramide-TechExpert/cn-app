@@ -58,19 +58,7 @@ class ArticleCard extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(children: [
-                        Flexible(
-                          child: Text(article.source,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppText.caption.copyWith(
-                                  color: c.textSecondary,
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                        Text(' · ${timeAgo(article.publishedAt)}',
-                            style:
-                                AppText.caption.copyWith(color: c.textFaint)),
-                      ]),
+                      SourceLine(article: article),
                       const SizedBox(height: 6),
                       Text(article.title,
                           maxLines: 3,

@@ -8,6 +8,7 @@ import '../../../theme/tokens.dart';
 import '../../../utils/format.dart';
 import '../../../utils/link_out.dart';
 import 'article_actions.dart';
+import 'signal_badges.dart';
 
 /// Fixed-width poster card for horizontal rails (web "rail" feel): image on
 /// top, title + source below. No curve.
@@ -71,10 +72,7 @@ class RailCard extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
                 style: AppText.bodyStrong.copyWith(color: c.text, height: 1.3)),
             const SizedBox(height: 4),
-            Text('${article.source} · ${timeAgo(article.publishedAt)}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppText.caption.copyWith(color: c.textFaint)),
+            SourceLine(article: article),
           ],
         ),
       ),

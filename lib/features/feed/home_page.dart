@@ -7,6 +7,7 @@ import '../../data/reading_history.dart';
 import '../../models/article.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
+import '../shell/app_drawer.dart';
 import 'widgets/article_card.dart';
 import 'widgets/card_variants.dart';
 import 'widgets/magazine_card.dart';
@@ -50,6 +51,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return Scaffold(
       backgroundColor: c.bg,
+      drawer: const AppDrawer(),
       body: feed.when(
         loading: () => const Center(child: CircularProgressIndicator.adaptive()),
         error: (e, _) =>
@@ -80,6 +82,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                   backgroundColor: c.bg,
                   surfaceTintColor: Colors.transparent,
                   pinned: true,
+                  leading: Builder(
+                    builder: (ctx) => IconButton(
+                      icon: Icon(Icons.menu, color: c.text),
+                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+                    ),
+                  ),
                   title: Text('Top Stories',
                       style: AppText.title.copyWith(color: c.text)),
                   actions: [

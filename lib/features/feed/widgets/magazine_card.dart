@@ -51,19 +51,16 @@ class MagazineCard extends ConsumerWidget {
                               HSLColor.fromAHSL(1, hue, 0.5, 0.4).toColor()),
                     if (article.isBreaking)
                       Positioned(
-                        top: AppSpace.md,
-                        left: AppSpace.md,
+                        top: 0,
+                        left: 0,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: AppSpace.sm, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: c.breaking,
-                            borderRadius: BorderRadius.circular(AppRadii.pill),
-                          ),
+                          color: c.breaking,
                           child: const Text('BREAKING',
                               style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 11,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: 0.4)),
                         ),
@@ -76,43 +73,23 @@ class MagazineCard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(children: [
-                      Container(
-                        width: 7,
-                        height: 7,
-                        decoration: BoxDecoration(
-                          color: c.impact(article.impact),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          '${article.source} · ${timeAgo(article.publishedAt)}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppText.caption.copyWith(
-                              color: c.textSecondary,
-                              fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ]),
+                    SignalRow(article: article),
                     const SizedBox(height: AppSpace.sm),
                     Text(article.title,
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
-                        style: AppText.title
-                            .copyWith(color: c.text, height: 1.2)),
+                        style: AppText.headline
+                            .copyWith(color: c.text, fontSize: 18, height: 1.25)),
                     if (blurb != null) ...[
-                      const SizedBox(height: AppSpace.sm),
+                      const SizedBox(height: 6),
                       Text(blurb,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style:
                               AppText.body.copyWith(color: c.textSecondary)),
                     ],
-                    const SizedBox(height: AppSpace.md),
-                    SignalRow(article: article),
+                    const SizedBox(height: AppSpace.sm),
+                    SourceLine(article: article),
                   ],
                 ),
               ),

@@ -2,130 +2,138 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../data/discover_controller.dart';
-import '../../models/cluster.dart';
+import '../../data/news_feed_controller.dart';
+import '../../data/source_signals.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
-import '../../utils/format.dart';
-import '../feed/widgets/rail_card.dart';
-import 'markets_weather_section.dart';
+import '../feed/widgets/card_variants.dart';
+import '../shell/app_drawer.dart';
 
-class DiscoverPage extends ConsumerWidget {
+/// News Feed — the filterable article stream (category · sort · impact),
+/// mirroring the web feed. Full-width square cards.
+class DiscoverPage extends ConsumerStatefulWidget {
   const DiscoverPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DiscoverPage> createState() => _DiscoverPageState();
+}
+
+class _DiscoverPageState extends ConsumerState<DiscoverPage> {
+  final _scroll = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(() {
+      if (_scroll.position.pixels >= _scroll.position.maxScrollExtent - 600) {
+        ref.read(newsFeedControllerProvider.notifier).loadMore();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final c = context.colors;
-    final clusters = ref.watch(clustersProvider);
-    final trending = ref.watch(trendingProvider);
-    final topTopics =
-        trending.valueOrNull?.take(3).toList() ?? const <TrendingTopic>[];
+    final notifier = ref.read(newsFeedControllerProvider.notifier);
+    final feed = ref.watch(newsFeedControllerProvider);
+    final filters = notifier.filters;
+
+    void setFilters(NewsFilters f) {
+      notifier.setFilters(f);
+      if (_scroll.hasClients) _scroll.jumpTo(0);
+    }
 
     return Scaffold(
       backgroundColor: c.bg,
+      drawer: const AppDrawer(),
       body: RefreshIndicator.adaptive(
-        onRefresh: () async {
-          ref.invalidate(clustersProvider);
-          ref.invalidate(trendingProvider);
-          ref.invalidate(briefingProvider);
-          ref.invalidate(widgetsDataProvider);
-        },
+        onRefresh: notifier.refresh,
         child: CustomScrollView(
+          controller: _scroll,
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
           slivers: [
-            SliverAppBar.large(
+            SliverAppBar(
+              pinned: true,
+              floating: true,
               backgroundColor: c.bg,
               surfaceTintColor: Colors.transparent,
-              pinned: true,
-              title: Text('Discover',
-                  style: AppText.title.copyWith(color: c.text)),
+              leading: Builder(
+                builder: (ctx) => IconButton(
+                  icon: Icon(Icons.menu, color: c.text),
+                  onPressed: () => Scaffold.of(ctx).openDrawer(),
+                ),
+              ),
+              title:
+                  Text('News Feed', style: AppText.title.copyWith(color: c.text)),
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.search, color: c.text),
+                  onPressed: () => context.push('/search'),
+                ),
+                const SizedBox(width: AppSpace.xs),
+              ],
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(92),
+                child: _FilterBar(filters: filters, onChanged: setFilters),
+              ),
             ),
-
-            // Search (simple tappable field → full search screen).
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                    AppSpace.lg, 0, AppSpace.lg, AppSpace.lg),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(AppRadii.md),
-                  onTap: () => context.push('/search'),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpace.lg, vertical: AppSpace.md),
-                    decoration: BoxDecoration(
-                      color: c.bgInset,
-                      borderRadius: BorderRadius.circular(AppRadii.md),
-                      border: Border.all(color: c.border),
-                    ),
-                    child: Row(children: [
-                      Icon(Icons.search, size: 20, color: c.textFaint),
-                      const SizedBox(width: AppSpace.sm),
-                      Text('Search news, topics, sources',
-                          style: AppText.body.copyWith(color: c.textFaint)),
-                    ]),
+            feed.when(
+              loading: () => const SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(child: CircularProgressIndicator.adaptive()),
+              ),
+              error: (e, _) => SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpace.x2),
+                    child: Text("Couldn't load the feed.\n$e",
+                        textAlign: TextAlign.center,
+                        style: AppText.body.copyWith(color: c.textSecondary)),
                   ),
                 ),
               ),
-            ),
-
-            // Daily briefing entry.
-            SliverToBoxAdapter(child: _BriefingCard()),
-
-            // Trending.
-            const SliverToBoxAdapter(child: _SectionHeader('Trending')),
-            SliverToBoxAdapter(
-              child: trending.when(
-                loading: () => const _InlineLoader(),
-                error: (_, __) => const _InlineNote('Trending unavailable.'),
-                data: (topics) => topics.isEmpty
-                    ? const _InlineNote('Nothing trending yet.')
-                    : SizedBox(
-                        height: 44,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpace.lg),
-                          itemCount: topics.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(width: AppSpace.sm),
-                          itemBuilder: (_, i) => _TopicChip(topic: topics[i]),
-                        ),
-                      ),
-              ),
-            ),
-
-            // Your topics — a rail of articles per top trending topic.
-            ...topTopics.map(
-              (t) => SliverToBoxAdapter(child: _TopicSection(topic: t)),
-            ),
-
-            // Markets + weather data widgets.
-            const SliverToBoxAdapter(child: MarketsWeatherSection()),
-
-            // Full coverage.
-            const SliverToBoxAdapter(child: _SectionHeader('Full coverage')),
-            clusters.when(
-              loading: () => const SliverToBoxAdapter(child: _InlineLoader()),
-              error: (_, __) => const SliverToBoxAdapter(
-                  child: _InlineNote("Couldn't load clusters.")),
-              data: (list) => list.isEmpty
-                  ? const SliverToBoxAdapter(
-                      child: _InlineNote(
-                          'No multi-source stories are clustered right now.'))
-                  : SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(
-                          AppSpace.lg, 0, AppSpace.lg, AppSpace.x3),
-                      sliver: SliverList.separated(
-                        itemCount: list.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: AppSpace.md),
-                        itemBuilder: (_, i) => _ClusterCard(cluster: list[i]),
-                      ),
+              data: (items) {
+                if (items.isEmpty) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Text('No stories match these filters.',
+                          style:
+                              AppText.body.copyWith(color: c.textSecondary)),
                     ),
+                  );
+                }
+                return SliverList.builder(
+                  itemCount: items.length + 1,
+                  itemBuilder: (context, i) {
+                    if (i == items.length) {
+                      return Padding(
+                        padding:
+                            const EdgeInsets.symmetric(vertical: AppSpace.xl),
+                        child: notifier.hasMore
+                            ? const Center(
+                                child: CircularProgressIndicator.adaptive())
+                            : const SizedBox(height: AppSpace.lg),
+                      );
+                    }
+                    final a = items[i];
+                    if (i == 0 && a.hasImage) return WideCard(article: a);
+                    return a.hasImage
+                        ? DefaultCard(article: a)
+                        : ListCard(article: a);
+                  },
+                );
+              },
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: AppSpace.x2)),
           ],
         ),
       ),
@@ -133,204 +141,138 @@ class DiscoverPage extends ConsumerWidget {
   }
 }
 
-class _BriefingCard extends ConsumerWidget {
+/// Sticky filter bar: category chips (row 1) + sort & impact (row 2).
+class _FilterBar extends StatelessWidget {
+  const _FilterBar({required this.filters, required this.onChanged});
+  final NewsFilters filters;
+  final ValueChanged<NewsFilters> onChanged;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final c = context.colors;
-    final b = ref.watch(briefingProvider).valueOrNull;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          AppSpace.lg, 0, AppSpace.lg, AppSpace.sm),
-      child: Material(
-        color: c.brandSoft,
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadii.lg),
-          onTap: () => context.push('/briefing'),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpace.lg),
-            child: Row(children: [
-              Icon(Icons.newspaper, color: c.brand),
-              const SizedBox(width: AppSpace.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Daily Briefing',
-                        style: AppText.bodyStrong.copyWith(color: c.text)),
-                    Text(
-                        b?.title.isNotEmpty == true
-                            ? b!.title
-                            : "Today's top stories, in brief",
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style:
-                            AppText.caption.copyWith(color: c.textSecondary)),
-                  ],
+    return Container(
+      color: c.bg,
+      padding: const EdgeInsets.only(bottom: AppSpace.sm),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Categories.
+          SizedBox(
+            height: 38,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+              children: [
+                _Chip(
+                  label: 'All',
+                  selected: filters.category == null,
+                  onTap: () => onChanged(filters.copyWith(category: null)),
                 ),
-              ),
-              Icon(Icons.chevron_right, color: c.textFaint),
-            ]),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.label);
-  final String label;
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          AppSpace.lg, AppSpace.sm, AppSpace.lg, AppSpace.md),
-      child: Text(label,
-          style: AppText.headline.copyWith(color: context.colors.text)),
-    );
-  }
-}
-
-class _InlineLoader extends StatelessWidget {
-  const _InlineLoader();
-  @override
-  Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.symmetric(vertical: AppSpace.lg),
-        child: Center(child: CircularProgressIndicator.adaptive()),
-      );
-}
-
-class _InlineNote extends StatelessWidget {
-  const _InlineNote(this.text);
-  final String text;
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
-      child: Text(text,
-          style: AppText.body.copyWith(color: context.colors.textSecondary)),
-    );
-  }
-}
-
-/// "Your topics" — a horizontal rail of a trending topic's articles. Hidden
-/// until its feed loads (avoids empty sections).
-class _TopicSection extends ConsumerWidget {
-  const _TopicSection({required this.topic});
-  final TrendingTopic topic;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final c = context.colors;
-    final articles = ref.watch(topicFeedProvider(topic.slug)).valueOrNull;
-    if (articles == null) return const SizedBox.shrink();
-    final items = articles.where((a) => a.hasImage).take(8).toList();
-    if (items.isEmpty) return const SizedBox.shrink();
-    final name = topic.topic;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpace.lg, AppSpace.lg, AppSpace.sm, AppSpace.md),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(name,
-                    style: AppText.headline.copyWith(color: c.text)),
-              ),
-              TextButton(
-                onPressed: () => context.push(
-                    '/topic/${topic.slug}?name=${Uri.encodeComponent(name)}'),
-                child: Text('See all',
-                    style: AppText.callout.copyWith(color: c.brand)),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(
-          height: 232,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
-            itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(width: AppSpace.lg),
-            itemBuilder: (_, i) => RailCard(article: items[i]),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TopicChip extends StatelessWidget {
-  const _TopicChip({required this.topic});
-  final TrendingTopic topic;
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return ActionChip(
-      label: Text(topic.topic),
-      labelStyle: AppText.callout.copyWith(color: c.text),
-      backgroundColor: c.bgInset,
-      side: BorderSide(color: c.border),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-      ),
-      onPressed: () => context.push(
-          '/topic/${topic.slug}?name=${Uri.encodeComponent(topic.topic)}'),
-    );
-  }
-}
-
-class _ClusterCard extends StatelessWidget {
-  const _ClusterCard({required this.cluster});
-  final StoryCluster cluster;
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return Material(
-      color: c.bgElevated,
-      borderRadius: BorderRadius.circular(AppRadii.lg),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => context.push('/cluster/${cluster.id}'),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpace.lg),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadii.lg),
-            border: Border.all(color: c.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                Icon(Icons.account_tree_outlined, size: 14, color: c.brand),
-                const SizedBox(width: 5),
-                Text('FULL COVERAGE',
-                    style: AppText.micro.copyWith(color: c.brand)),
-              ]),
-              const SizedBox(height: AppSpace.sm),
-              Text(cluster.title,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.headline.copyWith(color: c.text)),
-              if (cluster.summary.isNotEmpty) ...[
-                const SizedBox(height: AppSpace.sm),
-                Text(cluster.summary,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.body.copyWith(color: c.textSecondary)),
+                for (final (slug, label) in kNewsCategories)
+                  _Chip(
+                    label: label,
+                    selected: filters.category == slug,
+                    onTap: () => onChanged(filters.copyWith(category: slug)),
+                  ),
               ],
-              const SizedBox(height: AppSpace.md),
-              Text(
-                '${cluster.sourceCount} ${cluster.sourceCount == 1 ? "source" : "sources"} · updated ${timeAgo(cluster.lastUpdated)}',
-                style: AppText.caption.copyWith(color: c.textFaint),
-              ),
-            ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          // Sort + impact.
+          SizedBox(
+            height: 36,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+              children: [
+                _Chip(
+                  label: 'Latest',
+                  icon: Icons.schedule,
+                  selected: filters.sort == 'latest',
+                  onTap: () => onChanged(filters.copyWith(sort: 'latest')),
+                ),
+                _Chip(
+                  label: 'Trending',
+                  icon: Icons.trending_up,
+                  selected: filters.sort == 'trending',
+                  onTap: () => onChanged(filters.copyWith(sort: 'trending')),
+                ),
+                Container(
+                    width: 1,
+                    height: 20,
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: AppSpace.sm),
+                    color: c.border),
+                _Chip(
+                  label: 'Any impact',
+                  selected: filters.impact == null,
+                  onTap: () => onChanged(filters.copyWith(impact: null)),
+                ),
+                for (final lvl in const ['Critical', 'High', 'Medium', 'Low'])
+                  _Chip(
+                    label: lvl,
+                    dotColor: c.impact(lvl),
+                    selected: filters.impact == lvl,
+                    onTap: () => onChanged(filters.copyWith(impact: lvl)),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Chip extends StatelessWidget {
+  const _Chip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.icon,
+    this.dotColor,
+  });
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final IconData? icon;
+  final Color? dotColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Padding(
+      padding: const EdgeInsets.only(right: AppSpace.sm),
+      child: Material(
+        color: selected ? c.brand : c.bgInset,
+        child: InkWell(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(border: Border.all(color: c.border)),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (dotColor != null) ...[
+                  Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                          color: dotColor, shape: BoxShape.circle)),
+                  const SizedBox(width: 5),
+                ],
+                if (icon != null) ...[
+                  Icon(icon,
+                      size: 13,
+                      color: selected ? c.onBrand : c.textSecondary),
+                  const SizedBox(width: 4),
+                ],
+                Text(label,
+                    style: AppText.caption.copyWith(
+                        color: selected ? c.onBrand : c.textSecondary,
+                        fontWeight: FontWeight.w600)),
+              ],
+            ),
           ),
         ),
       ),

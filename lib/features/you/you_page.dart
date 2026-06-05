@@ -7,6 +7,7 @@ import '../../data/reading_history.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../utils/format.dart';
+import '../shell/app_drawer.dart';
 
 class YouPage extends ConsumerWidget {
   const YouPage({super.key});
@@ -19,6 +20,7 @@ class YouPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: c.bg,
+      drawer: const AppDrawer(),
       body: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
@@ -28,6 +30,12 @@ class YouPage extends ConsumerWidget {
             backgroundColor: c.bg,
             surfaceTintColor: Colors.transparent,
             pinned: true,
+            leading: Builder(
+              builder: (ctx) => IconButton(
+                icon: Icon(Icons.menu, color: c.text),
+                onPressed: () => Scaffold.of(ctx).openDrawer(),
+              ),
+            ),
             title: Text('You', style: AppText.title.copyWith(color: c.text)),
           ),
           SliverPadding(
@@ -169,7 +177,7 @@ class _MenuItem {
 }
 
 const _menu = [
-  _MenuItem(Icons.newspaper_outlined, 'Daily briefing', '', route: '/briefing'),
+  _MenuItem(Icons.bookmark_outline, 'Saved', '', route: '/saved'),
   _MenuItem(Icons.insights_outlined, 'Insights', '', route: '/insights'),
   _MenuItem(Icons.search, 'Search', '', route: '/search'),
   _MenuItem(Icons.auto_awesome_outlined, 'Your interests', 'Next'),

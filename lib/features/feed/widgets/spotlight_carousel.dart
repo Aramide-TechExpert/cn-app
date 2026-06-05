@@ -6,6 +6,7 @@ import '../../../theme/app_theme.dart';
 import '../../../theme/tokens.dart';
 import '../../../utils/format.dart';
 import '../../../utils/link_out.dart';
+import 'signal_badges.dart';
 
 /// Full-width (edge-to-edge) swipeable hero for the top stories. Full-bleed
 /// image + gradient with a subtle parallax; no curve. Page dots below.
@@ -111,14 +112,11 @@ class _Spotlight extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: AppSpace.sm, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: c.breaking,
-                      borderRadius: BorderRadius.circular(AppRadii.pill),
-                    ),
+                    color: c.breaking,
                     child: const Text('BREAKING',
                         style: TextStyle(
                             color: Colors.white,
-                            fontSize: 11,
+                            fontSize: 10,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.4)),
                   ),
@@ -129,9 +127,19 @@ class _Spotlight extends StatelessWidget {
                     style: AppText.title
                         .copyWith(color: Colors.white, height: 1.2)),
                 const SizedBox(height: 6),
-                Text('${article.source} · ${timeAgo(article.publishedAt)}',
-                    style: AppText.caption
-                        .copyWith(color: Colors.white.withValues(alpha: 0.85))),
+                Row(children: [
+                  SourceFavicon(
+                      url: article.sourceUrl, source: article.source, size: 16),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                        '${article.source} · ${timeAgo(article.publishedAt)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.caption.copyWith(
+                            color: Colors.white.withValues(alpha: 0.85))),
+                  ),
+                ]),
               ],
             ),
           ),

@@ -82,6 +82,18 @@ bool isFactChecked(String source) {
   return false;
 }
 
+/// Canonical News Feed categories (slug → label), mirroring the web filter bar.
+const List<(String slug, String label)> kNewsCategories = [
+  ('world', 'World'),
+  ('politics', 'Politics'),
+  ('business', 'Business'),
+  ('technology', 'Technology'),
+  ('science', 'Science'),
+  ('health', 'Health'),
+  ('sports', 'Sports'),
+  ('entertainment', 'Entertainment'),
+];
+
 /// Humanize a category slug: 'world-news' -> 'World News'.
 String categoryLabel(String slug) => slug
     .split('-')

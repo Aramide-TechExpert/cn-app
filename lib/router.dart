@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import 'features/auth/sign_in_page.dart';
 import 'features/briefing/briefing_page.dart';
+import 'features/clusters/clusters_page.dart';
 import 'features/discover/cluster_detail_page.dart';
 import 'features/discover/discover_page.dart';
 import 'features/discover/topic_page.dart';
@@ -10,11 +11,10 @@ import 'features/insights/insights_page.dart';
 import 'features/saved/saved_page.dart';
 import 'features/search/search_page.dart';
 import 'features/shell/scaffold_with_nav.dart';
-import 'features/watch/watch_page.dart';
 import 'features/you/you_page.dart';
 
-/// App routes: a 5-tab stateful shell (Home · Discover · Watch · Saved · You).
-/// Detail routes (/cluster/:id, /topic/:slug) and /sign-in land in follow-ups.
+/// App routes: a 5-tab stateful shell (Home · News Feed · Clusters · Briefing ·
+/// You). Saved, Search, Insights and detail screens are pushed on top.
 final router = GoRouter(
   initialLocation: '/',
   routes: [
@@ -32,12 +32,12 @@ final router = GoRouter(
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/watch', builder: (_, __) => const WatchPage()),
+            GoRoute(path: '/clusters', builder: (_, __) => const ClustersPage()),
           ],
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/saved', builder: (_, __) => const SavedPage()),
+            GoRoute(path: '/briefing', builder: (_, __) => const BriefingPage()),
           ],
         ),
         StatefulShellBranch(
@@ -49,7 +49,7 @@ final router = GoRouter(
     ),
     GoRoute(path: '/sign-in', builder: (_, __) => const SignInPage()),
     GoRoute(path: '/search', builder: (_, __) => const SearchPage()),
-    GoRoute(path: '/briefing', builder: (_, __) => const BriefingPage()),
+    GoRoute(path: '/saved', builder: (_, __) => const SavedPage()),
     GoRoute(path: '/insights', builder: (_, __) => const InsightsPage()),
     GoRoute(
       path: '/cluster/:id',

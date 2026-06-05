@@ -8,6 +8,7 @@ import '../../../theme/tokens.dart';
 import '../../../utils/format.dart';
 import '../../../utils/link_out.dart';
 import 'article_actions.dart';
+import 'signal_badges.dart';
 
 /// Full-bleed feature card (mirrors the web `overlay` variant): edge-to-edge
 /// image with a gradient + source/impact/headline overlaid. No curve. Used to
@@ -54,19 +55,16 @@ class OverlayCard extends ConsumerWidget {
             ),
             if (article.isBreaking)
               Positioned(
-                top: AppSpace.md,
-                left: AppSpace.lg,
+                top: 0,
+                left: 0,
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: AppSpace.sm, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: c.breaking,
-                    borderRadius: BorderRadius.circular(AppRadii.pill),
-                  ),
+                  color: c.breaking,
                   child: const Text('BREAKING',
                       style: TextStyle(
                           color: Colors.white,
-                          fontSize: 11,
+                          fontSize: 10,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.4)),
                 ),
@@ -80,14 +78,10 @@ class OverlayCard extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        color: c.impact(article.impact),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+                    SourceFavicon(
+                        url: article.sourceUrl,
+                        source: article.source,
+                        size: 15),
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
