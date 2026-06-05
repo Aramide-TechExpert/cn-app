@@ -12,6 +12,7 @@ import '../../../theme/tokens.dart';
 import '../../../utils/format.dart';
 import '../../../utils/link_out.dart';
 import 'article_actions.dart';
+import 'signal_badges.dart';
 
 /// Compact, edge-to-edge row card (mirrors the web `row` variant): square
 /// thumbnail + title + meta, full-width with a hairline divider. Tap link-outs;
@@ -58,15 +59,6 @@ class ArticleCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: c.impact(article.impact),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
                         Flexible(
                           child: Text(article.source,
                               maxLines: 1,
@@ -79,13 +71,15 @@ class ArticleCard extends ConsumerWidget {
                             style:
                                 AppText.caption.copyWith(color: c.textFaint)),
                       ]),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(article.title,
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                           style: AppText.bodyStrong
                               .copyWith(color: c.text, height: 1.3)),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
+                      SignalRow(article: article),
+                      const SizedBox(height: 8),
                       Row(children: [
                         Text(readTime(article.readingMinutes),
                             style:

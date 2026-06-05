@@ -8,6 +8,7 @@ import '../../../theme/tokens.dart';
 import '../../../utils/format.dart';
 import '../../../utils/link_out.dart';
 import 'article_actions.dart';
+import 'signal_badges.dart';
 
 /// Full-width image-top card (web "magazine"/"default"): big edge-to-edge
 /// image, then a large headline + meta below. No curve; hairline divider.
@@ -110,6 +111,8 @@ class MagazineCard extends ConsumerWidget {
                           style:
                               AppText.body.copyWith(color: c.textSecondary)),
                     ],
+                    const SizedBox(height: AppSpace.md),
+                    SignalRow(article: article),
                   ],
                 ),
               ),
