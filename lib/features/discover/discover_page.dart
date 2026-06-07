@@ -126,6 +126,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                       );
                     }
                     final a = items[i];
+                    if (a.hasVideo && a.hasImage) return VideoCard(article: a);
                     if (i == 0 && a.hasImage) return WideCard(article: a);
                     return a.hasImage
                         ? DefaultCard(article: a)

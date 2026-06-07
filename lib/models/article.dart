@@ -21,6 +21,7 @@ class Article {
   final int? trustScore;
   final int likeCount;
   final int commentCount;
+  final bool hasVideo;
 
   const Article({
     required this.id,
@@ -42,6 +43,7 @@ class Article {
     this.trustScore,
     required this.likeCount,
     required this.commentCount,
+    this.hasVideo = false,
   });
 
   bool get hasImage => image.isNotEmpty;
@@ -72,6 +74,7 @@ class Article {
       trustScore: (j['trustScore'] as num?)?.toInt(),
       likeCount: (j['likeCount'] as num?)?.toInt() ?? 0,
       commentCount: (j['commentCount'] as num?)?.toInt() ?? 0,
+      hasVideo: j['hasVideo'] == true,
     );
   }
 
@@ -94,6 +97,7 @@ class Article {
         'topics': topics,
         'likeCount': likeCount,
         'commentCount': commentCount,
+        'hasVideo': hasVideo,
       };
 }
 

@@ -60,7 +60,10 @@ class _HomePageState extends ConsumerState<HomePage> {
           final withImage = items.where((a) => a.hasImage).toList();
           final spotlight = withImage.take(5).toList();
           final rail = withImage.skip(5).take(6).toList();
-          final shorts = withImage.skip(11).take(8).toList();
+          // Shorts rail is sourced strictly from real in-article video
+          // (flagged at ingest) — not arbitrary articles.
+          final shorts =
+              withImage.where((a) => a.hasVideo).take(10).toList();
           final used = {
             ...spotlight.map((a) => a.id),
             ...rail.map((a) => a.id),
@@ -233,11 +236,14 @@ Widget _railHeader(BuildContext context, String title) => SliverToBoxAdapter(
 /// surfaces as you scroll. Falls back to a text variant when an article has no
 /// image (so image-led variants never render an empty box).
 Widget _feedCard(int i, Article a) {
+  // Real in-article video (flagged at ingest) always renders as the video
+  // card — the variant is driven by content, never by position.
+  if (a.hasVideo && a.hasImage) return VideoCard(article: a);
   Widget overlay() => Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpace.xs),
         child: OverlayCard(article: a),
       );
-  switch (i % 8) {
+  switch (i % 7) {
     case 0:
       return a.hasImage ? WideCard(article: a) : FeaturedCard(article: a);
     case 1:
@@ -250,8 +256,6 @@ Widget _feedCard(int i, Article a) {
       return a.hasImage ? MagazineCard(article: a) : ListCard(article: a);
     case 5:
       return FeaturedCard(article: a);
-    case 6:
-      return a.hasImage ? VideoCard(article: a) : ListCard(article: a);
     default:
       return ArticleCard(article: a);
   }
