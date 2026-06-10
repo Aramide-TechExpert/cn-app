@@ -61,6 +61,7 @@ jobs:
 
       - name: Upload diagnostics (analyze/test/build logs)
         if: always()
+        continue-on-error: true   # artifact-storage quota must never block the Release publish
         uses: actions/upload-artifact@v4
         with:
           name: diagnostics
@@ -72,6 +73,7 @@ jobs:
 
       - name: Upload APKs (if built)
         if: always()
+        continue-on-error: true   # redundant with the Release publish; never let quota fail the run
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apks
