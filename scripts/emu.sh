@@ -17,8 +17,14 @@ AVD="${1:-clustez}"
 # Free RAM: kill any stray emulator first (8 GB is tight).
 pkill -f qemu-system 2>/dev/null || true
 
+# -feature -Vulkan : host Iris 640 can't do hardware Vulkan, so the guest was
+#                    falling back to *software* Vulkan (CPU-pegging on 2 cores).
+#                    Disabling it makes HWUI use Skia-GLES, which IS hardware-
+#                    accelerated here via ANGLE->Metal. Verified: debug.hwui.renderer=skiagl.
+# -no-audio        : trims overhead. Resolution lowered to 720x1280 in config.ini.
 exec "$SDK/emulator/emulator" -avd "$AVD" \
   -gpu swiftshader_indirect \
-  -no-snapshot \
+  -feature -Vulkan \
+  -no-audio \
   -no-boot-anim \
   "${@:2}"
