@@ -180,7 +180,8 @@ const _menu = [
   _MenuItem(Icons.bookmark_outline, 'Saved', '', route: '/saved'),
   _MenuItem(Icons.insights_outlined, 'Insights', '', route: '/insights'),
   _MenuItem(Icons.search, 'Search', '', route: '/search'),
-  _MenuItem(Icons.auto_awesome_outlined, 'Your interests', 'Next'),
+  _MenuItem(Icons.auto_awesome_outlined, 'Your interests', '', route: '/interests'),
+  _MenuItem(Icons.bookmarks_outlined, 'Watchlists', '', route: '/watchlists'),
   _MenuItem(Icons.notifications_outlined, 'Alerts', 'Later'),
   _MenuItem(Icons.settings_outlined, 'Settings', '', route: '/settings'),
 ];

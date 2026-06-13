@@ -8,6 +8,8 @@ import 'features/discover/discover_page.dart';
 import 'features/discover/topic_page.dart';
 import 'features/feed/home_page.dart';
 import 'features/insights/insights_page.dart';
+import 'features/personalization/interests_page.dart';
+import 'features/personalization/watchlists_page.dart';
 import 'features/saved/saved_page.dart';
 import 'features/search/search_page.dart';
 import 'features/settings/settings_page.dart';
@@ -53,6 +55,8 @@ final router = GoRouter(
     GoRoute(path: '/saved', builder: (_, __) => const SavedPage()),
     GoRoute(path: '/insights', builder: (_, __) => const InsightsPage()),
     GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
+    GoRoute(path: '/interests', builder: (_, __) => const InterestsPage()),
+    GoRoute(path: '/watchlists', builder: (_, __) => const WatchlistsPage()),
     GoRoute(
       path: '/cluster/:id',
       builder: (_, s) => ClusterDetailPage(id: s.pathParameters['id']!),

@@ -122,6 +122,14 @@ class AppDrawer extends ConsumerWidget {
                 icon: Icons.bookmark_outline,
                 label: 'Saved',
                 onTap: () => push('/saved')),
+            _Item(
+                icon: Icons.auto_awesome_outlined,
+                label: 'Your interests',
+                onTap: () => push('/interests')),
+            _Item(
+                icon: Icons.bookmarks_outlined,
+                label: 'Watchlists',
+                onTap: () => push('/watchlists')),
             Divider(height: 1, color: c.border),
 
             // Categories.
