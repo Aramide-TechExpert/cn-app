@@ -152,7 +152,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               Text('Text size', style: AppText.bodyStrong.copyWith(color: c.text)),
               const SizedBox(height: AppSpace.sm),
               _ChoiceRow<double>(
-                options: const {0.9: 'Small', 1.0: 'Default', 1.15: 'Large'},
+                // non-const: double can't be a const map key (overrides ==)
+                options: {0.9: 'Small', 1.0: 'Default', 1.15: 'Large'},
                 selected: settings.textScale,
                 onSelect: ctrl.setTextScale,
               ),
