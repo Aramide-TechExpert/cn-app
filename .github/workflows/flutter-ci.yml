@@ -59,30 +59,18 @@ jobs:
             --dart-define=API_BASE=${{ secrets.API_BASE || 'https://clustez.vercel.app/api/v1' }} \
             2>&1 | tee build.txt
 
-      - name: Upload diagnostics (analyze/test/build logs)
-        if: always()
-        continue-on-error: true   # artifact-storage quota must never block the Release publish
-        uses: actions/upload-artifact@v4
-        with:
-          name: diagnostics
-          path: |
-            analyze.txt
-            test.txt
-            build.txt
-          if-no-files-found: ignore
-
-      - name: Upload APKs (if built)
-        if: always()
-        continue-on-error: true   # redundant with the Release publish; never let quota fail the run
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-debug-apks
-          path: build/app/outputs/flutter-apk/*-debug.apk
-          if-no-files-found: ignore
+      # NOTE: actions/upload-artifact steps were REMOVED 2026-06-13. The GitHub
+      # Actions artifact-storage quota is exhausted, and a failed upload —
+      # even with continue-on-error — flips the implicit success() to false for
+      # the publish steps below (their `if` has no status function), silently
+      # SKIPPING the Release publish. The APKs go to the rolling Release anyway,
+      # and build/analyze diagnostics are reachable via the run log / annotations,
+      # so these uploads were pure liability. analyze.txt/test.txt/build.txt are
+      # still written by `tee` above for the Gate to read locally.
 
       # Rolling Release on THIS (private) repo — for the team.
       - name: Publish APK to rolling Release (private)
-        if: steps.build.outcome == 'success' && hashFiles('build/app/outputs/flutter-apk/*-debug.apk') != ''
+        if: ${{ !cancelled() && steps.build.outcome == 'success' && hashFiles('build/app/outputs/flutter-apk/*-debug.apk') != '' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: flutter-latest
@@ -95,7 +83,7 @@ jobs:
 
       # Mirror to the PUBLIC dist repo so testers can download without a login.
       - name: Publish APK to public dist
-        if: steps.build.outcome == 'success' && hashFiles('build/app/outputs/flutter-apk/*-debug.apk') != ''
+        if: ${{ !cancelled() && steps.build.outcome == 'success' && hashFiles('build/app/outputs/flutter-apk/*-debug.apk') != '' }}
         uses: softprops/action-gh-release@v2
         with:
           repository: Aramide-TechExpert/clustez-flutter-dist
