@@ -182,7 +182,7 @@ const _menu = [
   _MenuItem(Icons.search, 'Search', '', route: '/search'),
   _MenuItem(Icons.auto_awesome_outlined, 'Your interests', 'Next'),
   _MenuItem(Icons.notifications_outlined, 'Alerts', 'Later'),
-  _MenuItem(Icons.settings_outlined, 'Settings', 'Next'),
+  _MenuItem(Icons.settings_outlined, 'Settings', '', route: '/settings'),
 ];
 
 class _MenuRow extends StatelessWidget {
