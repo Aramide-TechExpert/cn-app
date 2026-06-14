@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import 'features/alerts/alerts_page.dart';
 import 'features/auth/sign_in_page.dart';
 import 'features/briefing/briefing_page.dart';
 import 'features/clusters/clusters_page.dart';
@@ -57,6 +58,7 @@ final router = GoRouter(
     GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
     GoRoute(path: '/interests', builder: (_, __) => const InterestsPage()),
     GoRoute(path: '/watchlists', builder: (_, __) => const WatchlistsPage()),
+    GoRoute(path: '/alerts', builder: (_, __) => const AlertsPage()),
     GoRoute(
       path: '/cluster/:id',
       builder: (_, s) => ClusterDetailPage(id: s.pathParameters['id']!),
