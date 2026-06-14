@@ -1,6 +1,38 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/article.dart';
 import 'auth_controller.dart';
+import 'feed_controller.dart' show apiClientProvider;
+
+/// "For You" — articles merged from the user's followed categories
+/// (personalized Home rail). Empty when signed out / no interests. Bounded to
+/// the first 4 followed categories to keep it to a few requests.
+final forYouFeedProvider = FutureProvider.autoDispose<List<Article>>((ref) async {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return const [];
+  final followed = await ref.watch(interestsControllerProvider.future);
+  if (followed.isEmpty) return const [];
+  final api = ref.read(apiClientProvider);
+  final slugs = followed.take(4).toList();
+  final lists = await Future.wait(
+    slugs.map((s) async {
+      try {
+        return await api.categoryFeed(s, limit: 6);
+      } catch (_) {
+        return <Article>[];
+      }
+    }),
+  );
+  final seen = <String>{};
+  final merged = <Article>[];
+  for (final list in lists) {
+    for (final a in list) {
+      if (seen.add(a.id)) merged.add(a);
+    }
+  }
+  merged.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
+  return merged.take(12).toList();
+});
 
 /// A selectable category (followed via `user_interests`). slug is the FK into
 /// the `categories` table.

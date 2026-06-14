@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/feed_controller.dart';
+import '../../data/personalization_controller.dart';
 import '../../data/reading_history.dart';
 import '../../models/article.dart';
 import '../../theme/app_theme.dart';
@@ -48,6 +49,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     final c = context.colors;
     final feed = ref.watch(feedControllerProvider);
     final controller = ref.read(feedControllerProvider.notifier);
+    // Personalized rail — articles from the user's followed categories.
+    final forYou = ref.watch(forYouFeedProvider).valueOrNull ?? const <Article>[];
 
     return Scaffold(
       backgroundColor: c.bg,
@@ -108,6 +111,25 @@ class _HomePageState extends ConsumerState<HomePage> {
                       child: SpotlightCarousel(articles: spotlight),
                     ),
                   ),
+
+                // For You — personalized rail from followed interests.
+                if (forYou.isNotEmpty) ...[
+                  _railHeader(context, 'For You'),
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 224,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+                        itemCount: forYou.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(width: AppSpace.lg),
+                        itemBuilder: (_, i) => RailCard(article: forYou[i]),
+                      ),
+                    ),
+                  ),
+                ],
 
                 // Continue reading (local history).
                 SliverToBoxAdapter(
