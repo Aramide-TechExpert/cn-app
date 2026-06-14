@@ -100,6 +100,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                       style: AppText.title.copyWith(color: c.text)),
                   actions: [
                     IconButton(
+                      icon: Icon(Icons.view_carousel_outlined, color: c.text),
+                      tooltip: 'Stack',
+                      onPressed: () => context.push('/stack'),
+                    ),
+                    IconButton(
                       icon: Icon(Icons.search, color: c.text),
                       onPressed: () => context.push('/search'),
                     ),
