@@ -7,18 +7,33 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// choice survives restarts. (Account/email-digest prefs live in Supabase and
 /// are handled in the Settings screen directly.)
 class AppSettings {
-  const AppSettings({this.themeMode = ThemeMode.system, this.textScale = 1.0});
+  // firstRunSeen defaults true so returning users never flash the first-run
+  // banner before prefs load; _load() flips it false only for genuinely new
+  // users (no stored key).
+  const AppSettings({
+    this.themeMode = ThemeMode.system,
+    this.textScale = 1.0,
+    this.firstRunSeen = true,
+  });
   final ThemeMode themeMode;
   final double textScale;
+  final bool firstRunSeen;
 
-  AppSettings copyWith({ThemeMode? themeMode, double? textScale}) => AppSettings(
+  AppSettings copyWith({
+    ThemeMode? themeMode,
+    double? textScale,
+    bool? firstRunSeen,
+  }) =>
+      AppSettings(
         themeMode: themeMode ?? this.themeMode,
         textScale: textScale ?? this.textScale,
+        firstRunSeen: firstRunSeen ?? this.firstRunSeen,
       );
 }
 
 const _kThemeMode = 'clustez:themeMode';
 const _kTextScale = 'clustez:textScale';
+const _kFirstRun = 'clustez:firstRunSeen';
 
 class SettingsController extends Notifier<AppSettings> {
   SharedPreferences? _prefs;
@@ -38,7 +53,14 @@ class SettingsController extends Notifier<AppSettings> {
         _ => ThemeMode.system,
       },
       textScale: _prefs!.getDouble(_kTextScale) ?? 1.0,
+      firstRunSeen: _prefs!.getBool(_kFirstRun) ?? false,
     );
+  }
+
+  Future<void> markFirstRunSeen() async {
+    state = state.copyWith(firstRunSeen: true);
+    await _ensure();
+    await _prefs!.setBool(_kFirstRun, true);
   }
 
   Future<void> _ensure() async =>

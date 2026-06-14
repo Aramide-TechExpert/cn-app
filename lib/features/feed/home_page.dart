@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/feed_controller.dart';
 import '../../data/personalization_controller.dart';
 import '../../data/reading_history.dart';
+import '../../data/settings_controller.dart';
 import '../../models/article.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
@@ -51,6 +52,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final controller = ref.read(feedControllerProvider.notifier);
     // Personalized rail — articles from the user's followed categories.
     final forYou = ref.watch(forYouFeedProvider).valueOrNull ?? const <Article>[];
+    final firstRun = !ref.watch(settingsControllerProvider).firstRunSeen;
 
     return Scaffold(
       backgroundColor: c.bg,
@@ -104,6 +106,45 @@ class _HomePageState extends ConsumerState<HomePage> {
                     const SizedBox(width: AppSpace.xs),
                   ],
                 ),
+                // First-run welcome banner (dismissible — never gates the app).
+                if (firstRun)
+                  SliverToBoxAdapter(
+                    child: Container(
+                      margin: const EdgeInsets.fromLTRB(
+                          AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
+                      padding: const EdgeInsets.all(AppSpace.lg),
+                      color: c.brandSoft,
+                      child: Row(children: [
+                        Icon(Icons.auto_awesome, color: c.brand, size: 20),
+                        const SizedBox(width: AppSpace.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Welcome to Clustez',
+                                  style:
+                                      AppText.bodyStrong.copyWith(color: c.text)),
+                              Text('Personalize your feed in a few taps',
+                                  style: AppText.caption
+                                      .copyWith(color: c.textSecondary)),
+                            ],
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => context.push('/onboarding'),
+                          child: Text('Set up',
+                              style: AppText.callout.copyWith(color: c.brand)),
+                        ),
+                        InkResponse(
+                          onTap: () => ref
+                              .read(settingsControllerProvider.notifier)
+                              .markFirstRunSeen(),
+                          child: Icon(Icons.close, size: 18, color: c.textFaint),
+                        ),
+                      ]),
+                    ),
+                  ),
+
                 if (spotlight.isNotEmpty)
                   SliverToBoxAdapter(
                     child: Padding(
