@@ -158,6 +158,10 @@ class AppDrawer extends ConsumerWidget {
                 icon: Icons.person_outline,
                 label: 'Account',
                 onTap: () => go('/you')),
+            _Item(
+                icon: Icons.gavel_outlined,
+                label: 'Sources & attribution',
+                onTap: () => push('/legal-sources')),
             if (user != null)
               _Item(
                 icon: Icons.logout,
