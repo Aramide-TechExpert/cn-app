@@ -11,6 +11,7 @@ import '../../../theme/app_theme.dart';
 import '../../../theme/tokens.dart';
 import '../../../utils/format.dart';
 import '../../../utils/link_out.dart';
+import '../../comments/comments_page.dart';
 
 /// Native long-press action sheet for an article (drag-handle modal sheet +
 /// haptics + OS share). Open · Bookmark · Share · Copy link.
@@ -64,6 +65,19 @@ Future<void> showArticleActions(
                 openArticle(article.sourceUrl, track: article);
               },
             ),
+            if (dbId != null)
+              _ActionTile(
+                icon: Icons.mode_comment_outlined,
+                label: article.commentCount > 0
+                    ? 'Comments (${article.commentCount})'
+                    : 'Comments',
+                onTap: () {
+                  Navigator.pop(sheetCtx);
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => CommentsPage(article: article),
+                  ));
+                },
+              ),
             if (dbId != null)
               _ActionTile(
                 icon: marked ? Icons.bookmark : Icons.bookmark_outline,
