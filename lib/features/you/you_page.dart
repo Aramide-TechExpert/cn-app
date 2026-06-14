@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../data/alerts_controller.dart';
 import '../../data/auth_controller.dart';
+import '../../data/engagement_controller.dart';
+import '../../data/personalization_controller.dart';
 import '../../data/reading_history.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
@@ -51,6 +54,7 @@ class YouPage extends ConsumerWidget {
                 else
                   _SignInCard(onSignIn: () => context.push('/sign-in')),
                 const _StreakBadge(),
+                if (user != null) const _StatsGrid(),
                 const SizedBox(height: AppSpace.xl),
                 ..._menu.map((m) => _MenuRow(item: m)),
               ],
@@ -219,6 +223,91 @@ class _MenuRow extends StatelessWidget {
                 Icon(Icons.chevron_right, size: 18, color: c.textFaint),
             ]),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Personal dashboard — at-a-glance counts (saved / following / watchlists /
+/// unread alerts), each a shortcut to its screen. Signed-in only.
+class _StatsGrid extends ConsumerWidget {
+  const _StatsGrid();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final saved =
+        ref.watch(engagementProvider).valueOrNull?.bookmarked.length ?? 0;
+    final following =
+        ref.watch(interestsControllerProvider).valueOrNull?.length ?? 0;
+    final watchlists =
+        ref.watch(watchlistsControllerProvider).valueOrNull?.length ?? 0;
+    final alerts = ref
+            .watch(alertsControllerProvider)
+            .valueOrNull
+            ?.where((a) => a.unread)
+            .length ??
+        0;
+
+    final tiles = <(String, int, IconData, String)>[
+      ('Saved', saved, Icons.bookmark_outline, '/saved'),
+      ('Following', following, Icons.auto_awesome_outlined, '/interests'),
+      ('Watchlists', watchlists, Icons.bookmarks_outlined, '/watchlists'),
+      ('Unread alerts', alerts, Icons.notifications_outlined, '/alerts'),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpace.md),
+      child: GridView.count(
+        crossAxisCount: 2,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        mainAxisSpacing: AppSpace.md,
+        crossAxisSpacing: AppSpace.md,
+        childAspectRatio: 2.4,
+        children: [for (final t in tiles) _StatTile(t)],
+      ),
+    );
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  const _StatTile(this.data);
+  final (String, int, IconData, String) data;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final (label, value, icon, route) = data;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        onTap: () => context.push(route),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpace.lg),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            border: Border.all(color: c.border),
+          ),
+          child: Row(children: [
+            Icon(icon, size: 20, color: c.brand),
+            const SizedBox(width: AppSpace.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('$value',
+                      style: AppText.title.copyWith(color: c.text)),
+                  Text(label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.caption.copyWith(color: c.textFaint)),
+                ],
+              ),
+            ),
+          ]),
         ),
       ),
     );
