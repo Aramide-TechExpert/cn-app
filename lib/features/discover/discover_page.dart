@@ -21,6 +21,7 @@ class DiscoverPage extends ConsumerStatefulWidget {
 
 class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   final _scroll = ScrollController();
+  bool _compact = false; // view mode: rich (image cards) vs compact (text list)
 
   @override
   void initState() {
@@ -77,6 +78,15 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                   Text('News Feed', style: AppText.title.copyWith(color: c.text)),
               actions: [
                 IconButton(
+                  icon: Icon(
+                      _compact
+                          ? Icons.view_agenda_outlined
+                          : Icons.view_headline,
+                      color: c.text),
+                  tooltip: _compact ? 'Rich view' : 'Compact view',
+                  onPressed: () => setState(() => _compact = !_compact),
+                ),
+                IconButton(
                   icon: Icon(Icons.search, color: c.text),
                   onPressed: () => context.push('/search'),
                 ),
@@ -131,6 +141,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                       );
                     }
                     final a = items[i];
+                    if (_compact) return ListCard(article: a);
                     if (a.hasVideo && a.hasImage) return VideoCard(article: a);
                     if (i == 0 && a.hasImage) return WideCard(article: a);
                     return a.hasImage
