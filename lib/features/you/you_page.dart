@@ -192,13 +192,20 @@ const _menu = [
   _MenuItem(Icons.settings_outlined, 'Settings', '', route: '/settings'),
 ];
 
-class _MenuRow extends StatelessWidget {
+class _MenuRow extends ConsumerWidget {
   const _MenuRow({required this.item});
   final _MenuItem item;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
+    // Unread-alerts badge on the Alerts row.
+    final unread = item.route == '/alerts'
+        ? (ref.watch(alertsControllerProvider).valueOrNull
+                ?.where((a) => a.unread)
+                .length ??
+            0)
+        : 0;
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpace.sm),
       child: Material(
@@ -218,7 +225,17 @@ class _MenuRow extends StatelessWidget {
               Expanded(
                   child: Text(item.label,
                       style: AppText.body.copyWith(color: c.text))),
-              if (item.hint.isNotEmpty)
+              if (unread > 0)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                      color: c.brand,
+                      borderRadius: BorderRadius.circular(AppRadii.pill)),
+                  child: Text('$unread',
+                      style: AppText.micro.copyWith(color: c.onBrand)),
+                )
+              else if (item.hint.isNotEmpty)
                 Text(item.hint,
                     style: AppText.micro.copyWith(color: c.textFaint))
               else if (item.route != null)
