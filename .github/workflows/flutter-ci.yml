@@ -56,7 +56,7 @@ jobs:
             --build-name=1.0.${{ github.run_number }} \
             --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
-            --dart-define=API_BASE=${{ secrets.API_BASE || 'https://clustez.vercel.app/api/v1' }} \
+            --dart-define=API_BASE=${{ secrets.API_BASE || 'https://clustez-mu.vercel.app/api/v1' }} \
             2>&1 | tee build.txt
 
       # NOTE: actions/upload-artifact steps were REMOVED 2026-06-13. The GitHub

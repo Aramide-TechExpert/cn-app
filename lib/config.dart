@@ -6,7 +6,9 @@ class Config {
       String.fromEnvironment('SUPABASE_ANON_KEY');
   static const String apiBase = String.fromEnvironment(
     'API_BASE',
-    defaultValue: 'https://clustez.vercel.app/api/v1',
+    // New Vercel account (old clustez.vercel.app paused 2026-06-12).
+    // Stable production alias of the arahm-s-projects/clustez deployment.
+    defaultValue: 'https://clustez-mu.vercel.app/api/v1',
   );
 
   static bool get hasSupabase =>
