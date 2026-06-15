@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../data/dismissed_controller.dart';
 import '../../data/feed_controller.dart';
 import '../../data/personalization_controller.dart';
 import '../../data/reading_history.dart';
@@ -53,6 +54,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     // Personalized rail — articles from the user's followed categories.
     final forYou = ref.watch(forYouFeedProvider).valueOrNull ?? const <Article>[];
     final firstRun = !ref.watch(settingsControllerProvider).firstRunSeen;
+    final dismissed = ref.watch(dismissedProvider);
 
     return Scaffold(
       backgroundColor: c.bg,
@@ -61,7 +63,10 @@ class _HomePageState extends ConsumerState<HomePage> {
         loading: () => const Center(child: CircularProgressIndicator.adaptive()),
         error: (e, _) =>
             _ErrorView(message: e.toString(), onRetry: controller.refresh),
-        data: (items) {
+        data: (allItems) {
+          // Drop "not interested" stories everywhere on Home.
+          final items =
+              allItems.where((a) => !dismissed.contains(a.id)).toList();
           final withImage = items.where((a) => a.hasImage).toList();
           final spotlight = withImage.take(5).toList();
           final rail = withImage.skip(5).take(6).toList();

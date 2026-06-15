@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../data/auth_controller.dart';
+import '../../../data/dismissed_controller.dart';
 import '../../../data/engagement_controller.dart';
 import '../../../models/article.dart';
 import '../../../theme/app_theme.dart';
@@ -115,6 +116,22 @@ Future<void> showArticleActions(
                     const SnackBar(content: Text('Link copied')),
                   );
                 }
+              },
+            ),
+            _ActionTile(
+              icon: Icons.not_interested,
+              label: 'Not interested',
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                ref.read(dismissedProvider.notifier).dismiss(article.id);
+                messenger.showSnackBar(SnackBar(
+                  content: const Text('Hidden — fewer like this'),
+                  action: SnackBarAction(
+                    label: 'Undo',
+                    onPressed: () =>
+                        ref.read(dismissedProvider.notifier).undismiss(article.id),
+                  ),
+                ));
               },
             ),
             const SizedBox(height: AppSpace.sm),

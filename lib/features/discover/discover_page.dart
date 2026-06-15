@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../data/dismissed_controller.dart';
 import '../../data/news_feed_controller.dart';
 import '../../data/source_signals.dart';
 import '../../theme/app_theme.dart';
@@ -42,6 +43,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     final c = context.colors;
     final notifier = ref.read(newsFeedControllerProvider.notifier);
     final feed = ref.watch(newsFeedControllerProvider);
+    final dismissed = ref.watch(dismissedProvider);
     final filters = notifier.filters;
 
     void setFilters(NewsFilters f) {
@@ -101,7 +103,10 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                   ),
                 ),
               ),
-              data: (items) {
+              data: (allItems) {
+                final items = allItems
+                    .where((a) => !dismissed.contains(a.id))
+                    .toList();
                 if (items.isEmpty) {
                   return SliverFillRemaining(
                     hasScrollBody: false,
