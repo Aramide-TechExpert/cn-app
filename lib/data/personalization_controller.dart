@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/article.dart';
 import 'auth_controller.dart';
 import 'feed_controller.dart' show apiClientProvider;
+import 'reading_history.dart';
 
 /// "For You" — articles merged from the user's followed categories
 /// (personalized Home rail). Empty when signed out / no interests. Bounded to
@@ -32,6 +33,14 @@ final forYouFeedProvider = FutureProvider.autoDispose<List<Article>>((ref) async
   }
   merged.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
   return merged.take(12).toList();
+});
+
+/// "What you missed" — followed-topic stories the user hasn't opened yet
+/// (For-You minus locally-read). Dashboard section.
+final whatYouMissedProvider = FutureProvider.autoDispose<List<Article>>((ref) async {
+  final forYou = await ref.watch(forYouFeedProvider.future);
+  final readIds = ReadingHistory.items.value.map((a) => a.id).toSet();
+  return forYou.where((a) => !readIds.contains(a.id)).take(8).toList();
 });
 
 /// A selectable category (followed via `user_interests`). slug is the FK into

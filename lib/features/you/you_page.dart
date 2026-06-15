@@ -10,6 +10,7 @@ import '../../data/reading_history.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../utils/format.dart';
+import '../feed/widgets/rail_card.dart';
 import '../shell/app_drawer.dart';
 
 class YouPage extends ConsumerWidget {
@@ -55,6 +56,7 @@ class YouPage extends ConsumerWidget {
                   _SignInCard(onSignIn: () => context.push('/sign-in')),
                 const _StreakBadge(),
                 if (user != null) const _StatsGrid(),
+                if (user != null) const _WhatYouMissed(),
                 const SizedBox(height: AppSpace.xl),
                 ..._menu.map((m) => _MenuRow(item: m)),
               ],
@@ -310,6 +312,36 @@ class _StatTile extends StatelessWidget {
           ]),
         ),
       ),
+    );
+  }
+}
+
+/// "What you missed" — unread stories from followed topics. Hidden when empty.
+class _WhatYouMissed extends ConsumerWidget {
+  const _WhatYouMissed();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.colors;
+    final items = ref.watch(whatYouMissedProvider).valueOrNull ?? const [];
+    if (items.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: AppSpace.xl),
+        Text('What you missed',
+            style: AppText.headline.copyWith(color: c.text, fontSize: 16)),
+        const SizedBox(height: AppSpace.md),
+        SizedBox(
+          height: 224,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(width: AppSpace.lg),
+            itemBuilder: (_, i) => RailCard(article: items[i]),
+          ),
+        ),
+      ],
     );
   }
 }
