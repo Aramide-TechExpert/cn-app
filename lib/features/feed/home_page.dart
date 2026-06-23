@@ -12,6 +12,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../shell/app_drawer.dart';
 import 'widgets/article_card.dart';
+import 'widgets/bento_mosaic.dart';
 import 'widgets/card_variants.dart';
 import 'widgets/magazine_card.dart';
 import 'widgets/overlay_card.dart';
@@ -70,6 +71,9 @@ class _HomePageState extends ConsumerState<HomePage> {
           final withImage = items.where((a) => a.hasImage).toList();
           final spotlight = withImage.take(5).toList();
           final rail = withImage.skip(5).take(6).toList();
+          // Bento mosaic — a compact 2-up grid of "Top stories" (web bento feel)
+          // in a fitted slot below the rails.
+          final bento = withImage.skip(11).take(4).toList();
           // Shorts rail is sourced strictly from real in-article video
           // (flagged at ingest) — not arbitrary articles.
           final shorts =
@@ -77,6 +81,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           final used = {
             ...spotlight.map((a) => a.id),
             ...rail.map((a) => a.id),
+            ...bento.map((a) => a.id),
             ...shorts.map((a) => a.id),
           };
           // Everything else flows into the interleaved feed (magazine / overlay
@@ -254,6 +259,18 @@ class _HomePageState extends ConsumerState<HomePage> {
                         itemBuilder: (_, i) =>
                             VerticalCard(article: shorts[i], width: 152),
                       ),
+                    ),
+                  ),
+                ],
+
+                // Bento mosaic — "Top stories" 2-up grid block.
+                if (bento.length >= 2) ...[
+                  _railHeader(context, 'Top stories'),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                          AppSpace.lg, 0, AppSpace.lg, AppSpace.sm),
+                      child: BentoMosaic(articles: bento),
                     ),
                   ),
                 ],
