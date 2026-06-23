@@ -61,3 +61,23 @@ lib/
 
 ## Commit history (local, not pushed)
 scaffold → auth → likes/bookmarks → Discover → Watch+Saved → self-review fix.
+
+## Card-style parity pass (2026-06-23)
+Audited web card/header/media components vs Flutter; ported the gaps the web feed
+had that the app lacked. All verified via CI analyze (0 new issues).
+- **Autoplay/loop spotlight header** (`spotlight_carousel.dart`) — 6s auto-advance,
+  seamless loop, pause-on-touch + app-lifecycle pause, play/pause control, Ken
+  Burns zoom (web HeroCarousel parity). Lands on the Home dashboard.
+- **Card micro-features** (`card_extras.dart`) — animated pulsing `LiveBadge`,
+  `GainingAttention` (comment-velocity), reading-time image overlay, `EngagementBar`
+  (comment count + spring-animated like/bookmark). Wired into Default/Wide/Video/
+  Magazine cards.
+- **News Feed dynamic rhythm** (`discover_page.dart`) — replaced the thin 4-card
+  logic with a position+trait cadence cycling Wide/Magazine/Overlay/Default/Video/
+  Featured, plus skeleton (shimmer) loading and fade+slide card entry.
+- **Motion/polish** — `FadeSlideIn` entry, `Shimmer`/`SkeletonCard` loaders, spring
+  like/bookmark pops.
+- **Bento mosaic** (`bento_mosaic.dart`) — overflow-safe 2-up "Top stories" grid in
+  a fitted slot on Home.
+Not ported (intentional): real inline video playback (still icon-overlay only;
+YouTube/Vimeo ingestion was removed). Visual on-device check pending the local SDK.
