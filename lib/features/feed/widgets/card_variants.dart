@@ -8,6 +8,7 @@ import '../../../theme/tokens.dart';
 import '../../../utils/format.dart';
 import '../../../utils/link_out.dart';
 import 'article_actions.dart';
+import 'card_extras.dart';
 import 'signal_badges.dart';
 
 // ── shared image cover (network image or monogram fallback), square corners ──
@@ -30,19 +31,23 @@ Widget _cover(BuildContext context, Article a, {BoxFit fit = BoxFit.cover}) {
   );
 }
 
-Widget _breaking(BuildContext context) {
-  final c = context.colors;
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm, vertical: 3),
-    color: c.breaking,
-    child: const Text('BREAKING',
-        style: TextStyle(
-            color: Colors.white,
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.4)),
-  );
-}
+// Animated pulsing BREAKING badge (see card_extras.dart).
+Widget _breaking(BuildContext context) => const LiveBadge();
+
+/// Reading-time pill positioned at the image's bottom-right (feed cards).
+Widget _readTimeOverlay(Article a) => Positioned(
+      right: AppSpace.sm,
+      bottom: AppSpace.sm,
+      child: ReadingTimeBadge(minutes: a.readingMinutes),
+    );
+
+/// Optional "Gaining attention" line shown under the signal row.
+Widget _attention(Article a) => GainingAttention.qualifies(a)
+    ? const Padding(
+        padding: EdgeInsets.only(top: 6),
+        child: GainingAttention(),
+      )
+    : const SizedBox.shrink();
 
 Widget _divider(BuildContext context) =>
     Divider(height: 1, thickness: 1, color: context.colors.border);
@@ -69,6 +74,7 @@ class DefaultCard extends ConsumerWidget {
               aspectRatio: 16 / 9,
               child: Stack(fit: StackFit.expand, children: [
                 _cover(context, article),
+                _readTimeOverlay(article),
                 if (article.isBreaking)
                   Positioned(top: 0, left: 0, child: _breaking(context)),
               ]),
@@ -79,6 +85,7 @@ class DefaultCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SignalRow(article: article),
+                  _attention(article),
                   const SizedBox(height: AppSpace.sm),
                   Text(article.title,
                       maxLines: 3,
@@ -87,6 +94,8 @@ class DefaultCard extends ConsumerWidget {
                           .copyWith(color: c.text, fontSize: 16)),
                   const SizedBox(height: AppSpace.sm),
                   SourceLine(article: article),
+                  const SizedBox(height: AppSpace.md),
+                  EngagementBar(article: article),
                 ],
               ),
             ),
@@ -117,6 +126,7 @@ class WideCard extends ConsumerWidget {
               aspectRatio: 2 / 1,
               child: Stack(fit: StackFit.expand, children: [
                 _cover(context, article),
+                _readTimeOverlay(article),
                 if (article.isBreaking)
                   Positioned(top: 0, left: 0, child: _breaking(context)),
               ]),
@@ -127,6 +137,7 @@ class WideCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SignalRow(article: article),
+                  _attention(article),
                   const SizedBox(height: AppSpace.sm),
                   Text(article.title,
                       maxLines: 2,
@@ -142,6 +153,8 @@ class WideCard extends ConsumerWidget {
                   ],
                   const SizedBox(height: AppSpace.sm),
                   SourceLine(article: article),
+                  const SizedBox(height: AppSpace.md),
+                  EngagementBar(article: article),
                 ],
               ),
             ),
@@ -282,6 +295,7 @@ class VideoCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SignalRow(article: article),
+                  _attention(article),
                   const SizedBox(height: AppSpace.sm),
                   Text(article.title,
                       maxLines: 2,
@@ -290,6 +304,8 @@ class VideoCard extends ConsumerWidget {
                           .copyWith(color: c.text, fontSize: 16)),
                   const SizedBox(height: AppSpace.sm),
                   SourceLine(article: article),
+                  const SizedBox(height: AppSpace.md),
+                  EngagementBar(article: article),
                 ],
               ),
             ),

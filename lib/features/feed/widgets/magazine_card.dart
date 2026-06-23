@@ -8,6 +8,7 @@ import '../../../theme/tokens.dart';
 import '../../../utils/format.dart';
 import '../../../utils/link_out.dart';
 import 'article_actions.dart';
+import 'card_extras.dart';
 import 'signal_badges.dart';
 
 /// Full-width image-top card (web "magazine"/"default"): big edge-to-edge
@@ -49,22 +50,13 @@ class MagazineCard extends ConsumerWidget {
                       Container(
                           color:
                               HSLColor.fromAHSL(1, hue, 0.5, 0.4).toColor()),
+                    Positioned(
+                      right: AppSpace.sm,
+                      bottom: AppSpace.sm,
+                      child: ReadingTimeBadge(minutes: article.readingMinutes),
+                    ),
                     if (article.isBreaking)
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpace.sm, vertical: 3),
-                          color: c.breaking,
-                          child: const Text('BREAKING',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.4)),
-                        ),
-                      ),
+                      const Positioned(top: 0, left: 0, child: LiveBadge()),
                   ],
                 ),
               ),
@@ -74,6 +66,10 @@ class MagazineCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SignalRow(article: article),
+                    if (GainingAttention.qualifies(article)) ...[
+                      const SizedBox(height: 6),
+                      const GainingAttention(),
+                    ],
                     const SizedBox(height: AppSpace.sm),
                     Text(article.title,
                         maxLines: 3,
@@ -90,6 +86,8 @@ class MagazineCard extends ConsumerWidget {
                     ],
                     const SizedBox(height: AppSpace.sm),
                     SourceLine(article: article),
+                    const SizedBox(height: AppSpace.md),
+                    EngagementBar(article: article),
                   ],
                 ),
               ),

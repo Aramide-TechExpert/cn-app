@@ -7,7 +7,11 @@ import '../../data/news_feed_controller.dart';
 import '../../data/source_signals.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
+import '../feed/widgets/card_extras.dart';
 import '../feed/widgets/card_variants.dart';
+import '../feed/widgets/magazine_card.dart';
+import '../feed/widgets/overlay_card.dart';
+import '../../models/article.dart';
 import '../shell/app_drawer.dart';
 
 /// News Feed — the filterable article stream (category · sort · impact),
@@ -37,6 +41,32 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   void dispose() {
     _scroll.dispose();
     super.dispose();
+  }
+
+  /// Dynamic card rhythm — gives the feed visual variety instead of a flat
+  /// column of identical cards (mirrors the web mosaic/bucketed feed). The hero
+  /// leads, then a repeating cadence interleaves Magazine / Overlay / Wide
+  /// feature cards between the Default run. Video → VideoCard; image-less →
+  /// Featured (when it has a "why it matters") else the compact List card.
+  Widget _cardFor(int i, Article a) {
+    if (_compact) return ListCard(article: a);
+    if (a.hasVideo && a.hasImage) return VideoCard(article: a);
+    if (!a.hasImage) {
+      return (a.whyItMatters ?? '').isNotEmpty
+          ? FeaturedCard(article: a)
+          : ListCard(article: a);
+    }
+    if (i == 0) return WideCard(article: a); // hero
+    switch (i % 7) {
+      case 2:
+        return MagazineCard(article: a);
+      case 4:
+        return OverlayCard(article: a);
+      case 6:
+        return WideCard(article: a);
+      default:
+        return DefaultCard(article: a);
+    }
   }
 
   @override
@@ -98,9 +128,12 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
               ),
             ),
             feed.when(
-              loading: () => const SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(child: CircularProgressIndicator.adaptive()),
+              loading: () => SliverPadding(
+                padding: const EdgeInsets.only(top: AppSpace.md),
+                sliver: SliverList.builder(
+                  itemCount: 4,
+                  itemBuilder: (_, __) => const SkeletonCard(),
+                ),
               ),
               error: (e, _) => SliverFillRemaining(
                 hasScrollBody: false,
@@ -141,12 +174,10 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                       );
                     }
                     final a = items[i];
-                    if (_compact) return ListCard(article: a);
-                    if (a.hasVideo && a.hasImage) return VideoCard(article: a);
-                    if (i == 0 && a.hasImage) return WideCard(article: a);
-                    return a.hasImage
-                        ? DefaultCard(article: a)
-                        : ListCard(article: a);
+                    return FadeSlideIn(
+                      key: ValueKey(a.id),
+                      child: _cardFor(i, a),
+                    );
                   },
                 );
               },
