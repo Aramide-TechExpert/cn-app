@@ -1,0 +1,92 @@
+# Build the iOS app on a cloud macOS runner (Xcode 16 + iOS 18 SDK natively —
+# no local Ventura/Xcode-15.4 limits) and ship it to TestFlight. Manual trigger.
+#
+# REQUIRES (App Store Connect / Apple Developer — see docs):
+#   - Paid Apple Developer Program membership ($99/yr) — TestFlight needs it.
+#   - Bundle id app.clustez.clustez registered + an App record in App Store Connect.
+#   - An App Store Connect API key (Admin or App Manager role).
+# GitHub repo secrets used:
+#   ASC_KEY_ID       — the API key's Key ID
+#   ASC_ISSUER_ID    — the API key's Issuer ID
+#   ASC_API_KEY_P8   — base64 of the downloaded AuthKey_XXXX.p8
+#   APPLE_TEAM_ID    — your 10-char Apple Developer Team ID
+name: iOS TestFlight
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  testflight:
+    runs-on: macos-15 # Xcode 16 + iOS 18 SDK; signs/builds what Ventura can't
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter deps + materialize iOS project
+        run: |
+          flutter pub get
+          flutter create --platforms=ios --org app.clustez .
+
+      - name: Write App Store Connect API key
+        env:
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          mkdir -p ios/private_keys
+          echo "$ASC_API_KEY_P8" | base64 --decode > "ios/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: Generate iOS config + CocoaPods
+        run: |
+          flutter build ios --release --config-only
+          cd ios && pod install --repo-update
+
+      - name: Write fastlane config
+        run: |
+          mkdir -p ios/fastlane
+          cat > ios/fastlane/Appfile <<'APPFILE'
+          app_identifier("app.clustez.clustez")
+          APPFILE
+          cat > ios/fastlane/Fastfile <<'FASTFILE'
+          default_platform(:ios)
+          platform :ios do
+            lane :beta do
+              key = app_store_connect_api_key(
+                key_id: ENV["ASC_KEY_ID"],
+                issuer_id: ENV["ASC_ISSUER_ID"],
+                key_filepath: "private_keys/AuthKey_#{ENV['ASC_KEY_ID']}.p8",
+              )
+              # Use the CI run number as the build number (must be unique per upload).
+              increment_build_number(
+                build_number: ENV["GITHUB_RUN_NUMBER"],
+                xcodeproj: "Runner.xcodeproj",
+              )
+              build_app(
+                workspace: "Runner.xcworkspace",
+                scheme: "Runner",
+                export_method: "app-store",
+                xcargs: "-allowProvisioningUpdates",
+                export_options: {
+                  signingStyle: "automatic",
+                  teamID: ENV["APPLE_TEAM_ID"],
+                },
+              )
+              upload_to_testflight(
+                api_key: key,
+                skip_waiting_for_build_processing: true,
+              )
+            end
+          end
+          FASTFILE
+
+      - name: Build + upload to TestFlight
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cd ios && fastlane beta
