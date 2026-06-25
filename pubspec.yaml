@@ -32,6 +32,11 @@ dependencies:
   # error). Falls back to poster + link-out for non-YouTube / load failures.
   webview_flutter: ^4.10.0
 
+dependency_overrides:
+  # Xcode 15.2 (iOS 17 SDK) can't compile device_info_plus 12.x's
+  # NSProcessInfo.isiOSAppOnVision (iOS 18 SDK symbol). Pin pre-visionOS.
+  device_info_plus: 9.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
