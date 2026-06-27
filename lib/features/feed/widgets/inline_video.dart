@@ -29,9 +29,20 @@ class _InlineVideoState extends State<InlineVideo> {
   Future<void> _ensureStarted() async {
     if (_ctrl != null || _loading || _error) return;
     final url = widget.article.videoUrl;
-    if (url == null) return;
+    if (url == null || url.isEmpty) return;
+    // Some sources emit a relative video path (e.g. DVIDS "/video/x.m3u8") —
+    // resolve it against the article URL so it's a fetchable absolute URL.
+    Uri? uri = Uri.tryParse(url);
+    if (uri != null && !uri.hasScheme) {
+      final base = Uri.tryParse(widget.article.sourceUrl ?? '');
+      if (base != null && base.hasScheme) uri = base.resolveUri(uri);
+    }
+    if (uri == null || !uri.hasScheme) {
+      setState(() => _error = true);
+      return;
+    }
     setState(() => _loading = true);
-    final ctrl = VideoPlayerController.networkUrl(Uri.parse(url));
+    final ctrl = VideoPlayerController.networkUrl(uri);
     try {
       await ctrl.initialize();
       await ctrl.setLooping(true);
