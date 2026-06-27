@@ -22,6 +22,7 @@ class Article {
   final int likeCount;
   final int commentCount;
   final bool hasVideo;
+  final String? videoUrl;
 
   const Article({
     required this.id,
@@ -44,9 +45,13 @@ class Article {
     required this.likeCount,
     required this.commentCount,
     this.hasVideo = false,
+    this.videoUrl,
   });
 
   bool get hasImage => image.isNotEmpty;
+  /// True only when the source carries a self-hosted, directly-playable video
+  /// (set at ingest; never YouTube/Vimeo) — gates inline playback.
+  bool get hasPlayableVideo => videoUrl != null && videoUrl!.isNotEmpty;
   String? get blurb => (summary != null && summary!.isNotEmpty)
       ? summary
       : (excerpt.isNotEmpty ? excerpt : null);
@@ -75,6 +80,7 @@ class Article {
       likeCount: (j['likeCount'] as num?)?.toInt() ?? 0,
       commentCount: (j['commentCount'] as num?)?.toInt() ?? 0,
       hasVideo: j['hasVideo'] == true,
+      videoUrl: j['videoUrl'] as String?,
     );
   }
 
@@ -98,6 +104,7 @@ class Article {
         'likeCount': likeCount,
         'commentCount': commentCount,
         'hasVideo': hasVideo,
+        'videoUrl': videoUrl,
       };
 }
 

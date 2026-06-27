@@ -9,6 +9,7 @@ import '../../../utils/format.dart';
 import '../../../utils/link_out.dart';
 import 'article_actions.dart';
 import 'card_extras.dart';
+import 'inline_video.dart';
 import 'signal_badges.dart';
 
 // ── shared image cover (network image or monogram fallback), square corners ──
@@ -48,6 +49,64 @@ Widget _attention(Article a) => GainingAttention.qualifies(a)
         child: GainingAttention(),
       )
     : const SizedBox.shrink();
+
+/// SPLIT — horizontal magazine card: a landscape image on one side, text on the
+/// other. The side alternates (web "magazine-alternating") so consecutive split
+/// cards mirror each other — a distinct shape from the vertical image-top cards.
+class SplitCard extends ConsumerWidget {
+  const SplitCard({super.key, required this.article, this.imageRight = false});
+  final Article article;
+  final bool imageRight;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.colors;
+    final image = ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        width: 132,
+        height: 112,
+        child: Stack(fit: StackFit.expand, children: [
+          _cover(context, article),
+          if (article.isBreaking)
+            Positioned(top: 0, left: 0, child: _breaking(context)),
+        ]),
+      ),
+    );
+    final text = Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SignalRow(article: article),
+          const SizedBox(height: 6),
+          Text(article.title,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: AppText.bodyStrong.copyWith(color: c.text, height: 1.3)),
+          const SizedBox(height: 6),
+          SourceLine(article: article),
+        ],
+      ),
+    );
+    return Column(children: [
+      InkWell(
+        onTap: () => openArticle(article.sourceUrl, track: article),
+        onLongPress: () => showArticleActions(context, ref, article),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpace.lg, vertical: AppSpace.md),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: imageRight
+                ? [text, const SizedBox(width: AppSpace.md), image]
+                : [image, const SizedBox(width: AppSpace.md), text],
+          ),
+        ),
+      ),
+      _divider(context),
+    ]);
+  }
+}
 
 Widget _divider(BuildContext context) =>
     Divider(height: 1, thickness: 1, color: context.colors.border);
@@ -250,66 +309,70 @@ class VideoCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
     return Column(children: [
+      // Media: stream inline when the source carries a self-hosted video,
+      // otherwise a link-out poster with the VIDEO tag + play overlay.
+      if (article.hasPlayableVideo)
+        InlineVideo(article: article)
+      else
+        InkWell(
+          onTap: () => openArticle(article.sourceUrl, track: article),
+          onLongPress: () => showArticleActions(context, ref, article),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Stack(fit: StackFit.expand, children: [
+              _cover(context, article),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.center,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Colors.black45],
+                  ),
+                ),
+              ),
+              const Center(
+                  child: Icon(Icons.play_circle_fill,
+                      size: 52, color: Colors.white)),
+              Positioned(
+                top: 0,
+                left: 0,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  color: Colors.black.withValues(alpha: 0.6),
+                  child: const Text('VIDEO',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.4)),
+                ),
+              ),
+            ]),
+          ),
+        ),
       InkWell(
         onTap: () => openArticle(article.sourceUrl, track: article),
         onLongPress: () => showArticleActions(context, ref, article),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Stack(fit: StackFit.expand, children: [
-                _cover(context, article),
-                const DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.center,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Colors.black45],
-                    ),
-                  ),
-                ),
-                const Center(
-                    child: Icon(Icons.play_circle_fill,
-                        size: 52, color: Colors.white)),
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    color: Colors.black.withValues(alpha: 0.6),
-                    child: const Text('VIDEO',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.4)),
-                  ),
-                ),
-              ]),
-            ),
-            Padding(
-              padding: _bodyPad,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SignalRow(article: article),
-                  _attention(article),
-                  const SizedBox(height: AppSpace.sm),
-                  Text(article.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.headline
-                          .copyWith(color: c.text, fontSize: 16)),
-                  const SizedBox(height: AppSpace.sm),
-                  SourceLine(article: article),
-                  const SizedBox(height: AppSpace.md),
-                  EngagementBar(article: article),
-                ],
-              ),
-            ),
-          ],
+        child: Padding(
+          padding: _bodyPad,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SignalRow(article: article),
+              _attention(article),
+              const SizedBox(height: AppSpace.sm),
+              Text(article.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      AppText.headline.copyWith(color: c.text, fontSize: 16)),
+              const SizedBox(height: AppSpace.sm),
+              SourceLine(article: article),
+              const SizedBox(height: AppSpace.md),
+              EngagementBar(article: article),
+            ],
+          ),
         ),
       ),
       _divider(context),

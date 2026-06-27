@@ -31,6 +31,10 @@ dependencies:
   # (avoids flutter_inappwebview's Gradle break + the iframe player runtime
   # error). Falls back to poster + link-out for non-YouTube / load failures.
   webview_flutter: ^4.10.0
+  # Inline playback of self-hosted videos (article.videoUrl from ingest:
+  # mp4/m3u8 — never YouTube/Vimeo). Pinned for the Xcode 15.2 / iOS-17 SDK
+  # toolchain (avoids avfoundation impls that call iOS-18-only symbols).
+  video_player: ^2.8.7
 
 dependency_overrides:
   # Xcode 15.2 (iOS 17 SDK) can't compile device_info_plus 12.x's
