@@ -81,3 +81,16 @@ had that the app lacked. All verified via CI analyze (0 new issues).
   a fitted slot on Home.
 Not ported (intentional): real inline video playback (still icon-overlay only;
 YouTube/Vimeo ingestion was removed). Visual on-device check pending the local SDK.
+
+## Inline video (license-safe) — 2026-06-27
+- **Backend** captures a self-hosted `video_url` (rss media:content/enclosure +
+  page `<source>`/`<video>`/og:video), resolved to absolute + preferring direct
+  `.mp4` over HLS. **License-gated**: only public-domain/CC sources stream inline
+  (NASA, **DVIDS**, NSF, VOA, ESA) — commercial publishers stay link-out. `?video=1`
+  feed filter + a "Videos" chip.
+- **App** plays `videoUrl` inline (`video_player`), **muted-autoplay on scroll**
+  (visibility_detector), tap-to-pause, sound toggle; relative URLs resolved against
+  the article URL. A small video pool is **interleaved into the main feed (~1/6,
+  capped)** so video feels woven in, not a single-source dump.
+- **Reality:** free + legal + directly-playable video ≈ DVIDS (rich) + NASA (sparse);
+  more volume/variety needs a paid licensed video API.
