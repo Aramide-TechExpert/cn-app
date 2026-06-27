@@ -103,6 +103,29 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     return rows;
   }
 
+  /// Splice playable videos from the pool into the planned rows (~1 every 6
+  /// rows, capped at the pool size), de-duped against what's already shown, so
+  /// video is sprinkled through the feed instead of clustered.
+  List<List<Article>> _interleaveVideos(
+      List<List<Article>> rows, List<Article> pool) {
+    if (pool.isEmpty) return rows;
+    final seen = <String>{};
+    for (final r in rows) {
+      for (final a in r) {
+        seen.add(a.id);
+      }
+    }
+    final vids = pool.where((a) => !seen.contains(a.id)).toList();
+    if (vids.isEmpty) return rows;
+    final out = <List<Article>>[];
+    var vi = 0;
+    for (var i = 0; i < rows.length; i++) {
+      out.add(rows[i]);
+      if ((i + 1) % 6 == 0 && vi < vids.length) out.add([vids[vi++]]);
+    }
+    return out;
+  }
+
   /// Render one planned row: a 2-up compact pair, or a single styled card.
   Widget _rowWidget(BuildContext context, int r, List<Article> row) {
     if (row.length == 2) {
@@ -234,7 +257,14 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                             child: ListCard(article: items[i])),
                   );
                 }
-                final rows = _planRows(items);
+                // Weave a few license-safe videos into the main feed (capped,
+                // ~1 per 6 cards) so video feels integrated, not a single-source
+                // dump. Skipped when the Videos filter is already on.
+                final pool = filters.video
+                    ? const <Article>[]
+                    : (ref.watch(videoPoolProvider).valueOrNull ??
+                        const <Article>[]);
+                final rows = _interleaveVideos(_planRows(items), pool);
                 return SliverList.builder(
                   itemCount: rows.length + 1,
                   itemBuilder: (context, i) {

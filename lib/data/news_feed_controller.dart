@@ -3,6 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/article.dart';
 import 'feed_controller.dart' show apiClientProvider;
 
+/// A small pool of playable (license-safe) videos used to interleave into the
+/// main News Feed so video feels woven in rather than dumped in one list.
+final videoPoolProvider = FutureProvider.autoDispose<List<Article>>((ref) async {
+  final page = await ref.read(apiClientProvider).feed(limit: 10, video: true);
+  return page.items.where((a) => a.hasPlayableVideo && a.hasImage).toList();
+});
+
 /// Active filters for the News Feed (Discover). Mirrors the web feed filter bar:
 /// category, sort, and impact level. Null = "All".
 class NewsFilters {
