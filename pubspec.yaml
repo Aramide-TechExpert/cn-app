@@ -35,6 +35,8 @@ dependencies:
   # mp4/m3u8 — never YouTube/Vimeo). Pinned for the Xcode 15.2 / iOS-17 SDK
   # toolchain (avoids avfoundation impls that call iOS-18-only symbols).
   video_player: ^2.8.7
+  # Detect when a video card scrolls into view → muted autoplay (pure Dart).
+  visibility_detector: ^0.4.0+2
 
 dependency_overrides:
   # Xcode 15.2 (iOS 17 SDK) can't compile device_info_plus 12.x's
