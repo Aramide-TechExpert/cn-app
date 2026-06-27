@@ -27,6 +27,7 @@ class ApiClient {
     String? category,
     String? source,
     String? sort,
+    bool video = false,
   }) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/feed',
@@ -36,6 +37,7 @@ class ApiClient {
         if (category != null) 'category': category,
         if (source != null) 'source': source,
         if (sort != null) 'sort': sort,
+        if (video) 'video': '1',
       },
     );
     return FeedPage.fromJson(res.data ?? const {});

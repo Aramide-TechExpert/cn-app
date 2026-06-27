@@ -43,11 +43,12 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     super.dispose();
   }
 
-  /// Dynamic card rhythm — gives the feed visual variety instead of a flat
-  /// column of identical cards (mirrors the web mosaic/bucketed feed). The hero
-  /// leads, then a repeating cadence interleaves Magazine / Overlay / Wide
-  /// feature cards between the Default run. Video → VideoCard; image-less →
-  /// Featured (when it has a "why it matters") else the compact List card.
+  /// Dynamic card rhythm — gives the feed *visibly* distinct card shapes instead
+  /// of a flat column (mirrors the web mosaic/bucketed feed). A bold full-bleed
+  /// Overlay hero leads, then a tight 4-card cadence interleaves a full-bleed
+  /// Overlay, a panoramic Wide, and a big Magazine between standard Default
+  /// cards — so variety is obvious every few cards, not once every 7.
+  /// Video → VideoCard; image-less → Featured (with "why it matters") else List.
   Widget _cardFor(int i, Article a) {
     if (_compact) return ListCard(article: a);
     if (a.hasVideo && a.hasImage) return VideoCard(article: a);
@@ -56,17 +57,72 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
           ? FeaturedCard(article: a)
           : ListCard(article: a);
     }
-    if (i == 0) return WideCard(article: a); // hero
-    switch (i % 7) {
+    if (i == 0) return OverlayCard(article: a, height: 300); // bold full-bleed hero
+    switch (i % 6) {
+      case 0:
+        return WideCard(article: a); // panoramic 2:1
       case 2:
-        return MagazineCard(article: a);
+        return OverlayCard(article: a); // full-bleed, text over image
+      case 3:
+        return SplitCard(article: a); // horizontal, image left
       case 4:
-        return OverlayCard(article: a);
-      case 6:
-        return WideCard(article: a);
+        return MagazineCard(article: a); // large image-top
+      case 5:
+        return SplitCard(article: a, imageRight: true); // horizontal, image right
       default:
-        return DefaultCard(article: a);
+        return DefaultCard(article: a); // standard
     }
+  }
+
+  /// Plan the feed into rows: mostly single full-width cards, with a periodic
+  /// 2-up compact pair (two small cards side-by-side) to break the single-column
+  /// rhythm — the structural variety that keeps the feed from reading as one
+  /// repeated style. Pairs only group plain image cards (not video/text).
+  List<List<Article>> _planRows(List<Article> items) {
+    final rows = <List<Article>>[];
+    var i = 0, r = 0;
+    while (i < items.length) {
+      final a = items[i];
+      final next = i + 1 < items.length ? items[i + 1] : null;
+      final pairable = r > 0 &&
+          r % 4 == 1 &&
+          a.hasImage &&
+          !a.hasVideo &&
+          next != null &&
+          next.hasImage &&
+          !next.hasVideo;
+      if (pairable) {
+        rows.add([a, next]);
+        i += 2;
+      } else {
+        rows.add([a]);
+        i += 1;
+      }
+      r++;
+    }
+    return rows;
+  }
+
+  /// Render one planned row: a 2-up compact pair, or a single styled card.
+  Widget _rowWidget(BuildContext context, int r, List<Article> row) {
+    if (row.length == 2) {
+      return Column(children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpace.lg, AppSpace.md, AppSpace.lg, AppSpace.md),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: CompactCard(article: row[0])),
+              const SizedBox(width: AppSpace.md),
+              Expanded(child: CompactCard(article: row[1])),
+            ],
+          ),
+        ),
+        Divider(height: 1, thickness: 1, color: context.colors.border),
+      ]);
+    }
+    return _cardFor(r, row.first);
   }
 
   @override
@@ -160,23 +216,33 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                     ),
                   );
                 }
+                Widget loader() => Padding(
+                      padding:
+                          const EdgeInsets.symmetric(vertical: AppSpace.xl),
+                      child: notifier.hasMore
+                          ? const Center(
+                              child: CircularProgressIndicator.adaptive())
+                          : const SizedBox(height: AppSpace.lg),
+                    );
+                if (_compact) {
+                  return SliverList.builder(
+                    itemCount: items.length + 1,
+                    itemBuilder: (context, i) => i == items.length
+                        ? loader()
+                        : FadeSlideIn(
+                            key: ValueKey(items[i].id),
+                            child: ListCard(article: items[i])),
+                  );
+                }
+                final rows = _planRows(items);
                 return SliverList.builder(
-                  itemCount: items.length + 1,
+                  itemCount: rows.length + 1,
                   itemBuilder: (context, i) {
-                    if (i == items.length) {
-                      return Padding(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: AppSpace.xl),
-                        child: notifier.hasMore
-                            ? const Center(
-                                child: CircularProgressIndicator.adaptive())
-                            : const SizedBox(height: AppSpace.lg),
-                      );
-                    }
-                    final a = items[i];
+                    if (i == rows.length) return loader();
+                    final row = rows[i];
                     return FadeSlideIn(
-                      key: ValueKey(a.id),
-                      child: _cardFor(i, a),
+                      key: ValueKey(row.first.id),
+                      child: _rowWidget(context, i, row),
                     );
                   },
                 );
@@ -233,6 +299,19 @@ class _FilterBar extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
               children: [
+                _Chip(
+                  label: 'Videos',
+                  icon: Icons.play_circle_outline,
+                  selected: filters.video,
+                  onTap: () =>
+                      onChanged(filters.copyWith(video: !filters.video)),
+                ),
+                Container(
+                    width: 1,
+                    height: 20,
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: AppSpace.sm),
+                    color: c.border),
                 _Chip(
                   label: 'Latest',
                   icon: Icons.schedule,

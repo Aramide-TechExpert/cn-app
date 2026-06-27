@@ -6,20 +6,24 @@ import 'feed_controller.dart' show apiClientProvider;
 /// Active filters for the News Feed (Discover). Mirrors the web feed filter bar:
 /// category, sort, and impact level. Null = "All".
 class NewsFilters {
-  const NewsFilters({this.category, this.sort = 'latest', this.impact});
+  const NewsFilters(
+      {this.category, this.sort = 'latest', this.impact, this.video = false});
   final String? category; // slug, null = all
   final String sort; // 'latest' | 'trending'
   final String? impact; // 'Critical'|'High'|'Medium'|'Low', null = all
+  final bool video; // true = only articles with a playable video
 
   NewsFilters copyWith({
     Object? category = _unset,
     String? sort,
     Object? impact = _unset,
+    bool? video,
   }) {
     return NewsFilters(
       category: category == _unset ? this.category : category as String?,
       sort: sort ?? this.sort,
       impact: impact == _unset ? this.impact : impact as String?,
+      video: video ?? this.video,
     );
   }
 
@@ -50,6 +54,7 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
           limit: 20,
           category: _filters.category,
           sort: _filters.sort == 'latest' ? null : _filters.sort,
+          video: _filters.video,
         );
     _cursor = page.nextCursor;
     _hasMore = page.nextCursor != null;
