@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/dismissed_controller.dart';
 import '../../data/feed_controller.dart';
+import '../../data/news_feed_controller.dart' show videoPoolProvider;
 import '../../data/personalization_controller.dart';
 import '../../data/reading_history.dart';
 import '../../data/settings_controller.dart';
@@ -74,10 +75,13 @@ class _HomePageState extends ConsumerState<HomePage> {
           // Bento mosaic — a compact 2-up grid of "Top stories" (web bento feel)
           // in a fitted slot below the rails.
           final bento = withImage.skip(11).take(4).toList();
-          // Shorts rail is sourced strictly from real in-article video
-          // (flagged at ingest) — not arbitrary articles.
-          final shorts =
-              withImage.where((a) => a.hasPlayableVideo).take(10).toList();
+          // Shorts rail = the license-safe playable-video pool (DVIDS/NASA),
+          // not a filter of the recent feed (which rarely has playable video,
+          // so the rail kept vanishing). These all have a real video_url.
+          final shorts = (ref.watch(videoPoolProvider).valueOrNull ??
+                  const <Article>[])
+              .take(10)
+              .toList();
           final used = {
             ...spotlight.map((a) => a.id),
             ...rail.map((a) => a.id),
