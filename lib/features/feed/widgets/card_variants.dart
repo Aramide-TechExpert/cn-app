@@ -227,7 +227,7 @@ class WideCard extends ConsumerWidget {
           ],
         ),
       ),
-      _divider(context),
+      const BlockDivider(),
     ]);
   }
 }
@@ -302,7 +302,7 @@ class FeaturedCard extends ConsumerWidget {
           ),
         ),
       ),
-      _divider(context),
+      const BlockDivider(),
     ]);
   }
 }

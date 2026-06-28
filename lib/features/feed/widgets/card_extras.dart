@@ -138,6 +138,29 @@ class _SkeletonLines extends StatelessWidget {
   }
 }
 
+/// A thick grey section band — a heavier separator than the hairline divider,
+/// like the block separators between search-engine results. Used after select
+/// feature cards (Wide / Featured / Magazine) to break the feed into chunks
+/// without touching the cards' own layout.
+class BlockDivider extends StatelessWidget {
+  const BlockDivider({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Container(
+      height: 8,
+      decoration: BoxDecoration(
+        color: c.bgInset,
+        border: Border(
+          top: BorderSide(color: c.border),
+          bottom: BorderSide(color: c.border),
+        ),
+      ),
+    );
+  }
+}
+
 /// Animated BREAKING badge with a softly pulsing dot — mirrors the web LivePulse.
 class LiveBadge extends StatefulWidget {
   const LiveBadge({super.key});

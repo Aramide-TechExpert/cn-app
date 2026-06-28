@@ -94,7 +94,7 @@ class MagazineCard extends ConsumerWidget {
             ],
           ),
         ),
-        Divider(height: 1, thickness: 1, color: c.border),
+        const BlockDivider(),
       ],
     );
   }
