@@ -148,13 +148,17 @@ class BlockDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    // Deeper grey than bgInset (blend the border over it) + darker hairlines,
+    // so the section break reads clearly distinct between cards.
+    final band = Color.alphaBlend(c.border, c.bgInset);
+    final edge = Color.alphaBlend(c.textFaint.withValues(alpha: 0.35), band);
     return Container(
-      height: 8,
+      height: 12,
       decoration: BoxDecoration(
-        color: c.bgInset,
+        color: band,
         border: Border(
-          top: BorderSide(color: c.border),
-          bottom: BorderSide(color: c.border),
+          top: BorderSide(color: edge),
+          bottom: BorderSide(color: edge),
         ),
       ),
     );
