@@ -14,11 +14,11 @@ import 'signal_badges.dart';
 /// Full-width image-top card (web "magazine"/"default"): big edge-to-edge
 /// image, then a large headline + meta below. No curve; hairline divider.
 class MagazineCard extends ConsumerWidget {
-  const MagazineCard({super.key, required this.article, this.bandBelow = true});
+  const MagazineCard({super.key, required this.article, this.bandBelow = false});
 
   final Article article;
-  /// Grey section band below (default). The feed sets this false when the next
-  /// card is also a big image card, so two stacked image cards get a thin line.
+  /// Grey band below — set true by the feed only when the next card is also a
+  /// big image card (so two stacked image cards are split by the band).
   final bool bandBelow;
 
   @override

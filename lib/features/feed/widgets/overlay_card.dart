@@ -8,23 +8,31 @@ import '../../../theme/tokens.dart';
 import '../../../utils/format.dart';
 import '../../../utils/link_out.dart';
 import 'article_actions.dart';
+import 'card_extras.dart';
 import 'signal_badges.dart';
 
 /// Full-bleed feature card (mirrors the web `overlay` variant): edge-to-edge
 /// image with a gradient + source/impact/headline overlaid. No curve. Used to
 /// break up the row feed for a dynamic, magazine rhythm.
 class OverlayCard extends ConsumerWidget {
-  const OverlayCard({super.key, required this.article, this.height = 220});
+  const OverlayCard(
+      {super.key,
+      required this.article,
+      this.height = 220,
+      this.bandBelow = false});
 
   final Article article;
   final double height;
+  /// Grey band below — set true by the feed only when the next card is also a
+  /// big image card (so two stacked image cards are split by the band).
+  final bool bandBelow;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
     final hue = hueFromString(article.source).toDouble();
 
-    return InkWell(
+    final card = InkWell(
       onTap: () => openArticle(article.sourceUrl, track: article),
       onLongPress: () => showArticleActions(context, ref, article),
       child: SizedBox(
@@ -107,5 +115,7 @@ class OverlayCard extends ConsumerWidget {
         ),
       ),
     );
+    if (!bandBelow) return card;
+    return Column(children: [card, const BlockDivider()]);
   }
 }

@@ -49,30 +49,36 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   /// Overlay, a panoramic Wide, and a big Magazine between standard Default
   /// cards — so variety is obvious every few cards, not once every 7.
   /// Video → VideoCard; image-less → Featured (with "why it matters") else List.
-  Widget _cardFor(int i, Article a, {bool bandBelow = true}) {
+  Widget _cardFor(int i, Article a, {bool bandBelow = false}) {
     if (_compact) return ListCard(article: a);
     // Play icon ONLY for a real, captured, playable video — never the loose
     // hasVideo detector (which fires on ads / embeds / thumbnail players).
-    if (a.hasPlayableVideo && a.hasImage) return VideoCard(article: a);
+    if (a.hasPlayableVideo && a.hasImage) {
+      return VideoCard(article: a, bandBelow: bandBelow);
+    }
     if (!a.hasImage) {
       return (a.whyItMatters ?? '').isNotEmpty
           ? FeaturedCard(article: a)
           : ListCard(article: a);
     }
-    if (i == 0) return OverlayCard(article: a, height: 300); // bold full-bleed hero
+    if (i == 0) {
+      return OverlayCard(
+          article: a, height: 300, bandBelow: bandBelow); // bold full-bleed hero
+    }
     switch (i % 6) {
       case 0:
         return WideCard(article: a, bandBelow: bandBelow); // panoramic 2:1
       case 2:
-        return OverlayCard(article: a); // full-bleed, text over image
+        return OverlayCard(article: a, bandBelow: bandBelow); // full-bleed
       case 3:
-        return SplitCard(article: a); // horizontal, image left
+        return SplitCard(article: a, bandBelow: bandBelow); // image left
       case 4:
         return MagazineCard(article: a, bandBelow: bandBelow); // large image-top
       case 5:
-        return SplitCard(article: a, imageRight: true); // horizontal, image right
+        return SplitCard(
+            article: a, imageRight: true, bandBelow: bandBelow); // image right
       default:
-        return DefaultCard(article: a); // standard
+        return DefaultCard(article: a, bandBelow: bandBelow); // standard
     }
   }
 
@@ -277,11 +283,13 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                   itemBuilder: (context, i) {
                     if (i == rows.length) return loader();
                     final row = rows[i];
-                    // Two stacked big image cards → thin line, not a band.
+                    // Grey band ONLY between two stacked big image cards.
                     final next = i + 1 < rows.length ? rows[i + 1] : null;
-                    final bandBelow = next == null ||
-                        next.length != 1 ||
-                        !_isBigImageRow(next.first);
+                    final bandBelow = row.length == 1 &&
+                        _isBigImageRow(row.first) &&
+                        next != null &&
+                        next.length == 1 &&
+                        _isBigImageRow(next.first);
                     return FadeSlideIn(
                       key: ValueKey(row.first.id),
                       child: _rowWidget(context, i, row, bandBelow: bandBelow),

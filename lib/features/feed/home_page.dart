@@ -260,10 +260,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                             : const SizedBox(height: AppSpace.lg),
                       );
                     }
-                    // Two stacked big image cards → thin line, not a band.
+                    // Grey band ONLY between two stacked big image cards.
                     final next = i + 1 < rest.length ? rest[i + 1] : null;
-                    final bandBelow =
-                        next == null || !_isBigImageCardAt(i + 1, next);
+                    final bandBelow = next != null &&
+                        _isBigImageCardAt(i, rest[i]) &&
+                        _isBigImageCardAt(i + 1, next);
                     return _feedCard(i, rest[i], bandBelow: bandBelow);
                   },
                 ),
@@ -289,13 +290,15 @@ Widget _railHeader(BuildContext context, String title) => SliverToBoxAdapter(
 /// Cycles the "Latest" feed through every full-width variant so each card style
 /// surfaces as you scroll. Falls back to a text variant when an article has no
 /// image (so image-led variants never render an empty box).
-Widget _feedCard(int i, Article a, {bool bandBelow = true}) {
+Widget _feedCard(int i, Article a, {bool bandBelow = false}) {
   // Real in-article video (flagged at ingest) always renders as the video
   // card — the variant is driven by content, never by position.
-  if (a.hasPlayableVideo && a.hasImage) return VideoCard(article: a);
+  if (a.hasPlayableVideo && a.hasImage) {
+    return VideoCard(article: a, bandBelow: bandBelow);
+  }
   Widget overlay() => Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpace.xs),
-        child: OverlayCard(article: a),
+        child: OverlayCard(article: a, bandBelow: bandBelow),
       );
   switch (i % 7) {
     case 0:
@@ -303,7 +306,9 @@ Widget _feedCard(int i, Article a, {bool bandBelow = true}) {
           ? WideCard(article: a, bandBelow: bandBelow)
           : FeaturedCard(article: a);
     case 1:
-      return a.hasImage ? DefaultCard(article: a) : ListCard(article: a);
+      return a.hasImage
+          ? DefaultCard(article: a, bandBelow: bandBelow)
+          : ListCard(article: a);
     case 2:
       return ListCard(article: a);
     case 3:

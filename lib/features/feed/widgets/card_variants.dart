@@ -54,9 +54,16 @@ Widget _attention(Article a) => GainingAttention.qualifies(a)
 /// other. The side alternates (web "magazine-alternating") so consecutive split
 /// cards mirror each other — a distinct shape from the vertical image-top cards.
 class SplitCard extends ConsumerWidget {
-  const SplitCard({super.key, required this.article, this.imageRight = false});
+  const SplitCard(
+      {super.key,
+      required this.article,
+      this.imageRight = false,
+      this.bandBelow = false});
   final Article article;
   final bool imageRight;
+  /// Grey band below — set true by the feed only when the next card is also a
+  /// big image card (so two stacked image cards are split by the band).
+  final bool bandBelow;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -103,7 +110,7 @@ class SplitCard extends ConsumerWidget {
           ),
         ),
       ),
-      _divider(context),
+      _sep(context, bandBelow),
     ]);
   }
 }
@@ -111,13 +118,23 @@ class SplitCard extends ConsumerWidget {
 Widget _divider(BuildContext context) =>
     Divider(height: 1, thickness: 1, color: context.colors.border);
 
+/// Separator below a big image card: the grey band ONLY when [band] is true
+/// (the feed sets it true when the next card is also a big image card), else the
+/// usual hairline. This makes the band appear in exactly one place — between two
+/// stacked big image cards.
+Widget _sep(BuildContext context, bool band) =>
+    band ? const BlockDivider() : _divider(context);
+
 const _bodyPad =
     EdgeInsets.fromLTRB(AppSpace.lg, AppSpace.md, AppSpace.lg, AppSpace.lg);
 
 /// DEFAULT — full-width square card: full-bleed image, signals, title, source.
 class DefaultCard extends ConsumerWidget {
-  const DefaultCard({super.key, required this.article});
+  const DefaultCard({super.key, required this.article, this.bandBelow = false});
   final Article article;
+  /// Grey band below — set true by the feed only when the next card is also a
+  /// big image card (so two stacked image cards are split by the band).
+  final bool bandBelow;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -168,17 +185,17 @@ class DefaultCard extends ConsumerWidget {
           ],
         ),
       ),
-      _divider(context),
+      _sep(context, bandBelow),
     ]);
   }
 }
 
 /// WIDE — prominent feature: short 2:1 image, larger title + summary.
 class WideCard extends ConsumerWidget {
-  const WideCard({super.key, required this.article, this.bandBelow = true});
+  const WideCard({super.key, required this.article, this.bandBelow = false});
   final Article article;
-  /// Grey section band below (default). The feed sets this false when the next
-  /// card is also a big image card, so two stacked image cards get a thin line.
+  /// Grey band below — set true by the feed only when the next card is also a
+  /// big image card (so two stacked image cards are split by the band).
   final bool bandBelow;
 
   @override
@@ -230,7 +247,7 @@ class WideCard extends ConsumerWidget {
           ],
         ),
       ),
-      bandBelow ? const BlockDivider() : _divider(context),
+      _sep(context, bandBelow),
     ]);
   }
 }
@@ -305,15 +322,18 @@ class FeaturedCard extends ConsumerWidget {
           ),
         ),
       ),
-      const BlockDivider(),
+      _divider(context),
     ]);
   }
 }
 
 /// VIDEO — full-width square card with a play overlay + VIDEO tag.
 class VideoCard extends ConsumerWidget {
-  const VideoCard({super.key, required this.article});
+  const VideoCard({super.key, required this.article, this.bandBelow = false});
   final Article article;
+  /// Grey band below — set true by the feed only when the next card is also a
+  /// big image card (so two stacked image cards are split by the band).
+  final bool bandBelow;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -392,7 +412,7 @@ class VideoCard extends ConsumerWidget {
           ),
         ),
       ),
-      _divider(context),
+      _sep(context, bandBelow),
     ]);
   }
 }
