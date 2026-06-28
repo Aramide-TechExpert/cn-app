@@ -49,7 +49,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   /// Overlay, a panoramic Wide, and a big Magazine between standard Default
   /// cards — so variety is obvious every few cards, not once every 7.
   /// Video → VideoCard; image-less → Featured (with "why it matters") else List.
-  Widget _cardFor(int i, Article a) {
+  Widget _cardFor(int i, Article a, {bool bandBelow = true}) {
     if (_compact) return ListCard(article: a);
     // Play icon ONLY for a real, captured, playable video — never the loose
     // hasVideo detector (which fires on ads / embeds / thumbnail players).
@@ -62,19 +62,23 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     if (i == 0) return OverlayCard(article: a, height: 300); // bold full-bleed hero
     switch (i % 6) {
       case 0:
-        return WideCard(article: a); // panoramic 2:1
+        return WideCard(article: a, bandBelow: bandBelow); // panoramic 2:1
       case 2:
         return OverlayCard(article: a); // full-bleed, text over image
       case 3:
         return SplitCard(article: a); // horizontal, image left
       case 4:
-        return MagazineCard(article: a); // large image-top
+        return MagazineCard(article: a, bandBelow: bandBelow); // large image-top
       case 5:
         return SplitCard(article: a, imageRight: true); // horizontal, image right
       default:
         return DefaultCard(article: a); // standard
     }
   }
+
+  /// A row that renders as a big full-bleed image card (used to drop the band
+  /// above it to a thin line when two such cards stack together).
+  bool _isBigImageRow(Article a) => !_compact && a.hasImage;
 
   /// Plan the feed into rows: mostly single full-width cards, with a periodic
   /// 2-up compact pair (two small cards side-by-side) to break the single-column
@@ -129,7 +133,8 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   }
 
   /// Render one planned row: a 2-up compact pair, or a single styled card.
-  Widget _rowWidget(BuildContext context, int r, List<Article> row) {
+  Widget _rowWidget(BuildContext context, int r, List<Article> row,
+      {bool bandBelow = true}) {
     if (row.length == 2) {
       return Column(children: [
         Padding(
@@ -147,7 +152,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
         Divider(height: 1, thickness: 1, color: context.colors.border),
       ]);
     }
-    return _cardFor(r, row.first);
+    return _cardFor(r, row.first, bandBelow: bandBelow);
   }
 
   @override
@@ -272,9 +277,14 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                   itemBuilder: (context, i) {
                     if (i == rows.length) return loader();
                     final row = rows[i];
+                    // Two stacked big image cards → thin line, not a band.
+                    final next = i + 1 < rows.length ? rows[i + 1] : null;
+                    final bandBelow = next == null ||
+                        next.length != 1 ||
+                        !_isBigImageRow(next.first);
                     return FadeSlideIn(
                       key: ValueKey(row.first.id),
-                      child: _rowWidget(context, i, row),
+                      child: _rowWidget(context, i, row, bandBelow: bandBelow),
                     );
                   },
                 );

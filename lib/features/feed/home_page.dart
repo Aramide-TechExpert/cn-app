@@ -260,7 +260,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                             : const SizedBox(height: AppSpace.lg),
                       );
                     }
-                    return _feedCard(i, rest[i]);
+                    // Two stacked big image cards → thin line, not a band.
+                    final next = i + 1 < rest.length ? rest[i + 1] : null;
+                    final bandBelow =
+                        next == null || !_isBigImageCardAt(i + 1, next);
+                    return _feedCard(i, rest[i], bandBelow: bandBelow);
                   },
                 ),
               ],
@@ -285,7 +289,7 @@ Widget _railHeader(BuildContext context, String title) => SliverToBoxAdapter(
 /// Cycles the "Latest" feed through every full-width variant so each card style
 /// surfaces as you scroll. Falls back to a text variant when an article has no
 /// image (so image-led variants never render an empty box).
-Widget _feedCard(int i, Article a) {
+Widget _feedCard(int i, Article a, {bool bandBelow = true}) {
   // Real in-article video (flagged at ingest) always renders as the video
   // card — the variant is driven by content, never by position.
   if (a.hasPlayableVideo && a.hasImage) return VideoCard(article: a);
@@ -295,7 +299,9 @@ Widget _feedCard(int i, Article a) {
       );
   switch (i % 7) {
     case 0:
-      return a.hasImage ? WideCard(article: a) : FeaturedCard(article: a);
+      return a.hasImage
+          ? WideCard(article: a, bandBelow: bandBelow)
+          : FeaturedCard(article: a);
     case 1:
       return a.hasImage ? DefaultCard(article: a) : ListCard(article: a);
     case 2:
@@ -303,11 +309,28 @@ Widget _feedCard(int i, Article a) {
     case 3:
       return a.hasImage ? overlay() : ArticleCard(article: a);
     case 4:
-      return a.hasImage ? MagazineCard(article: a) : ListCard(article: a);
+      return a.hasImage
+          ? MagazineCard(article: a, bandBelow: bandBelow)
+          : ListCard(article: a);
     case 5:
       return FeaturedCard(article: a);
     default:
       return ArticleCard(article: a);
+  }
+}
+
+/// Whether the card at position [i] renders as a big full-bleed image card
+/// (used to decide if a band-carrying card above it should drop to a thin line).
+bool _isBigImageCardAt(int i, Article a) {
+  if (a.hasPlayableVideo && a.hasImage) return true; // VideoCard
+  switch (i % 7) {
+    case 0: // Wide
+    case 1: // Default
+    case 3: // Overlay
+    case 4: // Magazine
+      return a.hasImage;
+    default: // 2/5/6 → List / Featured / Article (compact or text)
+      return false;
   }
 }
 

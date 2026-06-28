@@ -175,8 +175,11 @@ class DefaultCard extends ConsumerWidget {
 
 /// WIDE — prominent feature: short 2:1 image, larger title + summary.
 class WideCard extends ConsumerWidget {
-  const WideCard({super.key, required this.article});
+  const WideCard({super.key, required this.article, this.bandBelow = true});
   final Article article;
+  /// Grey section band below (default). The feed sets this false when the next
+  /// card is also a big image card, so two stacked image cards get a thin line.
+  final bool bandBelow;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -227,7 +230,7 @@ class WideCard extends ConsumerWidget {
           ],
         ),
       ),
-      _divider(context),
+      bandBelow ? const BlockDivider() : _divider(context),
     ]);
   }
 }
@@ -302,7 +305,7 @@ class FeaturedCard extends ConsumerWidget {
           ),
         ),
       ),
-      _divider(context),
+      const BlockDivider(),
     ]);
   }
 }
@@ -402,10 +405,7 @@ class ListCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
-    // Grey band leads into the compact list item, marking it off from the
-    // image card above; thin hairline closes it below.
     return Column(children: [
-      const BlockDivider(),
       InkWell(
         onTap: () => openArticle(article.sourceUrl, track: article),
         onLongPress: () => showArticleActions(context, ref, article),
