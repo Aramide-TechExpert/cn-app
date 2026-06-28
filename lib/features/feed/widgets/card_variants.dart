@@ -227,7 +227,7 @@ class WideCard extends ConsumerWidget {
           ],
         ),
       ),
-      const BlockDivider(),
+      _divider(context),
     ]);
   }
 }
@@ -302,7 +302,7 @@ class FeaturedCard extends ConsumerWidget {
           ),
         ),
       ),
-      const BlockDivider(),
+      _divider(context),
     ]);
   }
 }
@@ -402,7 +402,10 @@ class ListCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
+    // Grey band leads into the compact list item, marking it off from the
+    // image card above; thin hairline closes it below.
     return Column(children: [
+      const BlockDivider(),
       InkWell(
         onTap: () => openArticle(article.sourceUrl, track: article),
         onLongPress: () => showArticleActions(context, ref, article),
