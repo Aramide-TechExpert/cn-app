@@ -94,7 +94,6 @@ class MagazineCard extends ConsumerWidget {
             ],
           ),
         ),
-        const BlockDivider(),
       ],
     );
   }
