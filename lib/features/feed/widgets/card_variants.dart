@@ -151,6 +151,13 @@ class DefaultCard extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                       style: AppText.headline
                           .copyWith(color: c.text, fontSize: 16)),
+                  if (article.blurb != null) ...[
+                    const SizedBox(height: 6),
+                    Text(article.blurb!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.body.copyWith(color: c.textSecondary)),
+                  ],
                   const SizedBox(height: AppSpace.sm),
                   SourceLine(article: article),
                   const SizedBox(height: AppSpace.md),
@@ -367,6 +374,13 @@ class VideoCard extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                   style:
                       AppText.headline.copyWith(color: c.text, fontSize: 16)),
+              if (article.blurb != null) ...[
+                const SizedBox(height: 6),
+                Text(article.blurb!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.body.copyWith(color: c.textSecondary)),
+              ],
               const SizedBox(height: AppSpace.sm),
               SourceLine(article: article),
               const SizedBox(height: AppSpace.md),
@@ -456,9 +470,13 @@ class CompactCard extends ConsumerWidget {
 
 /// VERTICAL — 9:16 square reels card: full-bleed + overlay.
 class VerticalCard extends ConsumerWidget {
-  const VerticalCard({super.key, required this.article, this.width = 150});
+  const VerticalCard(
+      {super.key, required this.article, this.width = 150, this.onTap});
   final Article article;
   final double width;
+  /// When set (Shorts rail), tapping the card runs this (open full reel) instead
+  /// of toggling the inline preview's play/pause.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -490,10 +508,15 @@ class VerticalCard extends ConsumerWidget {
     if (article.hasPlayableVideo) {
       return SizedBox(
         width: width,
-        child: ClipRRect(
+        child: GestureDetector(
+          onTap: onTap,
+          child: ClipRRect(
           borderRadius: BorderRadius.circular(10),
           child: Stack(children: [
-            InlineVideo(article: article, aspectRatio: 9 / 16),
+            InlineVideo(
+                article: article,
+                aspectRatio: 9 / 16,
+                tapToToggle: onTap == null),
             const Positioned.fill(
               child: IgnorePointer(
                 child: DecoratedBox(
@@ -510,6 +533,7 @@ class VerticalCard extends ConsumerWidget {
             ),
             overlay,
           ]),
+          ),
         ),
       );
     }

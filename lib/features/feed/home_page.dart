@@ -11,8 +11,8 @@ import '../../models/article.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../shell/app_drawer.dart';
+import 'video_reel_page.dart';
 import 'widgets/article_card.dart';
-import 'widgets/bento_mosaic.dart';
 import 'widgets/card_variants.dart';
 import 'widgets/magazine_card.dart';
 import 'widgets/overlay_card.dart';
@@ -71,9 +71,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           final withImage = items.where((a) => a.hasImage).toList();
           final spotlight = withImage.take(5).toList();
           final rail = withImage.skip(5).take(6).toList();
-          // Bento mosaic — a compact 2-up grid of "Top stories" (web bento feel)
-          // in a fitted slot below the rails.
-          final bento = withImage.skip(11).take(4).toList();
           // Shorts rail = the license-safe playable-video pool (DVIDS/NASA),
           // not a filter of the recent feed (which rarely has playable video,
           // so the rail kept vanishing). These all have a real video_url.
@@ -84,7 +81,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           final used = {
             ...spotlight.map((a) => a.id),
             ...rail.map((a) => a.id),
-            ...bento.map((a) => a.id),
             ...shorts.map((a) => a.id),
           };
           // Everything else flows into the interleaved feed (magazine / overlay
@@ -99,10 +95,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                 parent: BouncingScrollPhysics(),
               ),
               slivers: [
-                SliverAppBar.large(
+                SliverAppBar(
                   backgroundColor: c.bg,
                   surfaceTintColor: Colors.transparent,
                   pinned: true,
+                  floating: true,
                   leading: Builder(
                     builder: (ctx) => IconButton(
                       icon: Icon(Icons.menu, color: c.text),
@@ -223,21 +220,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                         itemCount: shorts.length,
                         separatorBuilder: (_, __) =>
                             const SizedBox(width: AppSpace.md),
-                        itemBuilder: (_, i) =>
-                            VerticalCard(article: shorts[i], width: 152),
+                        itemBuilder: (_, i) => VerticalCard(
+                          article: shorts[i],
+                          width: 152,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => VideoReelPage(
+                                  videos: shorts, initialIndex: i),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ],
-
-                // Bento mosaic — "Top stories" 2-up grid block.
-                if (bento.length >= 2) ...[
-                  _railHeader(context, 'Top stories'),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                          AppSpace.lg, 0, AppSpace.lg, AppSpace.sm),
-                      child: BentoMosaic(articles: bento),
                     ),
                   ),
                 ],

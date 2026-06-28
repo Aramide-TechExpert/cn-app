@@ -12,9 +12,21 @@ import '../../../theme/tokens.dart';
 /// button toggles sound. Loops (short clips). Falls back to the poster on any
 /// load failure (the card body still links out to the source).
 class InlineVideo extends StatefulWidget {
-  const InlineVideo({super.key, required this.article, this.aspectRatio = 16 / 9});
+  const InlineVideo({
+    super.key,
+    required this.article,
+    this.aspectRatio = 16 / 9,
+    this.tapToToggle = true,
+    this.fit = BoxFit.cover,
+  });
   final Article article;
   final double aspectRatio;
+  /// When false, taps fall through to a parent (e.g. a Shorts card that opens
+  /// the full-screen reel) instead of toggling play/pause.
+  final bool tapToToggle;
+  /// How the video fills its box — cover for cards, contain for the reel
+  /// (so landscape clips letterbox cleanly on black instead of cropping).
+  final BoxFit fit;
 
   @override
   State<InlineVideo> createState() => _InlineVideoState();
@@ -118,11 +130,13 @@ class _InlineVideoState extends State<InlineVideo> {
         aspectRatio: widget.aspectRatio,
         child: ready
             ? GestureDetector(
-                onTap: () => setState(
-                    () => ctrl.value.isPlaying ? ctrl.pause() : ctrl.play()),
+                onTap: widget.tapToToggle
+                    ? () => setState(() =>
+                        ctrl.value.isPlaying ? ctrl.pause() : ctrl.play())
+                    : null,
                 child: Stack(fit: StackFit.expand, children: [
                   FittedBox(
-                    fit: BoxFit.cover,
+                    fit: widget.fit,
                     child: SizedBox(
                       width: ctrl.value.size.width,
                       height: ctrl.value.size.height,
