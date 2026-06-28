@@ -25,6 +25,11 @@ class _InlineVideoState extends State<InlineVideo> {
   bool _loading = false;
   bool _error = false;
   bool _muted = true;
+  // Unique + stable per instance: the same article can render in two places at
+  // once (Shorts rail + interleaved feed), and VisibilityDetector keys must be
+  // globally unique. identityHashCode(this) is stable across this State's rebuilds.
+  late final Key _visKey =
+      Key('video-${widget.article.id}-${identityHashCode(this)}');
 
   Future<void> _ensureStarted() async {
     if (_ctrl != null || _loading || _error) return;
@@ -107,7 +112,7 @@ class _InlineVideoState extends State<InlineVideo> {
     final ctrl = _ctrl;
     final ready = ctrl != null && ctrl.value.isInitialized;
     return VisibilityDetector(
-      key: Key('video-${widget.article.id}'),
+      key: _visKey,
       onVisibilityChanged: _onVisibility,
       child: AspectRatio(
         aspectRatio: widget.aspectRatio,

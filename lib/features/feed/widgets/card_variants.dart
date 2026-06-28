@@ -462,6 +462,57 @@ class VerticalCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final overlay = Positioned(
+      left: AppSpace.sm,
+      right: AppSpace.sm,
+      bottom: AppSpace.sm,
+      child: IgnorePointer(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(article.source,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.caption
+                    .copyWith(color: Colors.white.withValues(alpha: 0.85))),
+            const SizedBox(height: 2),
+            Text(article.title,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.caption
+                    .copyWith(color: Colors.white, fontWeight: FontWeight.w700)),
+          ],
+        ),
+      ),
+    );
+    // Real video → autoplaying inline player (Shorts); else link-out poster.
+    if (article.hasPlayableVideo) {
+      return SizedBox(
+        width: width,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Stack(children: [
+            InlineVideo(article: article, aspectRatio: 9 / 16),
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.center,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Colors.black87],
+                      stops: [0.55, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            overlay,
+          ]),
+        ),
+      );
+    }
     return SizedBox(
       width: width,
       child: InkWell(
@@ -486,28 +537,7 @@ class VerticalCard extends ConsumerWidget {
                     size: 38, color: Colors.white)),
             if (article.isBreaking)
               Positioned(top: 0, left: 0, child: _breaking(context)),
-            Positioned(
-              left: AppSpace.sm,
-              right: AppSpace.sm,
-              bottom: AppSpace.sm,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(article.source,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.caption.copyWith(
-                          color: Colors.white.withValues(alpha: 0.85))),
-                  const SizedBox(height: 2),
-                  Text(article.title,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.caption.copyWith(
-                          color: Colors.white, fontWeight: FontWeight.w700)),
-                ],
-              ),
-            ),
+            overlay,
           ]),
         ),
       ),
