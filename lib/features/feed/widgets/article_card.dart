@@ -43,7 +43,6 @@ class ArticleCard extends ConsumerWidget {
 
     return Column(
       children: [
-        if (showDivider) Divider(height: 1, thickness: 1, color: c.border),
         InkWell(
           onTap: () => openArticle(article.sourceUrl, track: article),
           onLongPress: () => showArticleActions(context, ref, article),

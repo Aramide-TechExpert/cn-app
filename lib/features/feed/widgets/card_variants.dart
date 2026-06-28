@@ -103,6 +103,7 @@ class SplitCard extends ConsumerWidget {
           ),
         ),
       ),
+      _divider(context),
     ]);
   }
 }
@@ -167,6 +168,7 @@ class DefaultCard extends ConsumerWidget {
           ],
         ),
       ),
+      _divider(context),
     ]);
   }
 }
@@ -225,6 +227,7 @@ class WideCard extends ConsumerWidget {
           ],
         ),
       ),
+      const BlockDivider(),
     ]);
   }
 }
@@ -299,7 +302,7 @@ class FeaturedCard extends ConsumerWidget {
           ),
         ),
       ),
-      _divider(context),
+      const BlockDivider(),
     ]);
   }
 }
@@ -386,6 +389,7 @@ class VideoCard extends ConsumerWidget {
           ),
         ),
       ),
+      _divider(context),
     ]);
   }
 }
@@ -398,10 +402,7 @@ class ListCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
-    // Compact text card → bracketed by a hairline top and bottom, so it reads
-    // as a distinct item between the image cards that flow together around it.
     return Column(children: [
-      _divider(context),
       InkWell(
         onTap: () => openArticle(article.sourceUrl, track: article),
         onLongPress: () => showArticleActions(context, ref, article),
