@@ -87,9 +87,16 @@ class SplitCard extends ConsumerWidget {
           SignalRow(article: article),
           const SizedBox(height: 6),
           Text(article.title,
-              maxLines: 3,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: AppText.bodyStrong.copyWith(color: c.text, height: 1.3)),
+          if (article.blurb != null) ...[
+            const SizedBox(height: 4),
+            Text(article.blurb!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.body.copyWith(color: c.textSecondary)),
+          ],
           const SizedBox(height: 6),
           SourceLine(article: article),
         ],
@@ -115,9 +122,12 @@ class SplitCard extends ConsumerWidget {
   }
 }
 
-/// Separator below a card. The grey band is the DEFAULT between every card;
-/// [flush] is true only for two stacked big image cards, which renders nothing
-/// so they sit edge to edge.
+Widget _divider(BuildContext context) =>
+    Divider(height: 1, thickness: 1, color: context.colors.border);
+
+/// Separator below a big IMAGE card: the grey band (a section break after the
+/// substantial image cards), unless [flush] (two stacked big image cards) — then
+/// nothing, so they sit edge to edge. Compact/text cards use the thin hairline.
 Widget _sep(BuildContext context, bool flush) =>
     flush ? const SizedBox.shrink() : const BlockDivider();
 
@@ -318,7 +328,7 @@ class FeaturedCard extends ConsumerWidget {
           ),
         ),
       ),
-      const BlockDivider(),
+      _divider(context),
     ]);
   }
 }
@@ -437,13 +447,20 @@ class ListCard extends ConsumerWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppText.bodyStrong.copyWith(color: c.text)),
+              if (article.blurb != null) ...[
+                const SizedBox(height: 4),
+                Text(article.blurb!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.body.copyWith(color: c.textSecondary)),
+              ],
               const SizedBox(height: 6),
               SourceLine(article: article, showReadTime: true),
             ],
           ),
         ),
       ),
-      const BlockDivider(),
+      _divider(context),
     ]);
   }
 }

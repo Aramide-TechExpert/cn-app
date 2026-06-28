@@ -148,11 +148,10 @@ class BlockDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    // A clean flat grey band (Google-style) — no border lines. Deeper than
-    // bgInset so the section break reads distinct between cards.
+    // A clean flat grey band (Google search-results size) — thin and light.
     return Container(
-      height: 12,
-      color: Color.alphaBlend(c.border, c.bgInset),
+      height: 8,
+      color: c.bgInset,
     );
   }
 }

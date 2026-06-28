@@ -155,7 +155,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
             ],
           ),
         ),
-        const BlockDivider(),
+        Divider(height: 1, thickness: 1, color: context.colors.border),
       ]);
     }
     return _cardFor(r, row.first, flushBelow: flushBelow);
@@ -215,7 +215,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                 const SizedBox(width: AppSpace.xs),
               ],
               bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(92),
+                preferredSize: const Size.fromHeight(78),
                 child: _FilterBar(filters: filters, onChanged: setFilters),
               ),
             ),
@@ -322,7 +322,7 @@ class _FilterBar extends StatelessWidget {
         children: [
           // Categories.
           SizedBox(
-            height: 38,
+            height: 32,
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
@@ -344,7 +344,7 @@ class _FilterBar extends StatelessWidget {
           const SizedBox(height: 6),
           // Sort + impact.
           SizedBox(
-            height: 36,
+            height: 32,
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
@@ -418,39 +418,35 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Padding(
-      padding: const EdgeInsets.only(right: AppSpace.sm),
-      child: Material(
-        color: selected ? c.brand : c.bgInset,
-        child: InkWell(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: BoxDecoration(border: Border.all(color: c.border)),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (dotColor != null) ...[
-                  Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                          color: dotColor, shape: BoxShape.circle)),
-                  const SizedBox(width: 5),
-                ],
-                if (icon != null) ...[
-                  Icon(icon,
-                      size: 13,
-                      color: selected ? c.onBrand : c.textSecondary),
-                  const SizedBox(width: 4),
-                ],
-                Text(label,
-                    style: AppText.caption.copyWith(
-                        color: selected ? c.onBrand : c.textSecondary,
-                        fontWeight: FontWeight.w600)),
-              ],
-            ),
-          ),
+    // Minimal text filter (no box/tab): active = brand + bold, else faded.
+    final fg = selected ? c.brand : c.textSecondary;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (dotColor != null) ...[
+              Container(
+                  width: 7,
+                  height: 7,
+                  decoration:
+                      BoxDecoration(color: dotColor, shape: BoxShape.circle)),
+              const SizedBox(width: 5),
+            ],
+            if (icon != null) ...[
+              Icon(icon, size: 14, color: fg),
+              const SizedBox(width: 4),
+            ],
+            Text(label,
+                style: AppText.body.copyWith(
+                    color: fg,
+                    fontSize: 13.5,
+                    fontWeight:
+                        selected ? FontWeight.w700 : FontWeight.w500)),
+          ],
         ),
       ),
     );

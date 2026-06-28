@@ -12,7 +12,6 @@ import '../../../theme/tokens.dart';
 import '../../../utils/format.dart';
 import '../../../utils/link_out.dart';
 import 'article_actions.dart';
-import 'card_extras.dart';
 import 'signal_badges.dart';
 
 /// Compact, edge-to-edge row card (mirrors the web `row` variant): square
@@ -62,10 +61,18 @@ class ArticleCard extends ConsumerWidget {
                       SourceLine(article: article),
                       const SizedBox(height: 6),
                       Text(article.title,
-                          maxLines: 3,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: AppText.bodyStrong
                               .copyWith(color: c.text, height: 1.3)),
+                      if (article.blurb != null) ...[
+                        const SizedBox(height: 4),
+                        Text(article.blurb!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppText.body
+                                .copyWith(color: c.textSecondary)),
+                      ],
                       const SizedBox(height: 8),
                       SignalRow(article: article),
                       const SizedBox(height: 8),
@@ -102,7 +109,7 @@ class ArticleCard extends ConsumerWidget {
             ),
           ),
         ),
-        if (showDivider) const BlockDivider(),
+        if (showDivider) Divider(height: 1, thickness: 1, color: c.border),
       ],
     );
   }
