@@ -19,13 +19,13 @@ class OverlayCard extends ConsumerWidget {
       {super.key,
       required this.article,
       this.height = 220,
-      this.bandBelow = false});
+      this.flushBelow = false});
 
   final Article article;
   final double height;
-  /// Grey band below — set true by the feed only when the next card is also a
-  /// big image card (so two stacked image cards are split by the band).
-  final bool bandBelow;
+  /// When true (two stacked big image cards) nothing is drawn below this card so
+  /// they sit edge to edge. Otherwise the grey band separates it from the next.
+  final bool flushBelow;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -115,7 +115,7 @@ class OverlayCard extends ConsumerWidget {
         ),
       ),
     );
-    if (!bandBelow) return card;
+    if (flushBelow) return card;
     return Column(children: [card, const BlockDivider()]);
   }
 }

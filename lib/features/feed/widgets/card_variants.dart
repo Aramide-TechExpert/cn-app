@@ -58,12 +58,12 @@ class SplitCard extends ConsumerWidget {
       {super.key,
       required this.article,
       this.imageRight = false,
-      this.bandBelow = false});
+      this.flushBelow = false});
   final Article article;
   final bool imageRight;
-  /// Grey band below — set true by the feed only when the next card is also a
-  /// big image card (so two stacked image cards are split by the band).
-  final bool bandBelow;
+  /// When true (two stacked big image cards) nothing is drawn below this card so
+  /// they sit edge to edge. Otherwise the grey band separates it from the next.
+  final bool flushBelow;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -110,31 +110,27 @@ class SplitCard extends ConsumerWidget {
           ),
         ),
       ),
-      _sep(context, bandBelow),
+      _sep(context, flushBelow),
     ]);
   }
 }
 
-Widget _divider(BuildContext context) =>
-    Divider(height: 1, thickness: 1, color: context.colors.border);
-
-/// Separator below a big image card: the grey band ONLY when [band] is true
-/// (the feed sets it true when the next card is also a big image card), else the
-/// usual hairline. This makes the band appear in exactly one place — between two
-/// stacked big image cards.
-Widget _sep(BuildContext context, bool band) =>
-    band ? const BlockDivider() : _divider(context);
+/// Separator below a card. The grey band is the DEFAULT between every card;
+/// [flush] is true only for two stacked big image cards, which renders nothing
+/// so they sit edge to edge.
+Widget _sep(BuildContext context, bool flush) =>
+    flush ? const SizedBox.shrink() : const BlockDivider();
 
 const _bodyPad =
     EdgeInsets.fromLTRB(AppSpace.lg, AppSpace.md, AppSpace.lg, AppSpace.lg);
 
 /// DEFAULT — full-width square card: full-bleed image, signals, title, source.
 class DefaultCard extends ConsumerWidget {
-  const DefaultCard({super.key, required this.article, this.bandBelow = false});
+  const DefaultCard({super.key, required this.article, this.flushBelow = false});
   final Article article;
-  /// Grey band below — set true by the feed only when the next card is also a
-  /// big image card (so two stacked image cards are split by the band).
-  final bool bandBelow;
+  /// When true (two stacked big image cards) nothing is drawn below this card so
+  /// they sit edge to edge. Otherwise the grey band separates it from the next.
+  final bool flushBelow;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -185,18 +181,18 @@ class DefaultCard extends ConsumerWidget {
           ],
         ),
       ),
-      _sep(context, bandBelow),
+      _sep(context, flushBelow),
     ]);
   }
 }
 
 /// WIDE — prominent feature: short 2:1 image, larger title + summary.
 class WideCard extends ConsumerWidget {
-  const WideCard({super.key, required this.article, this.bandBelow = false});
+  const WideCard({super.key, required this.article, this.flushBelow = false});
   final Article article;
-  /// Grey band below — set true by the feed only when the next card is also a
-  /// big image card (so two stacked image cards are split by the band).
-  final bool bandBelow;
+  /// When true (two stacked big image cards) nothing is drawn below this card so
+  /// they sit edge to edge. Otherwise the grey band separates it from the next.
+  final bool flushBelow;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -247,7 +243,7 @@ class WideCard extends ConsumerWidget {
           ],
         ),
       ),
-      _sep(context, bandBelow),
+      _sep(context, flushBelow),
     ]);
   }
 }
@@ -322,18 +318,18 @@ class FeaturedCard extends ConsumerWidget {
           ),
         ),
       ),
-      _divider(context),
+      const BlockDivider(),
     ]);
   }
 }
 
 /// VIDEO — full-width square card with a play overlay + VIDEO tag.
 class VideoCard extends ConsumerWidget {
-  const VideoCard({super.key, required this.article, this.bandBelow = false});
+  const VideoCard({super.key, required this.article, this.flushBelow = false});
   final Article article;
-  /// Grey band below — set true by the feed only when the next card is also a
-  /// big image card (so two stacked image cards are split by the band).
-  final bool bandBelow;
+  /// When true (two stacked big image cards) nothing is drawn below this card so
+  /// they sit edge to edge. Otherwise the grey band separates it from the next.
+  final bool flushBelow;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -412,7 +408,7 @@ class VideoCard extends ConsumerWidget {
           ),
         ),
       ),
-      _sep(context, bandBelow),
+      _sep(context, flushBelow),
     ]);
   }
 }
@@ -447,7 +443,7 @@ class ListCard extends ConsumerWidget {
           ),
         ),
       ),
-      _divider(context),
+      const BlockDivider(),
     ]);
   }
 }

@@ -262,10 +262,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                     }
                     // Grey band ONLY between two stacked big image cards.
                     final next = i + 1 < rest.length ? rest[i + 1] : null;
-                    final bandBelow = next != null &&
+                    final flushBelow = next != null &&
                         _isBigImageCardAt(i, rest[i]) &&
                         _isBigImageCardAt(i + 1, next);
-                    return _feedCard(i, rest[i], bandBelow: bandBelow);
+                    return _feedCard(i, rest[i], flushBelow: flushBelow);
                   },
                 ),
               ],
@@ -290,24 +290,24 @@ Widget _railHeader(BuildContext context, String title) => SliverToBoxAdapter(
 /// Cycles the "Latest" feed through every full-width variant so each card style
 /// surfaces as you scroll. Falls back to a text variant when an article has no
 /// image (so image-led variants never render an empty box).
-Widget _feedCard(int i, Article a, {bool bandBelow = false}) {
+Widget _feedCard(int i, Article a, {bool flushBelow = false}) {
   // Real in-article video (flagged at ingest) always renders as the video
   // card — the variant is driven by content, never by position.
   if (a.hasPlayableVideo && a.hasImage) {
-    return VideoCard(article: a, bandBelow: bandBelow);
+    return VideoCard(article: a, flushBelow: flushBelow);
   }
   Widget overlay() => Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpace.xs),
-        child: OverlayCard(article: a, bandBelow: bandBelow),
+        child: OverlayCard(article: a, flushBelow: flushBelow),
       );
   switch (i % 7) {
     case 0:
       return a.hasImage
-          ? WideCard(article: a, bandBelow: bandBelow)
+          ? WideCard(article: a, flushBelow: flushBelow)
           : FeaturedCard(article: a);
     case 1:
       return a.hasImage
-          ? DefaultCard(article: a, bandBelow: bandBelow)
+          ? DefaultCard(article: a, flushBelow: flushBelow)
           : ListCard(article: a);
     case 2:
       return ListCard(article: a);
@@ -315,7 +315,7 @@ Widget _feedCard(int i, Article a, {bool bandBelow = false}) {
       return a.hasImage ? overlay() : ArticleCard(article: a);
     case 4:
       return a.hasImage
-          ? MagazineCard(article: a, bandBelow: bandBelow)
+          ? MagazineCard(article: a, flushBelow: flushBelow)
           : ListCard(article: a);
     case 5:
       return FeaturedCard(article: a);

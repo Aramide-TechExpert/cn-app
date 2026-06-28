@@ -12,6 +12,7 @@ import '../../../theme/tokens.dart';
 import '../../../utils/format.dart';
 import '../../../utils/link_out.dart';
 import 'article_actions.dart';
+import 'card_extras.dart';
 import 'signal_badges.dart';
 
 /// Compact, edge-to-edge row card (mirrors the web `row` variant): square
@@ -101,7 +102,7 @@ class ArticleCard extends ConsumerWidget {
             ),
           ),
         ),
-        if (showDivider) Divider(height: 1, thickness: 1, color: c.border),
+        if (showDivider) const BlockDivider(),
       ],
     );
   }
