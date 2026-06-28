@@ -51,7 +51,9 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   /// Video → VideoCard; image-less → Featured (with "why it matters") else List.
   Widget _cardFor(int i, Article a) {
     if (_compact) return ListCard(article: a);
-    if (a.hasVideo && a.hasImage) return VideoCard(article: a);
+    // Play icon ONLY for a real, captured, playable video — never the loose
+    // hasVideo detector (which fires on ads / embeds / thumbnail players).
+    if (a.hasPlayableVideo && a.hasImage) return VideoCard(article: a);
     if (!a.hasImage) {
       return (a.whyItMatters ?? '').isNotEmpty
           ? FeaturedCard(article: a)
@@ -87,10 +89,10 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
       final pairable = r > 0 &&
           r % 4 == 1 &&
           a.hasImage &&
-          !a.hasVideo &&
+          !a.hasPlayableVideo &&
           next != null &&
           next.hasImage &&
-          !next.hasVideo;
+          !next.hasPlayableVideo;
       if (pairable) {
         rows.add([a, next]);
         i += 2;
@@ -121,7 +123,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     var vi = 0;
     for (var i = 0; i < rows.length; i++) {
       out.add(rows[i]);
-      if ((i + 1) % 6 == 0 && vi < vids.length) out.add([vids[vi++]]);
+      if ((i + 1) % 10 == 0 && vi < vids.length) out.add([vids[vi++]]);
     }
     return out;
   }

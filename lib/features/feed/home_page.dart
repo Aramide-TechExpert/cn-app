@@ -77,7 +77,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           // Shorts rail is sourced strictly from real in-article video
           // (flagged at ingest) — not arbitrary articles.
           final shorts =
-              withImage.where((a) => a.hasVideo).take(10).toList();
+              withImage.where((a) => a.hasPlayableVideo).take(10).toList();
           final used = {
             ...spotlight.map((a) => a.id),
             ...rail.map((a) => a.id),
@@ -328,7 +328,7 @@ Widget _railHeader(BuildContext context, String title) => SliverToBoxAdapter(
 Widget _feedCard(int i, Article a) {
   // Real in-article video (flagged at ingest) always renders as the video
   // card — the variant is driven by content, never by position.
-  if (a.hasVideo && a.hasImage) return VideoCard(article: a);
+  if (a.hasPlayableVideo && a.hasImage) return VideoCard(article: a);
   Widget overlay() => Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpace.xs),
         child: OverlayCard(article: a),
