@@ -21,10 +21,14 @@ class VideoReelPage extends StatefulWidget {
 class _VideoReelPageState extends State<VideoReelPage> {
   late final PageController _controller =
       PageController(initialPage: widget.initialIndex);
+  // One shared mute state for the whole reel — starts muted (autoplay rule),
+  // and the single prominent button below flips every page at once.
+  final ValueNotifier<bool> _muted = ValueNotifier(true);
 
   @override
   void dispose() {
     _controller.dispose();
+    _muted.dispose();
     super.dispose();
   }
 
@@ -46,6 +50,8 @@ class _VideoReelPageState extends State<VideoReelPage> {
                   article: v,
                   aspectRatio: size.width / size.height,
                   fit: BoxFit.contain,
+                  muteController: _muted,
+                  showMuteButton: false,
                 ),
               ),
               const Positioned.fill(
@@ -102,6 +108,40 @@ class _VideoReelPageState extends State<VideoReelPage> {
             child: IconButton(
               icon: const Icon(Icons.close, color: Colors.white, size: 28),
               onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ),
+        // Prominent, always-in-the-same-spot sound toggle — large tap target so
+        // it's easy to find/press (the old tiny corner speaker was the gripe).
+        SafeArea(
+          child: Align(
+            alignment: Alignment.topRight,
+            child: Padding(
+              padding: const EdgeInsets.only(top: AppSpace.xs, right: AppSpace.sm),
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _muted,
+                builder: (_, muted, __) => Material(
+                  color: Colors.black.withValues(alpha: 0.55),
+                  shape: const StadiumBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () => _muted.value = !_muted.value,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 9),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(muted ? Icons.volume_off : Icons.volume_up,
+                            size: 20, color: Colors.white),
+                        const SizedBox(width: 7),
+                        Text(muted ? 'Tap for sound' : 'Sound on',
+                            style: AppText.caption.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700)),
+                      ]),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ),

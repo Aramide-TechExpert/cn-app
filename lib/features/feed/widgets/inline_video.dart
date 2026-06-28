@@ -18,9 +18,19 @@ class InlineVideo extends StatefulWidget {
     this.aspectRatio = 16 / 9,
     this.tapToToggle = true,
     this.fit = BoxFit.cover,
+    this.muteController,
+    this.showMuteButton = true,
   });
   final Article article;
   final double aspectRatio;
+  /// When supplied, mute state is driven by this shared notifier instead of
+  /// per-instance local state — so the full-screen reel can own one prominent
+  /// sound toggle that applies to every page. Tapping the speaker (or the
+  /// parent's button) flips it for all videos bound to the same controller.
+  final ValueNotifier<bool>? muteController;
+  /// Hide the built-in corner speaker button (the reel draws its own larger,
+  /// easier-to-find control).
+  final bool showMuteButton;
   /// When false, taps fall through to a parent (e.g. a Shorts card that opens
   /// the full-screen reel) instead of toggling play/pause.
   final bool tapToToggle;
@@ -36,7 +46,23 @@ class _InlineVideoState extends State<InlineVideo> {
   VideoPlayerController? _ctrl;
   bool _loading = false;
   bool _error = false;
-  bool _muted = true;
+  bool _localMuted = true;
+
+  /// Effective mute: the shared controller wins when present, else local state.
+  bool get _muted => widget.muteController?.value ?? _localMuted;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.muteController?.addListener(_onExternalMute);
+  }
+
+  // Shared controller flipped elsewhere (e.g. the reel's sound button) — apply
+  // the new volume to this player and refresh the speaker icon.
+  void _onExternalMute() {
+    _ctrl?.setVolume(_muted ? 0 : 1);
+    if (mounted) setState(() {});
+  }
   // Unique + stable per instance: the same article can render in two places at
   // once (Shorts rail + interleaved feed), and VisibilityDetector keys must be
   // globally unique. identityHashCode(this) is stable across this State's rebuilds.
@@ -107,12 +133,19 @@ class _InlineVideoState extends State<InlineVideo> {
   void _toggleMute() {
     final ctrl = _ctrl;
     if (ctrl == null) return;
-    setState(() => _muted = !_muted);
-    ctrl.setVolume(_muted ? 0 : 1);
+    final mc = widget.muteController;
+    if (mc != null) {
+      // Flips every video bound to the shared controller via _onExternalMute.
+      mc.value = !mc.value;
+    } else {
+      setState(() => _localMuted = !_localMuted);
+      ctrl.setVolume(_localMuted ? 0 : 1);
+    }
   }
 
   @override
   void dispose() {
+    widget.muteController?.removeListener(_onExternalMute);
     _ctrl?.removeListener(_tick);
     _ctrl?.dispose();
     super.dispose();
@@ -147,14 +180,15 @@ class _InlineVideoState extends State<InlineVideo> {
                     const Center(
                         child: Icon(Icons.play_circle_fill,
                             size: 56, color: Colors.white70)),
-                  Positioned(
-                    right: AppSpace.sm,
-                    top: AppSpace.sm,
-                    child: _RoundBtn(
-                      icon: _muted ? Icons.volume_off : Icons.volume_up,
-                      onTap: _toggleMute,
+                  if (widget.showMuteButton)
+                    Positioned(
+                      right: AppSpace.sm,
+                      top: AppSpace.sm,
+                      child: _RoundBtn(
+                        icon: _muted ? Icons.volume_off : Icons.volume_up,
+                        onTap: _toggleMute,
+                      ),
                     ),
-                  ),
                   Positioned(
                     left: 0,
                     right: 0,
