@@ -331,12 +331,14 @@ class _FilterBar extends StatelessWidget {
                   selected: filters.category == null,
                   onTap: () => onChanged(filters.copyWith(category: null)),
                 ),
-                for (final (slug, label) in kNewsCategories)
+                for (final (slug, label) in kNewsCategories) ...[
+                  const _VLine(),
                   _Chip(
                     label: label,
                     selected: filters.category == slug,
                     onTap: () => onChanged(filters.copyWith(category: slug)),
                   ),
+                ],
               ],
             ),
           ),
@@ -355,42 +357,35 @@ class _FilterBar extends StatelessWidget {
                   onTap: () =>
                       onChanged(filters.copyWith(video: !filters.video)),
                 ),
-                Container(
-                    width: 1,
-                    height: 20,
-                    margin:
-                        const EdgeInsets.symmetric(horizontal: AppSpace.sm),
-                    color: c.border),
+                const _VLine(),
                 _Chip(
                   label: 'Latest',
                   icon: Icons.schedule,
                   selected: filters.sort == 'latest',
                   onTap: () => onChanged(filters.copyWith(sort: 'latest')),
                 ),
+                const _VLine(),
                 _Chip(
                   label: 'Trending',
                   icon: Icons.trending_up,
                   selected: filters.sort == 'trending',
                   onTap: () => onChanged(filters.copyWith(sort: 'trending')),
                 ),
-                Container(
-                    width: 1,
-                    height: 20,
-                    margin:
-                        const EdgeInsets.symmetric(horizontal: AppSpace.sm),
-                    color: c.border),
+                const _VLine(),
                 _Chip(
                   label: 'Any impact',
                   selected: filters.impact == null,
                   onTap: () => onChanged(filters.copyWith(impact: null)),
                 ),
-                for (final lvl in const ['Critical', 'High', 'Medium', 'Low'])
+                for (final lvl in const ['Critical', 'High', 'Medium', 'Low']) ...[
+                  const _VLine(),
                   _Chip(
                     label: lvl,
                     dotColor: c.impact(lvl),
                     selected: filters.impact == lvl,
                     onTap: () => onChanged(filters.copyWith(impact: lvl)),
                   ),
+                ],
               ],
             ),
           ),
@@ -401,6 +396,15 @@ class _FilterBar extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Thin vertical hairline between filters.
+class _VLine extends StatelessWidget {
+  const _VLine();
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Container(width: 1, height: 15, color: context.colors.border),
+      );
 }
 
 class _Chip extends StatelessWidget {
@@ -426,7 +430,7 @@ class _Chip extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm),
+        padding: const EdgeInsets.symmetric(horizontal: 6),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

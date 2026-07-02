@@ -1,3 +1,5 @@
+import '../utils/format.dart';
+
 /// Mirrors the `/api/v1` Article payload (see API_V1.md in the backend repo).
 /// `id` is external_id ?? uuid (routing/display); `dbId` is the uuid used to
 /// key likes/bookmarks/comments.
@@ -62,8 +64,10 @@ class Article {
     return Article(
       id: (j['id'] ?? '').toString(),
       dbId: j['dbId'] as String?,
-      title: (j['title'] ?? '').toString(),
-      excerpt: (j['excerpt'] ?? '').toString(),
+      // Sanitize display text (strip URLs/HTML/markdown/hashes so cards read
+      // like clean prose, not scraped source).
+      title: cleanText((j['title'] ?? '').toString()),
+      excerpt: cleanText((j['excerpt'] ?? '').toString()),
       image: (j['image'] ?? '').toString(),
       source: (j['source'] ?? '').toString(),
       sourceUrl: j['sourceUrl'] as String?,
@@ -72,9 +76,9 @@ class Article {
       categories: strList(j['categories']),
       impact: (j['impact'] ?? 'Low').toString(),
       isBreaking: j['isBreaking'] == true,
-      summary: j['summary'] as String?,
-      whatHappened: j['whatHappened'] as String?,
-      whyItMatters: j['whyItMatters'] as String?,
+      summary: cleanText(j['summary'] as String?),
+      whatHappened: cleanText(j['whatHappened'] as String?),
+      whyItMatters: cleanText(j['whyItMatters'] as String?),
       topics: strList(j['topics']),
       trustScore: (j['trustScore'] as num?)?.toInt(),
       likeCount: (j['likeCount'] as num?)?.toInt() ?? 0,

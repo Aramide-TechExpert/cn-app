@@ -253,10 +253,18 @@ class _Spotlight extends StatelessWidget {
                   ),
                 const SizedBox(height: AppSpace.sm),
                 Text(article.title,
-                    maxLines: 3,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppText.title
                         .copyWith(color: Colors.white, height: 1.2)),
+                if (article.blurb != null) ...[
+                  const SizedBox(height: 6),
+                  Text(article.blurb!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.body.copyWith(
+                          color: Colors.white.withValues(alpha: 0.88))),
+                ],
                 const SizedBox(height: 6),
                 Row(children: [
                   SourceFavicon(

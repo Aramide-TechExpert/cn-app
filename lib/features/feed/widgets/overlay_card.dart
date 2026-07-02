@@ -104,10 +104,18 @@ class OverlayCard extends ConsumerWidget {
                   ]),
                   const SizedBox(height: 6),
                   Text(article.title,
-                      maxLines: 3,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppText.headline
                           .copyWith(color: Colors.white, height: 1.25)),
+                  if (article.blurb != null) ...[
+                    const SizedBox(height: 6),
+                    Text(article.blurb!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.caption.copyWith(
+                            color: Colors.white.withValues(alpha: 0.85))),
+                  ],
                 ],
               ),
             ),

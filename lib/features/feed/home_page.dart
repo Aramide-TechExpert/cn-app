@@ -177,7 +177,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   _railHeader(context, 'For You'),
                   SliverToBoxAdapter(
                     child: SizedBox(
-                      height: 224,
+                      height: 268,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         padding:
@@ -203,7 +203,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   _railHeader(context, 'Trending now'),
                   SliverToBoxAdapter(
                     child: SizedBox(
-                      height: 198,
+                      height: 244,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         padding:

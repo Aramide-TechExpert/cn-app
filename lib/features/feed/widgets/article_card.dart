@@ -49,8 +49,9 @@ class ArticleCard extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(
                 horizontal: AppSpace.lg, vertical: AppSpace.md),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: IntrinsicHeight(
+              child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _Thumb(article: article),
                 const SizedBox(width: AppSpace.md),
@@ -107,6 +108,7 @@ class ArticleCard extends ConsumerWidget {
                 ),
               ],
             ),
+            ),
           ),
         ),
         if (showDivider) Divider(height: 1, thickness: 1, color: c.border),
@@ -124,7 +126,8 @@ class _Thumb extends StatelessWidget {
     final c = context.colors;
     return SizedBox(
       width: 112,
-      height: 84,
+      // No fixed height — the parent Row stretches this to the text column's
+      // height (IntrinsicHeight), so the thumbnail always matches the text.
       child: Stack(
         fit: StackFit.expand,
         children: [

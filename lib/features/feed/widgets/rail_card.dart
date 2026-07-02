@@ -71,6 +71,13 @@ class RailCard extends ConsumerWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: AppText.bodyStrong.copyWith(color: c.text, height: 1.3)),
+            if (article.blurb != null) ...[
+              const SizedBox(height: 4),
+              Text(article.blurb!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.caption.copyWith(color: c.textSecondary)),
+            ],
             const SizedBox(height: 4),
             SourceLine(article: article),
           ],
