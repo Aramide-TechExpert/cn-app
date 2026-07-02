@@ -19,6 +19,7 @@ import 'widgets/magazine_card.dart';
 import 'widgets/overlay_card.dart';
 import 'widgets/rail_card.dart';
 import 'widgets/spotlight_carousel.dart';
+import 'widgets/stats_strip.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -122,6 +123,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                     const SizedBox(width: AppSpace.xs),
                   ],
                 ),
+                // News content analysis — swipeable stat tiles (ports the web
+                // dashboard StatsRow) pinned at the top of Home.
+                const SliverToBoxAdapter(child: HomeStatsStrip()),
                 // First-run welcome banner (dismissible — never gates the app).
                 if (firstRun)
                   SliverToBoxAdapter(
