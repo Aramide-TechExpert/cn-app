@@ -23,12 +23,14 @@ class NewsFilters {
       this.sort = 'latest',
       this.impact,
       this.video = false,
-      this.source});
+      this.source,
+      this.since});
   final String? category; // slug, null = all
   final String sort; // 'latest' | 'trending'
   final String? impact; // 'Critical'|'High'|'Medium'|'Low', null = all
   final bool video; // true = only articles with a playable video
   final String? source; // exact source name, null = all
+  final String? since; // '1h'|'24h'|'7d', null = any time
 
   NewsFilters copyWith({
     Object? category = _unset,
@@ -36,6 +38,7 @@ class NewsFilters {
     Object? impact = _unset,
     bool? video,
     Object? source = _unset,
+    Object? since = _unset,
   }) {
     return NewsFilters(
       category: category == _unset ? this.category : category as String?,
@@ -43,6 +46,7 @@ class NewsFilters {
       impact: impact == _unset ? this.impact : impact as String?,
       video: video ?? this.video,
       source: source == _unset ? this.source : source as String?,
+      since: since == _unset ? this.since : since as String?,
     );
   }
 
@@ -74,6 +78,7 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
           category: _filters.category,
           source: _filters.source,
           sort: _filters.sort == 'latest' ? null : _filters.sort,
+          since: _filters.since,
           video: _filters.video,
         );
     _cursor = page.nextCursor;

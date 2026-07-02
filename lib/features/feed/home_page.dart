@@ -167,16 +167,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ),
 
-                if (spotlight.isNotEmpty) ...[
+                if (spotlight.isNotEmpty)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: AppSpace.md),
                       child: SpotlightCarousel(articles: spotlight),
                     ),
                   ),
-                  // Band: section break after the hero, before the rails.
-                  const SliverToBoxAdapter(child: BlockDivider()),
-                ],
 
                 // For You — personalized rail from followed interests.
                 if (forYou.isNotEmpty) ...[
@@ -222,13 +219,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ),
                   ),
-                  // Thin line between the stacked rails.
+                  // Thin line under Trending, then a little gap before Shorts.
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.only(top: AppSpace.md),
                       child: Divider(height: 1, thickness: 1, color: c.border),
                     ),
                   ),
+                  const SliverToBoxAdapter(child: SizedBox(height: AppSpace.md)),
                 ],
 
                 // Horizontal "Shorts" rail — 9:16 reels cards.

@@ -49,65 +49,66 @@ class ArticleCard extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(
                 horizontal: AppSpace.lg, vertical: AppSpace.md),
-            child: IntrinsicHeight(
-              child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _Thumb(article: article),
-                const SizedBox(width: AppSpace.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                // Thumbnail matches ONLY the source→title→excerpt→signals block
+                // (ends where impact/trust stop), not the engagement row below.
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SourceLine(article: article),
-                      const SizedBox(height: 6),
-                      Text(article.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppText.bodyStrong
-                              .copyWith(color: c.text, height: 1.3)),
-                      if (article.blurb != null) ...[
-                        const SizedBox(height: 4),
-                        Text(article.blurb!,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppText.body
-                                .copyWith(color: c.textSecondary)),
-                      ],
-                      const SizedBox(height: 8),
-                      SignalRow(article: article),
-                      const SizedBox(height: 8),
-                      Row(children: [
-                        Text(readTime(article.readingMinutes),
-                            style:
-                                AppText.caption.copyWith(color: c.textFaint)),
-                        const Spacer(),
-                        if (canEngage) ...[
-                          _IconBtn(
-                            icon: marked
-                                ? Icons.bookmark
-                                : Icons.bookmark_outline,
-                            color: marked ? c.brand : c.textFaint,
-                            onTap: () => act(ref
-                                .read(engagementProvider.notifier)
-                                .toggleBookmark),
-                          ),
-                          const SizedBox(width: AppSpace.md),
-                          _IconBtn(
-                            icon:
-                                liked ? Icons.favorite : Icons.favorite_outline,
-                            color: liked ? c.accent : c.textFaint,
-                            onTap: () => act(ref
-                                .read(engagementProvider.notifier)
-                                .toggleLike),
-                          ),
-                        ],
-                      ]),
+                      _Thumb(article: article),
+                      const SizedBox(width: AppSpace.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SourceLine(article: article),
+                            const SizedBox(height: 6),
+                            Text(article.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppText.bodyStrong
+                                    .copyWith(color: c.text, height: 1.3)),
+                            if (article.blurb != null) ...[
+                              const SizedBox(height: 4),
+                              Text(article.blurb!,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppText.body
+                                      .copyWith(color: c.textSecondary)),
+                            ],
+                            const SizedBox(height: 8),
+                            SignalRow(article: article),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 8),
+                Row(children: [
+                  Text(readTime(article.readingMinutes),
+                      style: AppText.caption.copyWith(color: c.textFaint)),
+                  const Spacer(),
+                  if (canEngage) ...[
+                    _IconBtn(
+                      icon: marked ? Icons.bookmark : Icons.bookmark_outline,
+                      color: marked ? c.brand : c.textFaint,
+                      onTap: () => act(
+                          ref.read(engagementProvider.notifier).toggleBookmark),
+                    ),
+                    const SizedBox(width: AppSpace.md),
+                    _IconBtn(
+                      icon: liked ? Icons.favorite : Icons.favorite_outline,
+                      color: liked ? c.accent : c.textFaint,
+                      onTap: () => act(
+                          ref.read(engagementProvider.notifier).toggleLike),
+                    ),
+                  ],
+                ]),
               ],
-            ),
             ),
           ),
         ),

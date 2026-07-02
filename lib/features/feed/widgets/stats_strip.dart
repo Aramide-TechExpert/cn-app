@@ -51,7 +51,7 @@ class HomeStatsStrip extends ConsumerWidget {
     ];
 
     return Padding(
-      padding: const EdgeInsets.only(top: AppSpace.xs, bottom: AppSpace.sm),
+      padding: const EdgeInsets.only(top: AppSpace.sm, bottom: 5),
       child: SizedBox(
         height: 34,
         child: ListView.separated(
@@ -126,20 +126,26 @@ class HomeMarketsStrip extends ConsumerWidget {
     ];
     if (items.isEmpty) return const SizedBox.shrink();
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpace.sm),
-      child: SizedBox(
-        height: 30,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
-          itemCount: items.length,
-          separatorBuilder: (_, __) => Center(
-            child: Container(width: 1, height: 13, color: c.border),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Thin line tying the markets strip to the stats strip above it.
+        Divider(height: 1, thickness: 1, color: c.border),
+        const SizedBox(height: 5),
+        SizedBox(
+          height: 30,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => Center(
+              child: Container(width: 1, height: 13, color: c.border),
+            ),
+            itemBuilder: (_, i) => items[i],
           ),
-          itemBuilder: (_, i) => items[i],
         ),
-      ),
+        const SizedBox(height: AppSpace.sm),
+      ],
     );
   }
 }

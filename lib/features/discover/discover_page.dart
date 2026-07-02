@@ -14,6 +14,9 @@ import '../feed/widgets/overlay_card.dart';
 import '../../models/article.dart';
 import '../shell/app_drawer.dart';
 
+/// Feed layout the user can switch between (mirrors the web view options).
+enum FeedView { mixed, magazine, grid, list }
+
 /// News Feed — the filterable article stream (category · sort · impact),
 /// mirroring the web feed. Full-width square cards.
 class DiscoverPage extends ConsumerStatefulWidget {
@@ -25,7 +28,7 @@ class DiscoverPage extends ConsumerStatefulWidget {
 
 class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   final _scroll = ScrollController();
-  bool _compact = false; // view mode: rich (image cards) vs compact (text list)
+  FeedView _view = FeedView.mixed; // feed layout
 
   @override
   void initState() {
@@ -41,6 +44,45 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   void dispose() {
     _scroll.dispose();
     super.dispose();
+  }
+
+  static IconData _viewIcon(FeedView v) => switch (v) {
+        FeedView.mixed => Icons.dashboard_outlined,
+        FeedView.magazine => Icons.view_agenda_outlined,
+        FeedView.grid => Icons.grid_view,
+        FeedView.list => Icons.view_headline,
+      };
+
+  PopupMenuItem<FeedView> _viewItem(ClustezColors c, FeedView v, String label) {
+    final sel = _view == v;
+    return PopupMenuItem(
+      value: v,
+      child: Row(children: [
+        Icon(_viewIcon(v), size: 18, color: sel ? c.brand : c.textSecondary),
+        const SizedBox(width: AppSpace.md),
+        Text(label,
+            style: AppText.body.copyWith(
+                color: sel ? c.brand : c.text,
+                fontWeight: sel ? FontWeight.w700 : FontWeight.w500)),
+      ]),
+    );
+  }
+
+  PopupMenuItem<String> _timeItem(
+      ClustezColors c, String value, String label, String? current) {
+    final sel = (current ?? '') == value;
+    return PopupMenuItem(
+      value: value,
+      child: Row(children: [
+        Icon(sel ? Icons.check : Icons.schedule,
+            size: 18, color: sel ? c.brand : c.textSecondary),
+        const SizedBox(width: AppSpace.md),
+        Text(label,
+            style: AppText.body.copyWith(
+                color: sel ? c.brand : c.text,
+                fontWeight: sel ? FontWeight.w700 : FontWeight.w500)),
+      ]),
+    );
   }
 
   /// Opens the source picker sheet; applies the chosen source (or clears it).
@@ -66,7 +108,6 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   /// cards — so variety is obvious every few cards, not once every 7.
   /// Video → VideoCard; image-less → Featured (with "why it matters") else List.
   Widget _cardFor(int i, Article a, {bool flushBelow = false}) {
-    if (_compact) return ListCard(article: a);
     // Play icon ONLY for a real, captured, playable video — never the loose
     // hasVideo detector (which fires on ads / embeds / thumbnail players).
     if (a.hasPlayableVideo && a.hasImage) {
@@ -100,7 +141,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
 
   /// A row that renders as a big full-bleed image card (used to drop the band
   /// above it to a thin line when two such cards stack together).
-  bool _isBigImageRow(Article a) => !_compact && a.hasImage;
+  bool _isBigImageRow(Article a) => a.hasImage;
 
   /// Plan the feed into rows: mostly single full-width cards, with a periodic
   /// 2-up compact pair (two small cards side-by-side) to break the single-column
@@ -215,14 +256,31 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
               title:
                   Text('News Feed', style: AppText.title.copyWith(color: c.text)),
               actions: [
-                IconButton(
-                  icon: Icon(
-                      _compact
-                          ? Icons.view_agenda_outlined
-                          : Icons.view_headline,
-                      color: c.text),
-                  tooltip: _compact ? 'Rich view' : 'Compact view',
-                  onPressed: () => setState(() => _compact = !_compact),
+                // Time period (ports the web "Any time" dropdown → ?since=).
+                PopupMenuButton<String>(
+                  tooltip: 'Time period',
+                  icon: Icon(Icons.history,
+                      color: filters.since != null ? c.brand : c.text),
+                  onSelected: (v) =>
+                      setFilters(filters.copyWith(since: v.isEmpty ? null : v)),
+                  itemBuilder: (_) => [
+                    _timeItem(c, '', 'Any time', filters.since),
+                    _timeItem(c, '1h', 'Past hour', filters.since),
+                    _timeItem(c, '24h', 'Past 24 hours', filters.since),
+                    _timeItem(c, '7d', 'Past week', filters.since),
+                  ],
+                ),
+                // View layout: Mixed · Magazine · Grid · List.
+                PopupMenuButton<FeedView>(
+                  tooltip: 'View',
+                  icon: Icon(_viewIcon(_view), color: c.text),
+                  onSelected: (v) => setState(() => _view = v),
+                  itemBuilder: (_) => [
+                    _viewItem(c, FeedView.mixed, 'Mixed'),
+                    _viewItem(c, FeedView.magazine, 'Magazine'),
+                    _viewItem(c, FeedView.grid, 'Grid'),
+                    _viewItem(c, FeedView.list, 'List'),
+                  ],
                 ),
                 IconButton(
                   icon: Icon(Icons.search, color: c.text),
@@ -231,7 +289,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                 const SizedBox(width: AppSpace.xs),
               ],
               bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(86),
+                preferredSize: const Size.fromHeight(76),
                 child: _FilterBar(
                     filters: filters,
                     onChanged: setFilters,
@@ -279,42 +337,74 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                               child: CircularProgressIndicator.adaptive())
                           : const SizedBox(height: AppSpace.lg),
                     );
-                if (_compact) {
-                  return SliverList.builder(
-                    itemCount: items.length + 1,
-                    itemBuilder: (context, i) => i == items.length
-                        ? loader()
-                        : FadeSlideIn(
-                            key: ValueKey(items[i].id),
-                            child: ListCard(article: items[i])),
-                  );
-                }
-                // Weave a few license-safe videos into the main feed (capped,
-                // ~1 per 6 cards) so video feels integrated, not a single-source
-                // dump. Skipped when the Videos filter is already on.
-                final pool = filters.video
-                    ? const <Article>[]
-                    : (ref.watch(videoPoolProvider).valueOrNull ??
-                        const <Article>[]);
-                final rows = _interleaveVideos(_planRows(items), pool);
-                return SliverList.builder(
-                  itemCount: rows.length + 1,
-                  itemBuilder: (context, i) {
-                    if (i == rows.length) return loader();
-                    final row = rows[i];
-                    // Grey band ONLY between two stacked big image cards.
-                    final next = i + 1 < rows.length ? rows[i + 1] : null;
-                    final flushBelow = row.length == 1 &&
-                        _isBigImageRow(row.first) &&
-                        next != null &&
-                        next.length == 1 &&
-                        _isBigImageRow(next.first);
-                    return FadeSlideIn(
-                      key: ValueKey(row.first.id),
-                      child: _rowWidget(context, i, row, flushBelow: flushBelow),
+                switch (_view) {
+                  case FeedView.list:
+                    return SliverList.builder(
+                      itemCount: items.length + 1,
+                      itemBuilder: (context, i) => i == items.length
+                          ? loader()
+                          : FadeSlideIn(
+                              key: ValueKey(items[i].id),
+                              child: ListCard(article: items[i])),
                     );
-                  },
-                );
+                  case FeedView.magazine:
+                    return SliverList.builder(
+                      itemCount: items.length + 1,
+                      itemBuilder: (context, i) => i == items.length
+                          ? loader()
+                          : FadeSlideIn(
+                              key: ValueKey(items[i].id),
+                              child: MagazineCard(article: items[i])),
+                    );
+                  case FeedView.grid:
+                    return SliverPadding(
+                      padding: const EdgeInsets.all(AppSpace.lg),
+                      sliver: SliverGrid(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: AppSpace.lg,
+                          crossAxisSpacing: AppSpace.lg,
+                          childAspectRatio: 0.6,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, i) => FadeSlideIn(
+                            key: ValueKey(items[i].id),
+                            child: CompactCard(
+                                article: items[i], width: double.infinity),
+                          ),
+                          childCount: items.length,
+                        ),
+                      ),
+                    );
+                  case FeedView.mixed:
+                    // Weave a few license-safe videos into the feed (capped,
+                    // ~1 per 6 cards). Skipped when the Videos filter is on.
+                    final pool = filters.video
+                        ? const <Article>[]
+                        : (ref.watch(videoPoolProvider).valueOrNull ??
+                            const <Article>[]);
+                    final rows = _interleaveVideos(_planRows(items), pool);
+                    return SliverList.builder(
+                      itemCount: rows.length + 1,
+                      itemBuilder: (context, i) {
+                        if (i == rows.length) return loader();
+                        final row = rows[i];
+                        // Grey band ONLY between two stacked big image cards.
+                        final next = i + 1 < rows.length ? rows[i + 1] : null;
+                        final flushBelow = row.length == 1 &&
+                            _isBigImageRow(row.first) &&
+                            next != null &&
+                            next.length == 1 &&
+                            _isBigImageRow(next.first);
+                        return FadeSlideIn(
+                          key: ValueKey(row.first.id),
+                          child: _rowWidget(context, i, row,
+                              flushBelow: flushBelow),
+                        );
+                      },
+                    );
+                }
               },
             ),
           ],
@@ -365,7 +455,9 @@ class _FilterBar extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 5),
+          Divider(height: 1, thickness: 1, color: c.border),
+          const SizedBox(height: 5),
           // Sort + impact.
           SizedBox(
             height: 32,
@@ -419,9 +511,6 @@ class _FilterBar extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: AppSpace.sm),
-          // Band: separates the sticky filter toolbar from the feed below.
-          const BlockDivider(),
         ],
       ),
     );

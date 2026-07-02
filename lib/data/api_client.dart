@@ -27,6 +27,7 @@ class ApiClient {
     String? category,
     String? source,
     String? sort,
+    String? since,
     bool video = false,
   }) async {
     final res = await _dio.get<Map<String, dynamic>>(
@@ -37,6 +38,7 @@ class ApiClient {
         if (category != null) 'category': category,
         if (source != null) 'source': source,
         if (sort != null) 'sort': sort,
+        if (since != null) 'since': since,
         if (video) 'video': '1',
       },
     );
