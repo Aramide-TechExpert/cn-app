@@ -123,9 +123,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                     const SizedBox(width: AppSpace.xs),
                   ],
                 ),
-                // News content analysis — swipeable stat tiles (ports the web
-                // dashboard StatsRow) pinned at the top of Home.
+                // News content analysis — swipeable stat text (ports the web
+                // dashboard StatsRow) pinned at the top of Home, with an FX +
+                // stocks strip directly below it.
                 const SliverToBoxAdapter(child: HomeStatsStrip()),
+                const SliverToBoxAdapter(child: HomeMarketsStrip()),
                 // First-run welcome banner (dismissible — never gates the app).
                 if (firstRun)
                   SliverToBoxAdapter(

@@ -10,27 +10,39 @@ final videoPoolProvider = FutureProvider.autoDispose<List<Article>>((ref) async 
   return page.items.where((a) => a.hasPlayableVideo && a.hasImage).toList();
 });
 
+/// Distinct source names for the News Feed source picker (most frequent first).
+final sourcesProvider = FutureProvider.autoDispose<List<String>>(
+  (ref) => ref.read(apiClientProvider).sources(),
+);
+
 /// Active filters for the News Feed (Discover). Mirrors the web feed filter bar:
 /// category, sort, and impact level. Null = "All".
 class NewsFilters {
   const NewsFilters(
-      {this.category, this.sort = 'latest', this.impact, this.video = false});
+      {this.category,
+      this.sort = 'latest',
+      this.impact,
+      this.video = false,
+      this.source});
   final String? category; // slug, null = all
   final String sort; // 'latest' | 'trending'
   final String? impact; // 'Critical'|'High'|'Medium'|'Low', null = all
   final bool video; // true = only articles with a playable video
+  final String? source; // exact source name, null = all
 
   NewsFilters copyWith({
     Object? category = _unset,
     String? sort,
     Object? impact = _unset,
     bool? video,
+    Object? source = _unset,
   }) {
     return NewsFilters(
       category: category == _unset ? this.category : category as String?,
       sort: sort ?? this.sort,
       impact: impact == _unset ? this.impact : impact as String?,
       video: video ?? this.video,
+      source: source == _unset ? this.source : source as String?,
     );
   }
 
@@ -60,6 +72,7 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
           cursor: cursor,
           limit: 20,
           category: _filters.category,
+          source: _filters.source,
           sort: _filters.sort == 'latest' ? null : _filters.sort,
           video: _filters.video,
         );

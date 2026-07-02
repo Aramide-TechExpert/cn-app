@@ -81,6 +81,18 @@ class ApiClient {
         (res.data?['stats'] as Map<String, dynamic>?) ?? const {});
   }
 
+  /// Distinct article source names, most frequent first — for the News Feed
+  /// source picker. Pairs with feed(source: ...).
+  Future<List<String>> sources({int limit = 40}) async {
+    final res = await _dio.get<Map<String, dynamic>>('/sources',
+        queryParameters: {'limit': limit});
+    final list = (res.data?['sources'] as List?) ?? const [];
+    return list
+        .map((e) => (e as Map<String, dynamic>)['source']?.toString() ?? '')
+        .where((s) => s.isNotEmpty)
+        .toList();
+  }
+
   Future<DailyBriefing?> briefing() async {
     final res = await _dio.get<Map<String, dynamic>>('/briefing');
     final b = res.data?['briefing'];

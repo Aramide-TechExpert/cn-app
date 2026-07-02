@@ -43,6 +43,22 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     super.dispose();
   }
 
+  /// Opens the source picker sheet; applies the chosen source (or clears it).
+  Future<void> _openSourcePicker() async {
+    final notifier = ref.read(newsFeedControllerProvider.notifier);
+    final picked = await showModalBottomSheet<String?>(
+      context: context,
+      backgroundColor: context.colors.bgElevated,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (_) => _SourcePickerSheet(current: notifier.filters.source),
+    );
+    if (picked == null) return; // dismissed → no change
+    notifier.setFilters(
+        notifier.filters.copyWith(source: picked.isEmpty ? null : picked));
+    if (_scroll.hasClients) _scroll.jumpTo(0);
+  }
+
   /// Dynamic card rhythm — gives the feed *visibly* distinct card shapes instead
   /// of a flat column (mirrors the web mosaic/bucketed feed). A bold full-bleed
   /// Overlay hero leads, then a tight 4-card cadence interleaves a full-bleed
@@ -216,7 +232,10 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
               ],
               bottom: PreferredSize(
                 preferredSize: const Size.fromHeight(86),
-                child: _FilterBar(filters: filters, onChanged: setFilters),
+                child: _FilterBar(
+                    filters: filters,
+                    onChanged: setFilters,
+                    onOpenSources: _openSourcePicker),
               ),
             ),
             feed.when(
@@ -307,9 +326,13 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
 
 /// Sticky filter bar: category chips (row 1) + sort & impact (row 2).
 class _FilterBar extends StatelessWidget {
-  const _FilterBar({required this.filters, required this.onChanged});
+  const _FilterBar(
+      {required this.filters,
+      required this.onChanged,
+      required this.onOpenSources});
   final NewsFilters filters;
   final ValueChanged<NewsFilters> onChanged;
+  final VoidCallback onOpenSources;
 
   @override
   Widget build(BuildContext context) {
@@ -350,6 +373,13 @@ class _FilterBar extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
               children: [
+                _Chip(
+                  label: filters.source ?? 'Sources',
+                  icon: Icons.rss_feed,
+                  selected: filters.source != null,
+                  onTap: onOpenSources,
+                ),
+                const _VLine(),
                 _Chip(
                   label: 'Videos',
                   icon: Icons.play_circle_outline,
@@ -455,6 +485,91 @@ class _Chip extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Bottom-sheet source picker. Pops with '' for "All sources", a source name,
+/// or null when dismissed. Sources come from [sourcesProvider].
+class _SourcePickerSheet extends ConsumerWidget {
+  const _SourcePickerSheet({required this.current});
+  final String? current;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.colors;
+    final sources = ref.watch(sourcesProvider);
+    return SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpace.lg, 0, AppSpace.lg, AppSpace.sm),
+              child: Row(
+                children: [
+                  Text('Filter by source',
+                      style: AppText.bodyStrong.copyWith(color: c.text)),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: c.border),
+            Flexible(
+              child: sources.when(
+                loading: () => const Padding(
+                    padding: EdgeInsets.all(AppSpace.xl),
+                    child: Center(child: CircularProgressIndicator.adaptive())),
+                error: (e, _) => Padding(
+                    padding: const EdgeInsets.all(AppSpace.xl),
+                    child: Text("Couldn't load sources.",
+                        style:
+                            AppText.body.copyWith(color: c.textSecondary))),
+                data: (list) => ListView(
+                  shrinkWrap: true,
+                  children: [
+                    _SourceRow(
+                      label: 'All sources',
+                      selected: current == null,
+                      onTap: () => Navigator.pop(context, ''),
+                    ),
+                    for (final s in list)
+                      _SourceRow(
+                        label: s,
+                        selected: current == s,
+                        onTap: () => Navigator.pop(context, s),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SourceRow extends StatelessWidget {
+  const _SourceRow(
+      {required this.label, required this.selected, required this.onTap});
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return ListTile(
+      dense: true,
+      title: Text(label,
+          style: AppText.body.copyWith(
+              color: selected ? c.brand : c.text,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+      trailing: selected ? Icon(Icons.check, size: 18, color: c.brand) : null,
+      onTap: onTap,
     );
   }
 }
