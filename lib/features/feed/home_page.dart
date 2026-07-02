@@ -13,6 +13,7 @@ import '../../theme/tokens.dart';
 import '../shell/app_drawer.dart';
 import 'video_reel_page.dart';
 import 'widgets/article_card.dart';
+import 'widgets/card_extras.dart';
 import 'widgets/card_variants.dart';
 import 'widgets/magazine_card.dart';
 import 'widgets/overlay_card.dart';
@@ -160,13 +161,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ),
 
-                if (spotlight.isNotEmpty)
+                if (spotlight.isNotEmpty) ...[
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: AppSpace.md),
                       child: SpotlightCarousel(articles: spotlight),
                     ),
                   ),
+                  // Band: section break after the hero, before the rails.
+                  const SliverToBoxAdapter(child: BlockDivider()),
+                ],
 
                 // For You — personalized rail from followed interests.
                 if (forYou.isNotEmpty) ...[
@@ -183,6 +187,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                             const SizedBox(width: AppSpace.lg),
                         itemBuilder: (_, i) => RailCard(article: forYou[i]),
                       ),
+                    ),
+                  ),
+                  // Thin line between the stacked rails.
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: AppSpace.md),
+                      child: Divider(height: 1, thickness: 1, color: c.border),
                     ),
                   ),
                 ],
@@ -203,6 +214,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                         itemBuilder: (_, i) =>
                             CompactCard(article: rail[i], width: 220),
                       ),
+                    ),
+                  ),
+                  // Thin line between the stacked rails.
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: AppSpace.md),
+                      child: Divider(height: 1, thickness: 1, color: c.border),
                     ),
                   ),
                 ],
@@ -233,6 +251,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ),
                   ),
+                  // Band: section break after the rails, into the main feed.
+                  const SliverToBoxAdapter(child: BlockDivider()),
                 ],
 
                 if (rest.isNotEmpty)

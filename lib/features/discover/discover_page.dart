@@ -215,7 +215,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                 const SizedBox(width: AppSpace.xs),
               ],
               bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(78),
+                preferredSize: const Size.fromHeight(86),
                 child: _FilterBar(filters: filters, onChanged: setFilters),
               ),
             ),
@@ -316,7 +316,6 @@ class _FilterBar extends StatelessWidget {
     final c = context.colors;
     return Container(
       color: c.bg,
-      padding: const EdgeInsets.only(bottom: AppSpace.sm),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -395,6 +394,9 @@ class _FilterBar extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: AppSpace.sm),
+          // Band: separates the sticky filter toolbar from the feed below.
+          const BlockDivider(),
         ],
       ),
     );
