@@ -61,13 +61,29 @@ class Article {
   String? get blurb {
     final candidates = [summary, excerpt, whatHappened, whyItMatters];
     final t = title.trim().toLowerCase();
+    bool usable(String v, {required bool allowDup}) {
+      if (v.length < 8) return false;
+      final l = v.toLowerCase();
+      if (!allowDup && l == t) return false;
+      // Placeholder junk some scrapers emit instead of a real summary.
+      if (RegExp(
+              r'^(article url|read more|continue reading|click here|see more|view (the )?(full )?article|read (the )?full|full (story|article)|source|no summary|n/?a|\[)',
+              caseSensitive: false)
+          .hasMatch(l)) {
+        return false;
+      }
+      // Bare URL/domain leftover (a single token that looks like a link).
+      if (!v.contains(' ') && RegExp(r'^\S+\.\S+').hasMatch(v)) return false;
+      return true;
+    }
+
     for (final s in candidates) {
       final v = (s ?? '').trim();
-      if (v.isNotEmpty && v.toLowerCase() != t) return v;
+      if (usable(v, allowDup: false)) return v;
     }
     for (final s in candidates) {
       final v = (s ?? '').trim();
-      if (v.isNotEmpty) return v;
+      if (usable(v, allowDup: true)) return v;
     }
     return null;
   }

@@ -222,7 +222,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   // Thin line under Trending, then a little gap before Shorts.
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.only(top: AppSpace.md),
+                      padding: const EdgeInsets.only(top: AppSpace.xs),
                       child: Divider(height: 1, thickness: 1, color: c.border),
                     ),
                   ),
