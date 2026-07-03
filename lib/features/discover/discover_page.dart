@@ -456,7 +456,12 @@ class _FilterBar extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 5),
-          Divider(height: 1, thickness: 1, color: c.border),
+          // Deeper hairline between the two filter rows.
+          Divider(
+              height: 1,
+              thickness: 1,
+              color:
+                  Color.alphaBlend(c.textFaint.withValues(alpha: 0.5), c.border)),
           const SizedBox(height: 5),
           // Sort + impact.
           SizedBox(

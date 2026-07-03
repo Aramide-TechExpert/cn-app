@@ -54,9 +54,23 @@ class Article {
   /// True only when the source carries a self-hosted, directly-playable video
   /// (set at ingest; never YouTube/Vimeo) — gates inline playback.
   bool get hasPlayableVideo => videoUrl != null && videoUrl!.isNotEmpty;
-  String? get blurb => (summary != null && summary!.isNotEmpty)
-      ? summary
-      : (excerpt.isNotEmpty ? excerpt : null);
+  /// The excerpt shown on every card. Prefers a distinct blurb (summary →
+  /// excerpt → whatHappened → whyItMatters), skipping any that merely repeats
+  /// the title; falls back to a title-duplicate only as a last resort so a card
+  /// is never left title-only when any text exists.
+  String? get blurb {
+    final candidates = [summary, excerpt, whatHappened, whyItMatters];
+    final t = title.trim().toLowerCase();
+    for (final s in candidates) {
+      final v = (s ?? '').trim();
+      if (v.isNotEmpty && v.toLowerCase() != t) return v;
+    }
+    for (final s in candidates) {
+      final v = (s ?? '').trim();
+      if (v.isNotEmpty) return v;
+    }
+    return null;
+  }
 
   factory Article.fromJson(Map<String, dynamic> j) {
     List<String> strList(dynamic v) =>

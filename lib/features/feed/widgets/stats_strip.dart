@@ -51,7 +51,7 @@ class HomeStatsStrip extends ConsumerWidget {
     ];
 
     return Padding(
-      padding: const EdgeInsets.only(top: AppSpace.sm, bottom: 5),
+      padding: const EdgeInsets.only(top: 2, bottom: 5),
       child: SizedBox(
         height: 34,
         child: ListView.separated(
@@ -93,13 +93,13 @@ class _Stat extends StatelessWidget {
                 text: '$value ',
                 style: AppText.body.copyWith(
                     color: c.text,
-                    fontSize: 13.5,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700)),
             TextSpan(
                 text: label,
                 style: AppText.body.copyWith(
                     color: c.textSecondary,
-                    fontSize: 13.5,
+                    fontSize: 14,
                     fontWeight: FontWeight.w500)),
           ])),
         ],
@@ -129,8 +129,12 @@ class HomeMarketsStrip extends ConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Thin line tying the markets strip to the stats strip above it.
-        Divider(height: 1, thickness: 1, color: c.border),
+        // Deeper thin line tying the markets strip to the stats strip above it.
+        Divider(
+            height: 1,
+            thickness: 1,
+            color: Color.alphaBlend(
+                c.textFaint.withValues(alpha: 0.5), c.border)),
         const SizedBox(height: 5),
         SizedBox(
           height: 30,
@@ -165,12 +169,12 @@ class _Fx extends StatelessWidget {
               text: 'USD/${rate.code} ',
               style: AppText.body.copyWith(
                   color: c.textSecondary,
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: FontWeight.w500)),
           TextSpan(
               text: _fmtNum(rate.rate),
               style: AppText.body.copyWith(
-                  color: c.text, fontSize: 13, fontWeight: FontWeight.w700)),
+                  color: c.text, fontSize: 14, fontWeight: FontWeight.w700)),
         ])),
       ),
     );
@@ -193,11 +197,11 @@ class _Quote extends StatelessWidget {
           TextSpan(
               text: '${quote.label} ',
               style: AppText.body.copyWith(
-                  color: c.text, fontSize: 13, fontWeight: FontWeight.w700)),
+                  color: c.text, fontSize: 14, fontWeight: FontWeight.w700)),
           TextSpan(
               text: _fmtNum(quote.price),
               style: AppText.body.copyWith(
-                  color: c.textSecondary, fontSize: 13)),
+                  color: c.textSecondary, fontSize: 14)),
           TextSpan(
               text: '  ${up ? '▲' : '▼'}${quote.changePct.abs().toStringAsFixed(2)}%',
               style: AppText.body.copyWith(

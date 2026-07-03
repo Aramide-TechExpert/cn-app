@@ -79,14 +79,14 @@ class ArticleCard extends ConsumerWidget {
                                   style: AppText.body
                                       .copyWith(color: c.textSecondary)),
                             ],
-                            const SizedBox(height: 8),
-                            SignalRow(article: article),
                           ],
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 8),
+                SignalRow(article: article),
                 const SizedBox(height: 8),
                 Row(children: [
                   Text(readTime(article.readingMinutes),
