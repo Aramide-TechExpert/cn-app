@@ -28,14 +28,14 @@ final router = GoRouter(
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>
           ScaffoldWithNav(navigationShell: navigationShell),
-      // Footer order: Home · Clusters · Stack (center) · Briefing · Feed.
+      // Footer order: Home · Feed · Reel (center) · Clusters · Briefing.
       branches: [
         StatefulShellBranch(
           routes: [GoRoute(path: '/', builder: (_, __) => const HomePage())],
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/clusters', builder: (_, __) => const ClustersPage()),
+            GoRoute(path: '/discover', builder: (_, __) => const DiscoverPage()),
           ],
         ),
         StatefulShellBranch(
@@ -45,12 +45,12 @@ final router = GoRouter(
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/briefing', builder: (_, __) => const BriefingPage()),
+            GoRoute(path: '/clusters', builder: (_, __) => const ClustersPage()),
           ],
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/discover', builder: (_, __) => const DiscoverPage()),
+            GoRoute(path: '/briefing', builder: (_, __) => const BriefingPage()),
           ],
         ),
       ],
