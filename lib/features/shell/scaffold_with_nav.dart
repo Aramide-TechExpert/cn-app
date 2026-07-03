@@ -29,14 +29,15 @@ class ScaffoldWithNav extends StatelessWidget {
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.dynamic_feed_outlined),
-            selectedIcon: Icon(Icons.dynamic_feed),
-            label: 'Feed',
-          ),
-          NavigationDestination(
             icon: Icon(Icons.account_tree_outlined),
             selectedIcon: Icon(Icons.account_tree),
             label: 'Clusters',
+          ),
+          // Center: the full-screen "reel/stack" swiper.
+          NavigationDestination(
+            icon: Icon(Icons.auto_stories_outlined),
+            selectedIcon: Icon(Icons.auto_stories),
+            label: 'Reel',
           ),
           NavigationDestination(
             icon: Icon(Icons.newspaper_outlined),
@@ -44,9 +45,9 @@ class ScaffoldWithNav extends StatelessWidget {
             label: 'Briefing',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'You',
+            icon: Icon(Icons.dynamic_feed_outlined),
+            selectedIcon: Icon(Icons.dynamic_feed),
+            label: 'Feed',
           ),
         ],
       ),

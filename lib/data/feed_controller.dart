@@ -13,14 +13,17 @@ class FeedController extends AsyncNotifier<List<Article>> {
   String? _cursor;
   bool _hasMore = true;
   bool _loadingMore = false;
+  String? _since; // '1h'|'24h'|'7d', null = any time (Home time filter)
 
   bool get hasMore => _hasMore;
   bool get loadingMore => _loadingMore;
+  String? get since => _since;
 
   @override
   Future<List<Article>> build() async {
     // Larger first page so Home can fill hero + rail + bento + latest.
-    final page = await ref.read(apiClientProvider).feed(limit: 24);
+    final page =
+        await ref.read(apiClientProvider).feed(limit: 24, since: _since);
     _cursor = page.nextCursor;
     _hasMore = page.nextCursor != null;
     return page.items;
@@ -33,6 +36,7 @@ class FeedController extends AsyncNotifier<List<Article>> {
       final page = await ref.read(apiClientProvider).feed(
             cursor: _cursor,
             limit: 12,
+            since: _since,
           );
       _cursor = page.nextCursor;
       _hasMore = page.nextCursor != null;
@@ -48,7 +52,24 @@ class FeedController extends AsyncNotifier<List<Article>> {
     _cursor = null;
     _hasMore = true;
     state = await AsyncValue.guard(() async {
-      final page = await ref.read(apiClientProvider).feed(limit: 12);
+      final page =
+          await ref.read(apiClientProvider).feed(limit: 24, since: _since);
+      _cursor = page.nextCursor;
+      _hasMore = page.nextCursor != null;
+      return page.items;
+    });
+  }
+
+  /// Home time filter — refetches the feed with the new lower bound.
+  Future<void> setSince(String? since) async {
+    if (_since == since) return;
+    _since = since;
+    _cursor = null;
+    _hasMore = true;
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final page =
+          await ref.read(apiClientProvider).feed(limit: 24, since: _since);
       _cursor = page.nextCursor;
       _hasMore = page.nextCursor != null;
       return page.items;

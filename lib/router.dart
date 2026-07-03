@@ -28,18 +28,19 @@ final router = GoRouter(
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>
           ScaffoldWithNav(navigationShell: navigationShell),
+      // Footer order: Home · Clusters · Stack (center) · Briefing · Feed.
       branches: [
         StatefulShellBranch(
           routes: [GoRoute(path: '/', builder: (_, __) => const HomePage())],
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/discover', builder: (_, __) => const DiscoverPage()),
+            GoRoute(path: '/clusters', builder: (_, __) => const ClustersPage()),
           ],
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/clusters', builder: (_, __) => const ClustersPage()),
+            GoRoute(path: '/stack', builder: (_, __) => const StackFeedPage()),
           ],
         ),
         StatefulShellBranch(
@@ -49,7 +50,7 @@ final router = GoRouter(
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/you', builder: (_, __) => const YouPage()),
+            GoRoute(path: '/discover', builder: (_, __) => const DiscoverPage()),
           ],
         ),
       ],
@@ -59,6 +60,8 @@ final router = GoRouter(
     GoRoute(path: '/saved', builder: (_, __) => const SavedPage()),
     GoRoute(path: '/insights', builder: (_, __) => const InsightsPage()),
     GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
+    // You / account — reachable from the drawer, no longer a footer tab.
+    GoRoute(path: '/you', builder: (_, __) => const YouPage()),
     GoRoute(path: '/interests', builder: (_, __) => const InterestsPage()),
     GoRoute(path: '/watchlists', builder: (_, __) => const WatchlistsPage()),
     GoRoute(path: '/alerts', builder: (_, __) => const AlertsPage()),
@@ -66,7 +69,6 @@ final router = GoRouter(
         path: '/legal-sources',
         builder: (_, __) => const LegalSourcesPage()),
     GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingPage()),
-    GoRoute(path: '/stack', builder: (_, __) => const StackFeedPage()),
     GoRoute(
       path: '/cluster/:id',
       builder: (_, s) => ClusterDetailPage(id: s.pathParameters['id']!),

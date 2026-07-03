@@ -10,6 +10,7 @@ import '../../data/settings_controller.dart';
 import '../../models/article.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
+import '../discover/discover_page.dart' show FeedView;
 import '../shell/app_drawer.dart';
 import 'video_reel_page.dart';
 import 'widgets/article_card.dart';
@@ -30,11 +31,51 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   final _scroll = ScrollController();
+  FeedView _view = FeedView.mixed; // layout of the "Latest" section
 
   @override
   void initState() {
     super.initState();
     _scroll.addListener(_onScroll);
+  }
+
+  static IconData _viewIcon(FeedView v) => switch (v) {
+        FeedView.mixed => Icons.dashboard_outlined,
+        FeedView.magazine => Icons.view_agenda_outlined,
+        FeedView.grid => Icons.grid_view,
+        FeedView.list => Icons.view_headline,
+      };
+
+  PopupMenuItem<FeedView> _viewItem(ClustezColors c, FeedView v, String label) {
+    final sel = _view == v;
+    return PopupMenuItem(
+      value: v,
+      child: Row(children: [
+        Icon(_viewIcon(v), size: 18, color: sel ? c.brand : c.textSecondary),
+        const SizedBox(width: AppSpace.md),
+        Text(label,
+            style: AppText.body.copyWith(
+                color: sel ? c.brand : c.text,
+                fontWeight: sel ? FontWeight.w700 : FontWeight.w500)),
+      ]),
+    );
+  }
+
+  PopupMenuItem<String> _timeItem(
+      ClustezColors c, String value, String label, String? current) {
+    final sel = (current ?? '') == value;
+    return PopupMenuItem(
+      value: value,
+      child: Row(children: [
+        Icon(sel ? Icons.check : Icons.schedule,
+            size: 18, color: sel ? c.brand : c.textSecondary),
+        const SizedBox(width: AppSpace.md),
+        Text(label,
+            style: AppText.body.copyWith(
+                color: sel ? c.brand : c.text,
+                fontWeight: sel ? FontWeight.w700 : FontWeight.w500)),
+      ]),
+    );
   }
 
   void _onScroll() {
@@ -111,10 +152,31 @@ class _HomePageState extends ConsumerState<HomePage> {
                   title: Text('Top Stories',
                       style: AppText.title.copyWith(color: c.text)),
                   actions: [
-                    IconButton(
-                      icon: Icon(Icons.view_carousel_outlined, color: c.text),
-                      tooltip: 'Stack',
-                      onPressed: () => context.push('/stack'),
+                    // Time period (?since=) — same as the News Feed header.
+                    PopupMenuButton<String>(
+                      tooltip: 'Time period',
+                      icon: Icon(Icons.history,
+                          color: controller.since != null ? c.brand : c.text),
+                      onSelected: (v) =>
+                          controller.setSince(v.isEmpty ? null : v),
+                      itemBuilder: (_) => [
+                        _timeItem(c, '', 'Any time', controller.since),
+                        _timeItem(c, '1h', 'Past hour', controller.since),
+                        _timeItem(c, '24h', 'Past 24 hours', controller.since),
+                        _timeItem(c, '7d', 'Past week', controller.since),
+                      ],
+                    ),
+                    // View layout for the Latest section.
+                    PopupMenuButton<FeedView>(
+                      tooltip: 'View',
+                      icon: Icon(_viewIcon(_view), color: c.text),
+                      onSelected: (v) => setState(() => _view = v),
+                      itemBuilder: (_) => [
+                        _viewItem(c, FeedView.mixed, 'Mixed'),
+                        _viewItem(c, FeedView.magazine, 'Magazine'),
+                        _viewItem(c, FeedView.grid, 'Grid'),
+                        _viewItem(c, FeedView.list, 'List'),
+                      ],
                     ),
                     IconButton(
                       icon: Icon(Icons.search, color: c.text),
@@ -269,29 +331,52 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ),
 
-                // Main feed — frequent magazine / overlay features interleaved
-                // with rows so all card styles show as you scroll.
-                SliverList.builder(
-                  itemCount: rest.length + 1,
-                  itemBuilder: (context, i) {
-                    if (i == rest.length) {
-                      return Padding(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: AppSpace.xl),
-                        child: controller.hasMore
-                            ? const Center(
-                                child: CircularProgressIndicator.adaptive())
-                            : const SizedBox(height: AppSpace.lg),
-                      );
-                    }
-                    // Grey band ONLY between two stacked big image cards.
-                    final next = i + 1 < rest.length ? rest[i + 1] : null;
-                    final flushBelow = next != null &&
-                        _isBigImageCardAt(i, rest[i]) &&
-                        _isBigImageCardAt(i + 1, next);
-                    return _feedCard(i, rest[i], flushBelow: flushBelow);
-                  },
-                ),
+                // Main "Latest" feed — layout follows the view switcher.
+                switch (_view) {
+                  FeedView.list => SliverList.builder(
+                      itemCount: rest.length + 1,
+                      itemBuilder: (context, i) => i == rest.length
+                          ? _feedLoader(controller.hasMore)
+                          : ListCard(article: rest[i]),
+                    ),
+                  FeedView.magazine => SliverList.builder(
+                      itemCount: rest.length + 1,
+                      itemBuilder: (context, i) => i == rest.length
+                          ? _feedLoader(controller.hasMore)
+                          : MagazineCard(article: rest[i]),
+                    ),
+                  FeedView.grid => SliverPadding(
+                      padding: const EdgeInsets.all(AppSpace.lg),
+                      sliver: SliverGrid(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: AppSpace.lg,
+                          crossAxisSpacing: AppSpace.lg,
+                          childAspectRatio: 0.6,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, i) => CompactCard(
+                              article: rest[i], width: double.infinity),
+                          childCount: rest.length,
+                        ),
+                      ),
+                    ),
+                  FeedView.mixed => SliverList.builder(
+                      itemCount: rest.length + 1,
+                      itemBuilder: (context, i) {
+                        if (i == rest.length) {
+                          return _feedLoader(controller.hasMore);
+                        }
+                        // Grey band ONLY between two stacked big image cards.
+                        final next = i + 1 < rest.length ? rest[i + 1] : null;
+                        final flushBelow = next != null &&
+                            _isBigImageCardAt(i, rest[i]) &&
+                            _isBigImageCardAt(i + 1, next);
+                        return _feedCard(i, rest[i], flushBelow: flushBelow);
+                      },
+                    ),
+                },
               ],
             ),
           );
@@ -314,6 +399,13 @@ Widget _railHeader(BuildContext context, String title) => SliverToBoxAdapter(
 /// Cycles the "Latest" feed through every full-width variant so each card style
 /// surfaces as you scroll. Falls back to a text variant when an article has no
 /// image (so image-led variants never render an empty box).
+Widget _feedLoader(bool hasMore) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpace.xl),
+      child: hasMore
+          ? const Center(child: CircularProgressIndicator.adaptive())
+          : const SizedBox(height: AppSpace.lg),
+    );
+
 Widget _feedCard(int i, Article a, {bool flushBelow = false}) {
   // Real in-article video (flagged at ingest) always renders as the video
   // card — the variant is driven by content, never by position.
