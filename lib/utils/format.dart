@@ -65,8 +65,16 @@ String cleanText(String? input) {
   t = t.replaceAll(RegExp(r'#(?=\w)'), '');
   // Leftover markdown quote/list markers at line starts.
   t = t.replaceAll(RegExp(r'(^|\n)\s*[>\-\*]\s+'), ' ');
-  // Collapse whitespace + tidy spaces before punctuation.
-  t = t.replaceAll(RegExp(r'\s+'), ' ').replaceAll(RegExp(r'\s+([,.;:!?])'), r'$1');
+  // WordPress RSS footer boilerplate ("The post X appeared first on Y").
+  t = t.replaceAll(
+      RegExp(r'\s*The post\b.*?\bappeared first on\b[^.]*\.?',
+          caseSensitive: false, dotAll: true),
+      '');
+  // Collapse whitespace, then drop the space before punctuation. Use
+  // replaceAllMapped so the captured punctuation is KEPT — a plain replaceAll
+  // with r'$1' inserts a literal "$1" (Dart replaceAll has no backreferences).
+  t = t.replaceAll(RegExp(r'\s+'), ' ');
+  t = t.replaceAllMapped(RegExp(r'\s+([,.;:!?])'), (m) => m[1]!);
   return t.trim();
 }
 

@@ -128,9 +128,12 @@ class _HomePageState extends ConsumerState<HomePage> {
         error: (e, _) =>
             _ErrorView(message: e.toString(), onRetry: controller.refresh),
         data: (allItems) {
-          // Drop "not interested" stories everywhere on Home.
-          final items =
-              allItems.where((a) => !dismissed.contains(a.id)).toList();
+          // Drop "not interested" stories, and keep NASA's obscure
+          // astronomy/space-object posts off Home (they read as noise here).
+          final items = allItems
+              .where((a) => !dismissed.contains(a.id))
+              .where((a) => !a.source.toLowerCase().contains('nasa'))
+              .toList();
           final withImage = items.where((a) => a.hasImage).toList();
           final spotlight = withImage.take(5).toList();
           final rail = withImage.skip(5).take(6).toList();
