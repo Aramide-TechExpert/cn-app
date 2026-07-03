@@ -40,19 +40,25 @@ class HomeStatsStrip extends ConsumerWidget {
     final corpus = ref.watch(statsProvider).valueOrNull;
     final clusters = ref.watch(clustersProvider).valueOrNull?.length;
     final sources = ref.watch(sourcesProvider).valueOrNull?.length;
-    final breaking = corpus?.breaking ?? 0;
-    final highImpact = (corpus?.high ?? 0) + (corpus?.critical ?? 0);
 
-    // Full set — Stories · Breaking · High Impact · Sources · Clusters.
-    // Breaking/High Impact come from the real corpus stats; they read 0 until
-    // the pipeline's tag job re-classifies impact, then populate live.
+    // Whole corpus, consistent with "Stories" (the impact buckets sum to the
+    // total): Stories · Breaking · Critical · High · Medium · Low · Sources ·
+    // Clusters. Impact buckets rebalance off "Medium" as the tag job runs.
     final stats = <Widget>[
       _Stat(
           value: corpus?.total ?? loaded.length,
           label: 'Stories',
           color: c.brand),
-      _Stat(value: breaking, label: 'Breaking', color: c.breaking),
-      _Stat(value: highImpact, label: 'High Impact', color: c.impact('High')),
+      if (corpus != null) ...[
+        _Stat(value: corpus.breaking, label: 'Breaking', color: c.breaking),
+        _Stat(
+            value: corpus.critical,
+            label: 'Critical',
+            color: c.impact('Critical')),
+        _Stat(value: corpus.high, label: 'High', color: c.impact('High')),
+        _Stat(value: corpus.medium, label: 'Medium', color: c.impact('Medium')),
+        _Stat(value: corpus.low, label: 'Low', color: c.impact('Low')),
+      ],
       if (sources != null)
         _Stat(value: sources, label: 'Sources', color: c.accent),
       if (clusters != null)
