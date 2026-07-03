@@ -80,9 +80,27 @@ class BriefingPage extends ConsumerWidget {
                     Text(b.title, style: AppText.display.copyWith(color: c.text)),
                     if (b.summary.isNotEmpty) ...[
                       const SizedBox(height: AppSpace.md),
-                      Text(b.summary,
-                          style: AppText.body
-                              .copyWith(color: c.textSecondary, height: 1.5)),
+                      // Lead brief — highlighted so it reads as the TL;DR.
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(AppSpace.lg),
+                        decoration: BoxDecoration(
+                          color: c.brandSoft,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('THE BRIEF',
+                                style: AppText.micro.copyWith(
+                                    color: c.brand, letterSpacing: 1)),
+                            const SizedBox(height: 6),
+                            Text(b.summary,
+                                style: AppText.body
+                                    .copyWith(color: c.text, height: 1.5)),
+                          ],
+                        ),
+                      ),
                     ],
                     if (b.topStories.isNotEmpty) ...[
                       const SizedBox(height: AppSpace.xl),
@@ -142,24 +160,39 @@ class _Story extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpace.lg),
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpace.md),
+      padding: const EdgeInsets.all(AppSpace.lg),
+      decoration: BoxDecoration(
+        color: c.bgElevated,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: c.border),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${story.number}',
-              style: AppText.title.copyWith(color: c.brand)),
+          Container(
+            width: 26,
+            height: 26,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: c.brandSoft, shape: BoxShape.circle),
+            child: Text('${story.number}',
+                style: AppText.bodyStrong
+                    .copyWith(color: c.brand, fontSize: 13)),
+          ),
           const SizedBox(width: AppSpace.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(story.title,
-                    style: AppText.bodyStrong.copyWith(color: c.text)),
+                    style: AppText.bodyStrong
+                        .copyWith(color: c.text, height: 1.3)),
                 if (story.summary.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(story.summary,
-                      style: AppText.body.copyWith(color: c.textSecondary)),
+                      style: AppText.body
+                          .copyWith(color: c.textSecondary, height: 1.4)),
                 ],
               ],
             ),

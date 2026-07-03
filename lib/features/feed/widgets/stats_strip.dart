@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/discover_controller.dart';
 import '../../../data/feed_controller.dart';
+import '../../../data/news_feed_controller.dart';
 import '../../../models/widgets_data.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/tokens.dart';
@@ -33,21 +34,31 @@ class HomeStatsStrip extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
-    final items = ref.watch(feedControllerProvider).valueOrNull ?? const [];
-    if (items.isEmpty) return const SizedBox.shrink();
+    final loaded = ref.watch(feedControllerProvider).valueOrNull ?? const [];
+    if (loaded.isEmpty) return const SizedBox.shrink();
+    // Real corpus stats (not just the loaded page) + live cluster/source counts.
+    final corpus = ref.watch(statsProvider).valueOrNull;
     final clusters = ref.watch(clustersProvider).valueOrNull?.length;
+    final sources = ref.watch(sourcesProvider).valueOrNull?.length;
+    final breaking = corpus?.breaking ?? 0;
+    final highImpact = (corpus?.high ?? 0) + (corpus?.critical ?? 0);
 
-    final breaking = items.where((a) => a.isBreaking).length;
-    final high = items
-        .where((a) => a.impact == 'High' || a.impact == 'Critical')
-        .length;
-
+    // Only show tiles with a meaningful (non-zero) value, so nothing renders
+    // as a dead "0" (the corpus is currently all-"medium", so Breaking/High
+    // Impact stay hidden until the data has them).
     final stats = <Widget>[
-      _Stat(value: items.length, label: 'Stories', color: c.brand),
-      _Stat(value: breaking, label: 'Breaking', color: c.breaking),
-      _Stat(value: high, label: 'High Impact', color: c.impact('High')),
-      if (clusters != null)
+      _Stat(
+          value: corpus?.total ?? loaded.length,
+          label: 'Stories',
+          color: c.brand),
+      if (sources != null && sources > 0)
+        _Stat(value: sources, label: 'Sources', color: c.accent),
+      if (clusters != null && clusters > 0)
         _Stat(value: clusters, label: 'Clusters', color: c.success),
+      if (breaking > 0)
+        _Stat(value: breaking, label: 'Breaking', color: c.breaking),
+      if (highImpact > 0)
+        _Stat(value: highImpact, label: 'High Impact', color: c.impact('High')),
     ];
 
     return Padding(

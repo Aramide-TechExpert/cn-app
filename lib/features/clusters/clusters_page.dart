@@ -52,7 +52,30 @@ class ClustersPage extends ConsumerWidget {
                   Text('Clusters', style: AppText.title.copyWith(color: c.text)),
             ),
 
-            // Trending topics.
+            // Intro — explains what a cluster is (the core value).
+            SliverToBoxAdapter(
+              child: clusters.maybeWhen(
+                data: (list) => _ClustersIntro(count: list.length),
+                orElse: () => const SizedBox.shrink(),
+              ),
+            ),
+
+            // Full coverage clusters — the hero of this page.
+            clusters.when(
+              loading: () => const SliverToBoxAdapter(child: _InlineLoader()),
+              error: (_, __) => const SliverToBoxAdapter(
+                  child: _InlineNote("Couldn't load clusters.")),
+              data: (list) => list.isEmpty
+                  ? const SliverToBoxAdapter(
+                      child: _InlineNote(
+                          'No multi-source stories are clustered right now.'))
+                  : SliverList.builder(
+                      itemCount: list.length,
+                      itemBuilder: (_, i) => _ClusterCard(cluster: list[i]),
+                    ),
+            ),
+
+            // Trending topics (secondary).
             const SliverToBoxAdapter(child: _SectionHeader('Trending')),
             SliverToBoxAdapter(
               child: trending.when(
@@ -82,24 +105,6 @@ class ClustersPage extends ConsumerWidget {
 
             // Markets + weather.
             const SliverToBoxAdapter(child: MarketsWeatherSection()),
-
-            // Full coverage clusters.
-            const SliverToBoxAdapter(child: _SectionHeader('Full coverage')),
-            clusters.when(
-              loading: () => const SliverToBoxAdapter(child: _InlineLoader()),
-              error: (_, __) => const SliverToBoxAdapter(
-                  child: _InlineNote("Couldn't load clusters.")),
-              data: (list) => list.isEmpty
-                  ? const SliverToBoxAdapter(
-                      child: _InlineNote(
-                          'No multi-source stories are clustered right now.'))
-                  : SliverList.separated(
-                      itemCount: list.length,
-                      separatorBuilder: (_, __) =>
-                          Divider(height: 1, thickness: 1, color: c.border),
-                      itemBuilder: (_, i) => _ClusterCard(cluster: list[i]),
-                    ),
-            ),
             const SliverToBoxAdapter(child: SizedBox(height: AppSpace.x2)),
           ],
         ),
@@ -212,44 +217,127 @@ class _TopicChip extends StatelessWidget {
   }
 }
 
+/// One-line intro under the app bar explaining what the page is.
+class _ClustersIntro extends StatelessWidget {
+  const _ClustersIntro({required this.count});
+  final int count;
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
+      child: Row(
+        children: [
+          Icon(Icons.hub_outlined, size: 16, color: c.brand),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              count > 0
+                  ? '$count stories, each grouped across every source covering it'
+                  : 'Stories grouped across every source covering them',
+              style: AppText.caption.copyWith(color: c.textSecondary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Prominent "N sources" pill — the proof that this is multi-source coverage.
+class _SourcesPill extends StatelessWidget {
+  const _SourcesPill({required this.count});
+  final int count;
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: c.brandSoft,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.account_tree, size: 13, color: c.brand),
+        const SizedBox(width: 5),
+        Text('$count ${count == 1 ? "source" : "sources"}',
+            style: AppText.caption
+                .copyWith(color: c.brand, fontWeight: FontWeight.w700)),
+      ]),
+    );
+  }
+}
+
 class _ClusterCard extends StatelessWidget {
   const _ClusterCard({required this.cluster});
   final StoryCluster cluster;
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return InkWell(
-      onTap: () => context.push('/cluster/${cluster.id}'),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(AppSpace.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Icon(Icons.account_tree_outlined, size: 14, color: c.brand),
-              const SizedBox(width: 5),
-              Text('FULL COVERAGE',
-                  style: AppText.micro.copyWith(color: c.brand)),
-            ]),
-            const SizedBox(height: AppSpace.sm),
-            Text(cluster.title,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: AppText.headline.copyWith(color: c.text)),
-            if (cluster.summary.isNotEmpty) ...[
-              const SizedBox(height: AppSpace.sm),
-              Text(cluster.summary,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.body.copyWith(color: c.textSecondary)),
-            ],
-            const SizedBox(height: AppSpace.md),
-            Text(
-              '${cluster.sourceCount} ${cluster.sourceCount == 1 ? "source" : "sources"} · updated ${timeAgo(cluster.lastUpdated)}',
-              style: AppText.caption.copyWith(color: c.textFaint),
+    final tags = cluster.tags.take(4).toList();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
+      child: Material(
+        color: c.bgElevated,
+        borderRadius: BorderRadius.circular(14),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push('/cluster/${cluster.id}'),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: c.border),
             ),
-          ],
+            padding: const EdgeInsets.all(AppSpace.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  _SourcesPill(count: cluster.sourceCount),
+                  const Spacer(),
+                  Text('updated ${timeAgo(cluster.lastUpdated)}',
+                      style: AppText.caption.copyWith(color: c.textFaint)),
+                ]),
+                const SizedBox(height: AppSpace.md),
+                Text(cluster.title,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.headline
+                        .copyWith(color: c.text, height: 1.25)),
+                if (cluster.summary.isNotEmpty) ...[
+                  const SizedBox(height: AppSpace.sm),
+                  Text(cluster.summary,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.body
+                          .copyWith(color: c.textSecondary, height: 1.4)),
+                ],
+                if (tags.isNotEmpty) ...[
+                  const SizedBox(height: AppSpace.md),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      for (final t in tags)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: c.bgInset,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(t,
+                              style: AppText.micro
+                                  .copyWith(color: c.textSecondary)),
+                        ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );
