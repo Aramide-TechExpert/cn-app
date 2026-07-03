@@ -85,7 +85,7 @@ class ApiClient {
 
   /// Distinct article source names, most frequent first — for the News Feed
   /// source picker. Pairs with feed(source: ...).
-  Future<List<String>> sources({int limit = 40}) async {
+  Future<List<String>> sources({int limit = 50}) async {
     final res = await _dio.get<Map<String, dynamic>>('/sources',
         queryParameters: {'limit': limit});
     final list = (res.data?['sources'] as List?) ?? const [];

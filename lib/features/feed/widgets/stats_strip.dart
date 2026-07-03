@@ -43,34 +43,32 @@ class HomeStatsStrip extends ConsumerWidget {
     final breaking = corpus?.breaking ?? 0;
     final highImpact = (corpus?.high ?? 0) + (corpus?.critical ?? 0);
 
-    // Only show tiles with a meaningful (non-zero) value, so nothing renders
-    // as a dead "0" (the corpus is currently all-"medium", so Breaking/High
-    // Impact stay hidden until the data has them).
+    // Full set — Stories · Breaking · High Impact · Sources · Clusters.
+    // Breaking/High Impact come from the real corpus stats; they read 0 until
+    // the pipeline's tag job re-classifies impact, then populate live.
     final stats = <Widget>[
       _Stat(
           value: corpus?.total ?? loaded.length,
           label: 'Stories',
           color: c.brand),
-      if (sources != null && sources > 0)
+      _Stat(value: breaking, label: 'Breaking', color: c.breaking),
+      _Stat(value: highImpact, label: 'High Impact', color: c.impact('High')),
+      if (sources != null)
         _Stat(value: sources, label: 'Sources', color: c.accent),
-      if (clusters != null && clusters > 0)
+      if (clusters != null)
         _Stat(value: clusters, label: 'Clusters', color: c.success),
-      if (breaking > 0)
-        _Stat(value: breaking, label: 'Breaking', color: c.breaking),
-      if (highImpact > 0)
-        _Stat(value: highImpact, label: 'High Impact', color: c.impact('High')),
     ];
 
     return Padding(
-      padding: const EdgeInsets.only(top: 2, bottom: 5),
+      padding: const EdgeInsets.only(top: 2, bottom: 4),
       child: SizedBox(
-        height: 34,
+        height: 30,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
           itemCount: stats.length,
           separatorBuilder: (_, __) => Center(
-            child: Container(width: 1, height: 15, color: c.border),
+            child: Container(width: 1, height: 13, color: c.border),
           ),
           itemBuilder: (_, i) => stats[i],
         ),
@@ -104,13 +102,13 @@ class _Stat extends StatelessWidget {
                 text: '$value ',
                 style: AppText.body.copyWith(
                     color: c.text,
-                    fontSize: 14,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w700)),
             TextSpan(
                 text: label,
                 style: AppText.body.copyWith(
                     color: c.textSecondary,
-                    fontSize: 14,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w500)),
           ])),
         ],
@@ -180,12 +178,12 @@ class _Fx extends StatelessWidget {
               text: 'USD/${rate.code} ',
               style: AppText.body.copyWith(
                   color: c.textSecondary,
-                  fontSize: 14,
+                  fontSize: 13.5,
                   fontWeight: FontWeight.w500)),
           TextSpan(
               text: _fmtNum(rate.rate),
               style: AppText.body.copyWith(
-                  color: c.text, fontSize: 14, fontWeight: FontWeight.w700)),
+                  color: c.text, fontSize: 13.5, fontWeight: FontWeight.w700)),
         ])),
       ),
     );
@@ -208,11 +206,11 @@ class _Quote extends StatelessWidget {
           TextSpan(
               text: '${quote.label} ',
               style: AppText.body.copyWith(
-                  color: c.text, fontSize: 14, fontWeight: FontWeight.w700)),
+                  color: c.text, fontSize: 13.5, fontWeight: FontWeight.w700)),
           TextSpan(
               text: _fmtNum(quote.price),
               style: AppText.body.copyWith(
-                  color: c.textSecondary, fontSize: 14)),
+                  color: c.textSecondary, fontSize: 13.5)),
           TextSpan(
               text: '  ${up ? '▲' : '▼'}${quote.changePct.abs().toStringAsFixed(2)}%',
               style: AppText.body.copyWith(

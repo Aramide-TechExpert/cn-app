@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../data/discover_controller.dart'
+    show statsProvider, clustersProvider, widgetsDataProvider;
 import '../../data/dismissed_controller.dart';
 import '../../data/feed_controller.dart';
-import '../../data/news_feed_controller.dart' show videoPoolProvider;
+import '../../data/news_feed_controller.dart'
+    show videoPoolProvider, sourcesProvider;
 import '../../data/personalization_controller.dart';
 import '../../data/settings_controller.dart';
 import '../../models/article.dart';
@@ -32,11 +37,25 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   final _scroll = ScrollController();
   FeedView _view = FeedView.mixed; // layout of the "Latest" section
+  Timer? _statsTimer;
 
   @override
   void initState() {
     super.initState();
     _scroll.addListener(_onScroll);
+    // Keep the header stats live — refetch on a cadence so they track each
+    // ingestion cycle instead of showing the first load's numbers forever.
+    _statsTimer =
+        Timer.periodic(const Duration(minutes: 2), (_) => _refreshStats());
+  }
+
+  /// Refetch the header stat sources (corpus totals, sources, clusters, FX).
+  void _refreshStats() {
+    if (!mounted) return;
+    ref.invalidate(statsProvider);
+    ref.invalidate(sourcesProvider);
+    ref.invalidate(clustersProvider);
+    ref.invalidate(widgetsDataProvider);
   }
 
   static IconData _viewIcon(FeedView v) => switch (v) {
@@ -86,6 +105,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   void dispose() {
+    _statsTimer?.cancel();
     _scroll.dispose();
     super.dispose();
   }
@@ -131,7 +151,10 @@ class _HomePageState extends ConsumerState<HomePage> {
           final rest = items.where((a) => !used.contains(a.id)).toList();
 
           return RefreshIndicator.adaptive(
-            onRefresh: controller.refresh,
+            onRefresh: () async {
+              _refreshStats();
+              await controller.refresh();
+            },
             child: CustomScrollView(
               controller: _scroll,
               physics: const AlwaysScrollableScrollPhysics(
