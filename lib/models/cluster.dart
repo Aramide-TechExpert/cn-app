@@ -8,6 +8,8 @@ class StoryCluster {
   final List<String> categories;
   final List<String> articleIds;
   final List<String> tags;
+  final List<String> sources; // distinct source names of member articles
+  final String? image; // representative hero image, if any
   final String lastUpdated;
 
   const StoryCluster({
@@ -17,14 +19,19 @@ class StoryCluster {
     required this.categories,
     required this.articleIds,
     required this.tags,
+    required this.sources,
+    required this.image,
     required this.lastUpdated,
   });
 
-  int get sourceCount => articleIds.length;
+  /// Distinct sources covering the story (falls back to member count).
+  int get sourceCount =>
+      sources.isNotEmpty ? sources.length : articleIds.length;
 
   factory StoryCluster.fromJson(Map<String, dynamic> j) {
     List<String> strList(dynamic v) =>
         (v as List?)?.map((e) => e.toString()).toList() ?? const [];
+    final img = (j['image'] ?? '').toString();
     return StoryCluster(
       id: (j['id'] ?? '').toString(),
       title: (j['title'] ?? '').toString(),
@@ -32,6 +39,8 @@ class StoryCluster {
       categories: strList(j['categories']),
       articleIds: strList(j['articleIds']),
       tags: strList(j['tags']),
+      sources: strList(j['sources']),
+      image: img.isEmpty ? null : img,
       lastUpdated: (j['lastUpdated'] ?? '').toString(),
     );
   }

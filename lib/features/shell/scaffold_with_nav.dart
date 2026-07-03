@@ -13,9 +13,15 @@ class ScaffoldWithNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    // The Reel (center, index 2) is a full-screen swiper — hide the footer so
+    // it runs edge to edge. Its own close button returns to Home.
+    final onReel = navigationShell.currentIndex == 2;
     return Scaffold(
+      extendBody: onReel,
       body: navigationShell,
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: onReel
+          ? null
+          : NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (i) => navigationShell.goBranch(
           i,

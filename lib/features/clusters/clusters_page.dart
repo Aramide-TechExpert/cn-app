@@ -1,14 +1,17 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/discover_controller.dart';
+import '../../data/source_signals.dart';
 import '../../models/cluster.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../utils/format.dart';
 import '../discover/markets_weather_section.dart';
 import '../feed/widgets/rail_card.dart';
+import '../feed/widgets/signal_badges.dart';
 import '../shell/app_drawer.dart';
 
 /// Clusters — multi-source "full coverage" stories, plus trending topics, topic
@@ -245,101 +248,186 @@ class _ClustersIntro extends StatelessWidget {
   }
 }
 
-/// Prominent "N sources" pill — the proof that this is multi-source coverage.
-class _SourcesPill extends StatelessWidget {
-  const _SourcesPill({required this.count});
-  final int count;
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: c.brandSoft,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(Icons.account_tree, size: 13, color: c.brand),
-        const SizedBox(width: 5),
-        Text('$count ${count == 1 ? "source" : "sources"}',
-            style: AppText.caption
-                .copyWith(color: c.brand, fontWeight: FontWeight.w700)),
-      ]),
-    );
-  }
-}
-
 class _ClusterCard extends StatelessWidget {
   const _ClusterCard({required this.cluster});
   final StoryCluster cluster;
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final tags = cluster.tags.take(4).toList();
+    final tags = cluster.tags.take(3).toList();
+    final shown = cluster.sources.take(3).toList();
+    final extra = cluster.sources.length - shown.length;
+    final category =
+        cluster.categories.isNotEmpty ? cluster.categories.first : null;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
+      padding:
+          const EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
       child: Material(
         color: c.bgElevated,
         borderRadius: BorderRadius.circular(14),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => context.push('/cluster/${cluster.id}'),
-          child: Container(
+          child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: c.border),
             ),
-            padding: const EdgeInsets.all(AppSpace.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: [
-                  _SourcesPill(count: cluster.sourceCount),
-                  const Spacer(),
-                  Text('updated ${timeAgo(cluster.lastUpdated)}',
-                      style: AppText.caption.copyWith(color: c.textFaint)),
-                ]),
-                const SizedBox(height: AppSpace.md),
-                Text(cluster.title,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.headline
-                        .copyWith(color: c.text, height: 1.25)),
-                if (cluster.summary.isNotEmpty) ...[
-                  const SizedBox(height: AppSpace.sm),
-                  Text(cluster.summary,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.body
-                          .copyWith(color: c.textSecondary, height: 1.4)),
-                ],
-                if (tags.isNotEmpty) ...[
-                  const SizedBox(height: AppSpace.md),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      for (final t in tags)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: c.bgInset,
-                            borderRadius: BorderRadius.circular(6),
+                // Hero image + a "FULL COVERAGE · N sources" ribbon.
+                if (cluster.image != null)
+                  Stack(children: [
+                    AspectRatio(
+                      aspectRatio: 2.3,
+                      child: CachedNetworkImage(
+                        imageUrl: cluster.image!,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => Container(color: c.bgInset),
+                        errorWidget: (_, __, ___) => Container(color: c.bgInset),
+                      ),
+                    ),
+                    const Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.center,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, Colors.black54],
                           ),
-                          child: Text(t,
-                              style: AppText.micro
-                                  .copyWith(color: c.textSecondary)),
                         ),
+                      ),
+                    ),
+                    Positioned(
+                      left: AppSpace.md,
+                      bottom: AppSpace.md,
+                      child: _CoverageRibbon(count: cluster.sourceCount),
+                    ),
+                  ]),
+                Padding(
+                  padding: const EdgeInsets.all(AppSpace.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        if (category != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: c.bgInset,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(categoryLabel(category).toUpperCase(),
+                                style: AppText.micro.copyWith(
+                                    color: c.textSecondary,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.3)),
+                          ),
+                          const Spacer(),
+                        ] else
+                          const Spacer(),
+                        if (cluster.image == null) ...[
+                          _CoverageRibbon(count: cluster.sourceCount, dark: false),
+                          const SizedBox(width: AppSpace.sm),
+                        ],
+                        Text(timeAgo(cluster.lastUpdated),
+                            style: AppText.caption.copyWith(color: c.textFaint)),
+                      ]),
+                      const SizedBox(height: AppSpace.sm),
+                      Text(cluster.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.headline
+                              .copyWith(color: c.text, height: 1.25)),
+                      if (cluster.summary.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(cluster.summary,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppText.body
+                                .copyWith(color: c.textSecondary, height: 1.4)),
+                      ],
+                      // The coverage line — the actual sources on the story.
+                      if (shown.isNotEmpty) ...[
+                        const SizedBox(height: AppSpace.md),
+                        Row(children: [
+                          for (final s in shown)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: SourceFavicon(
+                                  url: null, source: s, size: 16),
+                            ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              extra > 0
+                                  ? '${shown.join(", ")} +$extra more'
+                                  : shown.join(", "),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppText.caption
+                                  .copyWith(color: c.textSecondary),
+                            ),
+                          ),
+                        ]),
+                      ],
+                      if (tags.isNotEmpty) ...[
+                        const SizedBox(height: AppSpace.md),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            for (final t in tags)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: c.bgInset,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(t,
+                                    style: AppText.micro
+                                        .copyWith(color: c.textSecondary)),
+                              ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
-                ],
+                ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// "FULL COVERAGE · N sources" ribbon — dark (on image) or brand (on card).
+class _CoverageRibbon extends StatelessWidget {
+  const _CoverageRibbon({required this.count, this.dark = true});
+  final int count;
+  final bool dark;
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final fg = dark ? Colors.white : c.brand;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: dark ? Colors.black.withValues(alpha: 0.55) : c.brandSoft,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.account_tree, size: 12, color: fg),
+        const SizedBox(width: 5),
+        Text('$count ${count == 1 ? "source" : "sources"}',
+            style: AppText.micro.copyWith(color: fg, fontWeight: FontWeight.w800)),
+      ]),
     );
   }
 }
