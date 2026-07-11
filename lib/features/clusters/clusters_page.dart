@@ -63,19 +63,37 @@ class ClustersPage extends ConsumerWidget {
               ),
             ),
 
-            // Full coverage clusters — the hero of this page.
+            // Full coverage clusters — the hero of this page. Sorted so the
+            // most-covered story leads; card style varies down the list
+            // (hero → standard → compact rhythm) for a dynamic layout.
             clusters.when(
               loading: () => const SliverToBoxAdapter(child: _InlineLoader()),
               error: (_, __) => const SliverToBoxAdapter(
                   child: _InlineNote("Couldn't load clusters.")),
-              data: (list) => list.isEmpty
-                  ? const SliverToBoxAdapter(
+              data: (list) {
+                if (list.isEmpty) {
+                  return const SliverToBoxAdapter(
                       child: _InlineNote(
-                          'No multi-source stories are clustered right now.'))
-                  : SliverList.builder(
-                      itemCount: list.length,
-                      itemBuilder: (_, i) => _ClusterCard(cluster: list[i]),
-                    ),
+                          'No multi-source stories are clustered right now.'));
+                }
+                final sorted = [...list]..sort((a, b) =>
+                    b.sourceCount.compareTo(a.sourceCount) != 0
+                        ? b.sourceCount.compareTo(a.sourceCount)
+                        : b.lastUpdated.compareTo(a.lastUpdated));
+                return SliverList.builder(
+                  itemCount: sorted.length,
+                  itemBuilder: (_, i) {
+                    final cl = sorted[i];
+                    if (i == 0 && cl.image != null) {
+                      return _HeroClusterCard(cluster: cl);
+                    }
+                    if (i > 0 && i % 3 == 0) {
+                      return _CompactClusterCard(cluster: cl);
+                    }
+                    return _ClusterCard(cluster: cl);
+                  },
+                );
+              },
             ),
 
             // Trending topics (secondary).
@@ -428,6 +446,208 @@ class _CoverageRibbon extends StatelessWidget {
         Text('$count ${count == 1 ? "source" : "sources"}',
             style: AppText.micro.copyWith(color: fg, fontWeight: FontWeight.w800)),
       ]),
+    );
+  }
+}
+
+/// HERO — the most-covered story: full-bleed image, title + summary overlaid,
+/// "TOP COVERAGE" ribbon and the source line pinned to the bottom.
+class _HeroClusterCard extends StatelessWidget {
+  const _HeroClusterCard({required this.cluster});
+  final StoryCluster cluster;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final shown = cluster.sources.take(3).toList();
+    final extra = cluster.sources.length - shown.length;
+    return Padding(
+      padding:
+          const EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
+      child: Material(
+        borderRadius: BorderRadius.circular(14),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push('/cluster/${cluster.id}'),
+          child: AspectRatio(
+            aspectRatio: 0.95,
+            child: Stack(fit: StackFit.expand, children: [
+              CachedNetworkImage(
+                imageUrl: cluster.image!,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => Container(color: c.bgInset),
+                errorWidget: (_, __, ___) => Container(color: c.bgInset),
+              ),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.black26, Colors.transparent, Colors.black87],
+                    stops: [0.0, 0.35, 1.0],
+                  ),
+                ),
+              ),
+              Positioned(
+                top: AppSpace.md,
+                left: AppSpace.md,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: c.brand,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.workspace_premium,
+                        size: 12, color: Colors.white),
+                    const SizedBox(width: 4),
+                    Text('TOP COVERAGE · ${cluster.sourceCount} SOURCES',
+                        style: AppText.micro.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.4)),
+                  ]),
+                ),
+              ),
+              Positioned(
+                left: AppSpace.lg,
+                right: AppSpace.lg,
+                bottom: AppSpace.lg,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(cluster.title,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.title.copyWith(
+                            color: Colors.white, height: 1.2, fontSize: 21)),
+                    if (cluster.summary.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(cluster.summary,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.body.copyWith(
+                              color: Colors.white.withValues(alpha: 0.88),
+                              height: 1.35)),
+                    ],
+                    if (shown.isNotEmpty) ...[
+                      const SizedBox(height: AppSpace.md),
+                      Row(children: [
+                        for (final s in shown)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child:
+                                SourceFavicon(url: null, source: s, size: 16),
+                          ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            extra > 0
+                                ? '${shown.join(", ")} +$extra more'
+                                : shown.join(", "),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppText.caption.copyWith(
+                                color: Colors.white.withValues(alpha: 0.85)),
+                          ),
+                        ),
+                        Text(timeAgo(cluster.lastUpdated),
+                            style: AppText.caption.copyWith(
+                                color: Colors.white.withValues(alpha: 0.7))),
+                      ]),
+                    ],
+                  ],
+                ),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// COMPACT — dense horizontal row: thumbnail right, sources ribbon + title left.
+class _CompactClusterCard extends StatelessWidget {
+  const _CompactClusterCard({required this.cluster});
+  final StoryCluster cluster;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Padding(
+      padding:
+          const EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
+      child: Material(
+        color: c.bgElevated,
+        borderRadius: BorderRadius.circular(14),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push('/cluster/${cluster.id}'),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: c.border),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpace.md),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          _CoverageRibbon(
+                              count: cluster.sourceCount, dark: false),
+                          const SizedBox(width: AppSpace.sm),
+                          Text(timeAgo(cluster.lastUpdated),
+                              style: AppText.caption
+                                  .copyWith(color: c.textFaint)),
+                        ]),
+                        const SizedBox(height: AppSpace.sm),
+                        Text(cluster.title,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppText.bodyStrong
+                                .copyWith(color: c.text, height: 1.3)),
+                        if (cluster.sources.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(cluster.sources.take(4).join(' · '),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppText.caption
+                                  .copyWith(color: c.textSecondary)),
+                        ],
+                      ],
+                    ),
+                  ),
+                  if (cluster.image != null) ...[
+                    const SizedBox(width: AppSpace.md),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: SizedBox(
+                        width: 92,
+                        height: 92,
+                        child: CachedNetworkImage(
+                          imageUrl: cluster.image!,
+                          fit: BoxFit.cover,
+                          placeholder: (_, __) => Container(color: c.bgInset),
+                          errorWidget: (_, __, ___) =>
+                              Container(color: c.bgInset),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
