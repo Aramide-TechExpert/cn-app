@@ -107,6 +107,64 @@ class SignalRow extends StatelessWidget {
   }
 }
 
+/// Canonical site domain for a known ingest source name — cluster surfaces
+/// only carry source NAMES (no article url), so this keeps them on real
+/// favicons instead of the initial-monogram fallback. Matched by substring,
+/// most-specific rules first (e.g. "cnbc" before "nbc").
+String? domainForSource(String source) {
+  final s = source.toLowerCase();
+  for (final rule in _sourceDomains) {
+    if (s.contains(rule.$1)) return rule.$2;
+  }
+  return null;
+}
+
+const List<(String, String)> _sourceDomains = [
+  ('bbc', 'bbc.co.uk'),
+  ('guardian', 'theguardian.com'),
+  ('al jazeera', 'aljazeera.com'),
+  ('npr', 'npr.org'),
+  ('cnbc', 'cnbc.com'),
+  ('cnn', 'cnn.com'),
+  ('cbs', 'cbsnews.com'),
+  ('nbc', 'nbcnews.com'),
+  ('abc', 'abcnews.go.com'),
+  ('axios', 'axios.com'),
+  ('politico', 'politico.com'),
+  ('the hill', 'thehill.com'),
+  ('deutsche welle', 'dw.com'),
+  ('france 24', 'france24.com'),
+  ('south china', 'scmp.com'),
+  ('sydney morning', 'smh.com.au'),
+  ('times of india', 'timesofindia.indiatimes.com'),
+  ('japan times', 'japantimes.co.jp'),
+  ('marketwatch', 'marketwatch.com'),
+  ('fortune', 'fortune.com'),
+  ('techcrunch', 'techcrunch.com'),
+  ('verge', 'theverge.com'),
+  ('ars technica', 'arstechnica.com'),
+  ('engadget', 'engadget.com'),
+  ('wired', 'wired.com'),
+  ('technology review', 'technologyreview.com'),
+  ('venturebeat', 'venturebeat.com'),
+  ('ieee', 'spectrum.ieee.org'),
+  ('hacker news', 'news.ycombinator.com'),
+  ('nasa', 'nasa.gov'),
+  ('esa ', 'esa.int'),
+  ('nsf', 'nsf.gov'),
+  ('dvids', 'dvidshub.net'),
+  ('voa', 'voanews.com'),
+  ('coindesk', 'coindesk.com'),
+  ('decrypt', 'decrypt.co'),
+  ('quanta', 'quantamagazine.org'),
+  ('nature', 'nature.com'),
+  ('phys.org', 'phys.org'),
+  ('inside climate', 'insideclimatenews.org'),
+  ('grist', 'grist.org'),
+  ('stat news', 'statnews.com'),
+  ('kff', 'kffhealthnews.org'),
+];
+
 /// Publisher favicon — Google's favicon service keyed on the article's source
 /// domain, with a tinted monogram fallback while loading / on failure.
 class SourceFavicon extends StatelessWidget {
@@ -138,7 +196,7 @@ class SourceFavicon extends StatelessWidget {
               fontSize: size * 0.6,
               fontWeight: FontWeight.w800)),
     );
-    final host = _host(url);
+    final host = _host(url) ?? domainForSource(source);
     if (host == null) return mono;
     return ClipRRect(
       borderRadius: BorderRadius.circular(3),
