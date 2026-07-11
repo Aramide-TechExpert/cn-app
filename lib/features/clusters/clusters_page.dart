@@ -63,9 +63,10 @@ class ClustersPage extends ConsumerWidget {
               ),
             ),
 
-            // Full coverage clusters — the hero of this page. Sorted so the
-            // most-covered story leads; card style varies down the list
-            // (hero → standard → compact rhythm) for a dynamic layout.
+            // Three clustering lenses, each its own section with its own card
+            // treatment: Full Coverage (same story, many sources) → Trending
+            // (highest-volume topics, ranked) → Connected (related
+            // developments forming one narrative).
             clusters.when(
               loading: () => const SliverToBoxAdapter(child: _InlineLoader()),
               error: (_, __) => const SliverToBoxAdapter(
@@ -76,23 +77,49 @@ class ClustersPage extends ConsumerWidget {
                       child: _InlineNote(
                           'No multi-source stories are clustered right now.'));
                 }
-                final sorted = [...list]..sort((a, b) =>
-                    b.sourceCount.compareTo(a.sourceCount) != 0
-                        ? b.sourceCount.compareTo(a.sourceCount)
-                        : b.lastUpdated.compareTo(a.lastUpdated));
-                return SliverList.builder(
-                  itemCount: sorted.length,
-                  itemBuilder: (_, i) {
-                    final cl = sorted[i];
-                    if (i == 0 && cl.image != null) {
-                      return _HeroClusterCard(cluster: cl);
-                    }
-                    if (i > 0 && i % 3 == 0) {
-                      return _CompactClusterCard(cluster: cl);
-                    }
-                    return _ClusterCard(cluster: cl);
-                  },
-                );
+                List<StoryCluster> byKind(String k) {
+                  final xs = list.where((c) => c.kind == k).toList()
+                    ..sort((a, b) =>
+                        b.sourceCount.compareTo(a.sourceCount) != 0
+                            ? b.sourceCount.compareTo(a.sourceCount)
+                            : b.lastUpdated.compareTo(a.lastUpdated));
+                  return xs;
+                }
+
+                final story = byKind('story');
+                final trending = byKind('trending')
+                  ..sort((a, b) => b.articleIds.length
+                      .compareTo(a.articleIds.length)); // trend = volume
+                final related = byKind('related');
+
+                final children = <Widget>[
+                  // ── Full coverage: hero → standard → compact rhythm.
+                  for (var i = 0; i < story.length; i++)
+                    if (i == 0 && story[i].image != null)
+                      _HeroClusterCard(cluster: story[i])
+                    else if (i > 0 && i % 3 == 0)
+                      _CompactClusterCard(cluster: story[i])
+                    else
+                      _ClusterCard(cluster: story[i]),
+
+                  // ── Trending across sources: ranked full-width rows.
+                  if (trending.isNotEmpty) ...[
+                    const _SectionHeader('Trending across sources'),
+                    for (var i = 0; i < trending.length; i++)
+                      _TrendingClusterCard(cluster: trending[i], rank: i + 1),
+                  ],
+
+                  // ── Connected coverage: standard/compact alternation.
+                  if (related.isNotEmpty) ...[
+                    const _SectionHeader('Connected coverage'),
+                    for (var i = 0; i < related.length; i++)
+                      if (i.isOdd)
+                        _CompactClusterCard(cluster: related[i])
+                      else
+                        _ClusterCard(cluster: related[i]),
+                  ],
+                ];
+                return SliverList.list(children: children);
               },
             ),
 
@@ -642,6 +669,100 @@ class _CompactClusterCard extends StatelessWidget {
                       ),
                     ),
                   ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// TRENDING — ranked full-width row: big rank number, title, volume + sources.
+class _TrendingClusterCard extends StatelessWidget {
+  const _TrendingClusterCard({required this.cluster, required this.rank});
+  final StoryCluster cluster;
+  final int rank;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Padding(
+      padding:
+          const EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
+      child: Material(
+        color: c.bgElevated,
+        borderRadius: BorderRadius.circular(14),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push('/cluster/${cluster.id}'),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: c.border),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpace.md),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Rank numeral — the "chart position" of the trend.
+                  SizedBox(
+                    width: 34,
+                    child: Text('$rank',
+                        style: AppText.display.copyWith(
+                            color: rank == 1 ? c.accent : c.textFaint,
+                            fontSize: 30,
+                            fontWeight: FontWeight.w800,
+                            height: 1.0)),
+                  ),
+                  const SizedBox(width: AppSpace.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Icon(Icons.trending_up, size: 13, color: c.accent),
+                          const SizedBox(width: 4),
+                          Text(
+                              '${cluster.articleIds.length} stories · ${cluster.sourceCount} sources',
+                              style: AppText.caption.copyWith(
+                                  color: c.accent,
+                                  fontWeight: FontWeight.w700)),
+                          const Spacer(),
+                          Text(timeAgo(cluster.lastUpdated),
+                              style: AppText.caption
+                                  .copyWith(color: c.textFaint)),
+                        ]),
+                        const SizedBox(height: 6),
+                        Text(cluster.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppText.bodyStrong
+                                .copyWith(color: c.text, height: 1.3)),
+                        if (cluster.sources.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Row(children: [
+                            for (final s in cluster.sources.take(4))
+                              Padding(
+                                padding: const EdgeInsets.only(right: 4),
+                                child: SourceFavicon(
+                                    url: null, source: s, size: 14),
+                              ),
+                            const SizedBox(width: 2),
+                            Expanded(
+                              child: Text(cluster.sources.take(4).join(' · '),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppText.caption
+                                      .copyWith(color: c.textSecondary)),
+                            ),
+                          ]),
+                        ],
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),

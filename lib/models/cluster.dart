@@ -10,6 +10,7 @@ class StoryCluster {
   final List<String> tags;
   final List<String> sources; // distinct source names of member articles
   final String? image; // representative hero image, if any
+  final String kind; // 'story' | 'related' | 'trending'
   final String lastUpdated;
 
   const StoryCluster({
@@ -21,6 +22,7 @@ class StoryCluster {
     required this.tags,
     required this.sources,
     required this.image,
+    required this.kind,
     required this.lastUpdated,
   });
 
@@ -41,6 +43,7 @@ class StoryCluster {
       tags: strList(j['tags']),
       sources: strList(j['sources']),
       image: img.isEmpty ? null : img,
+      kind: (j['kind'] ?? 'story').toString(),
       lastUpdated: (j['lastUpdated'] ?? '').toString(),
     );
   }
