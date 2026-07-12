@@ -97,17 +97,22 @@ class ClustersPage extends ConsumerWidget {
       ];
     }
 
+    // One de-duped view of all lenses for the aggregate surfaces, so a story
+    // that is also trending isn't counted or rendered twice. Story-first, so
+    // the Full-coverage version wins over its trending duplicate.
+    final unique = dedupByTitle([...story, ...related, ...trending]);
+
     // Developing now — whatever moved most recently, across all lenses.
     final cutoff =
         DateTime.now().toUtc().subtract(const Duration(hours: 4)).toIso8601String();
-    final developing = dedupByTitle(list
+    final developing = unique
         .where((c) => c.lastUpdated.compareTo(cutoff) >= 0)
         .toList()
-      ..sort((a, b) => b.lastUpdated.compareTo(a.lastUpdated)));
+      ..sort((a, b) => b.lastUpdated.compareTo(a.lastUpdated));
 
     // Coverage by category — every category with ≥ 2 clusters gets a rail.
     final byCategory = <String, List<StoryCluster>>{};
-    for (final cl in dedupByTitle([...story, ...related, ...trending])) {
+    for (final cl in unique) {
       for (final cat in cl.categories) {
         (byCategory[cat] ??= []).add(cl);
       }
@@ -119,7 +124,7 @@ class ClustersPage extends ConsumerWidget {
 
     // Coverage engine — which sources appear across the most clusters.
     final sourceCounts = <String, int>{};
-    for (final cl in list) {
+    for (final cl in unique) {
       for (final s in cl.sources.toSet()) {
         sourceCounts[s] = (sourceCounts[s] ?? 0) + 1;
       }
@@ -128,7 +133,7 @@ class ClustersPage extends ConsumerWidget {
       ..sort((a, b) => b.value.compareTo(a.value));
 
     final storiesLinked =
-        list.fold<int>(0, (sum, cl) => sum + cl.articleIds.length);
+        unique.fold<int>(0, (sum, cl) => sum + cl.articleIds.length);
 
     // Full-coverage card shapes: compact rows every 3rd (after the first);
     // everything else is a big image card when it has an image.
