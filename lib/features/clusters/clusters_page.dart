@@ -87,17 +87,27 @@ class ClustersPage extends ConsumerWidget {
           b.articleIds.length.compareTo(a.articleIds.length)); // trend = volume
     final related = byKind('related');
 
+    // Trending is a RANKING lens that intentionally overlaps the story lens,
+    // so any surface mixing lenses must de-dup by title — story version wins.
+    List<StoryCluster> dedupByTitle(Iterable<StoryCluster> xs) {
+      final seen = <String>{};
+      return [
+        for (final c in xs)
+          if (seen.add(c.title.trim().toLowerCase())) c,
+      ];
+    }
+
     // Developing now — whatever moved most recently, across all lenses.
     final cutoff =
         DateTime.now().toUtc().subtract(const Duration(hours: 4)).toIso8601String();
-    final developing = list
+    final developing = dedupByTitle(list
         .where((c) => c.lastUpdated.compareTo(cutoff) >= 0)
         .toList()
-      ..sort((a, b) => b.lastUpdated.compareTo(a.lastUpdated));
+      ..sort((a, b) => b.lastUpdated.compareTo(a.lastUpdated)));
 
     // Coverage by category — every category with ≥ 2 clusters gets a rail.
     final byCategory = <String, List<StoryCluster>>{};
-    for (final cl in list) {
+    for (final cl in dedupByTitle([...story, ...related, ...trending])) {
       for (final cat in cl.categories) {
         (byCategory[cat] ??= []).add(cl);
       }
