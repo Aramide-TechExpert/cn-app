@@ -21,11 +21,77 @@ import '../shell/app_drawer.dart';
 ///   Connected        — related developments forming one narrative
 ///   By Category      — coverage rails per news desk
 ///   Coverage Engine  — which sources power the clusters
-class ClustersPage extends ConsumerWidget {
+class ClustersPage extends ConsumerStatefulWidget {
   const ClustersPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ClustersPage> createState() => _ClustersPageState();
+}
+
+/// Layout of the Full Coverage section — same idea as Home's view switcher.
+enum _ClusterView { mixed, grid, list }
+
+class _ClustersPageState extends ConsumerState<ClustersPage> {
+  _ClusterView _view = _ClusterView.mixed;
+  String? _since; // '1h' | '6h' | '24h' | null = any time
+
+  static IconData _viewIcon(_ClusterView v) => switch (v) {
+        _ClusterView.mixed => Icons.dashboard_outlined,
+        _ClusterView.grid => Icons.grid_view,
+        _ClusterView.list => Icons.view_headline,
+      };
+
+  PopupMenuItem<_ClusterView> _viewItem(
+      ClustezColors c, _ClusterView v, String label) {
+    final sel = _view == v;
+    return PopupMenuItem(
+      value: v,
+      child: Row(children: [
+        Icon(_viewIcon(v), size: 18, color: sel ? c.brand : c.textSecondary),
+        const SizedBox(width: AppSpace.md),
+        Text(label,
+            style: AppText.body.copyWith(
+                color: sel ? c.brand : c.text,
+                fontWeight: sel ? FontWeight.w700 : FontWeight.w500)),
+      ]),
+    );
+  }
+
+  PopupMenuItem<String> _timeItem(ClustezColors c, String value, String label) {
+    final sel = (_since ?? '') == value;
+    return PopupMenuItem(
+      value: value,
+      child: Row(children: [
+        Icon(sel ? Icons.check : Icons.schedule,
+            size: 18, color: sel ? c.brand : c.textSecondary),
+        const SizedBox(width: AppSpace.md),
+        Text(label,
+            style: AppText.body.copyWith(
+                color: sel ? c.brand : c.text,
+                fontWeight: sel ? FontWeight.w700 : FontWeight.w500)),
+      ]),
+    );
+  }
+
+  /// Client-side time window on last_updated (clusters are one small list —
+  /// no need for a server param like the feed's ?since=).
+  List<StoryCluster> _applySince(List<StoryCluster> list) {
+    final hours = switch (_since) {
+      '1h' => 1,
+      '6h' => 6,
+      '24h' => 24,
+      _ => null,
+    };
+    if (hours == null) return list;
+    final cutoff = DateTime.now()
+        .toUtc()
+        .subtract(Duration(hours: hours))
+        .toIso8601String();
+    return list.where((c) => c.lastUpdated.compareTo(cutoff) >= 0).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final c = context.colors;
     final clusters = ref.watch(clustersProvider);
 
@@ -39,10 +105,13 @@ class ClustersPage extends ConsumerWidget {
             parent: BouncingScrollPhysics(),
           ),
           slivers: [
-            SliverAppBar.large(
+            // Compact pinned+floating bar — same header behavior and top
+            // rhythm as Home / News Feed (no oversized collapsing title).
+            SliverAppBar(
               backgroundColor: c.bg,
               surfaceTintColor: Colors.transparent,
               pinned: true,
+              floating: true,
               leading: Builder(
                 builder: (ctx) => IconButton(
                   icon: Icon(Icons.menu, color: c.text),
@@ -51,6 +120,36 @@ class ClustersPage extends ConsumerWidget {
               ),
               title:
                   Text('Clusters', style: AppText.title.copyWith(color: c.text)),
+              actions: [
+                PopupMenuButton<String>(
+                  tooltip: 'Time period',
+                  icon: Icon(Icons.history,
+                      color: _since != null ? c.brand : c.text),
+                  onSelected: (v) =>
+                      setState(() => _since = v.isEmpty ? null : v),
+                  itemBuilder: (_) => [
+                    _timeItem(c, '', 'Any time'),
+                    _timeItem(c, '1h', 'Past hour'),
+                    _timeItem(c, '6h', 'Past 6 hours'),
+                    _timeItem(c, '24h', 'Past 24 hours'),
+                  ],
+                ),
+                PopupMenuButton<_ClusterView>(
+                  tooltip: 'View',
+                  icon: Icon(_viewIcon(_view), color: c.text),
+                  onSelected: (v) => setState(() => _view = v),
+                  itemBuilder: (_) => [
+                    _viewItem(c, _ClusterView.mixed, 'Mixed'),
+                    _viewItem(c, _ClusterView.grid, 'Grid'),
+                    _viewItem(c, _ClusterView.list, 'List'),
+                  ],
+                ),
+                IconButton(
+                  icon: Icon(Icons.search, color: c.text),
+                  onPressed: () => context.push('/search'),
+                ),
+                const SizedBox(width: AppSpace.xs),
+              ],
             ),
             clusters.when(
               loading: () => const SliverToBoxAdapter(child: _InlineLoader()),
@@ -62,7 +161,14 @@ class ClustersPage extends ConsumerWidget {
                       child: _InlineNote(
                           'No multi-source stories are clustered right now.'));
                 }
-                return SliverList.list(children: _buildSections(context, list));
+                final filtered = _applySince(list);
+                if (filtered.isEmpty) {
+                  return const SliverToBoxAdapter(
+                      child: _InlineNote(
+                          'No clusters updated in this time window — try a wider period.'));
+                }
+                return SliverList.list(
+                    children: _buildSections(context, filtered));
               },
             ),
             const SliverToBoxAdapter(child: SizedBox(height: AppSpace.x2)),
@@ -135,10 +241,72 @@ class ClustersPage extends ConsumerWidget {
     final storiesLinked =
         unique.fold<int>(0, (sum, cl) => sum + cl.articleIds.length);
 
-    // Full-coverage card shapes: compact rows every 3rd (after the first);
-    // everything else is a big image card when it has an image.
-    bool isCompact(int i) => i > 0 && i % 3 == 0;
-    bool isBigImage(int i) => !isCompact(i) && story[i].image != null;
+    // ── Full coverage layouts, driven by the header view switcher.
+    //   mixed — hero → 2-up grid duo → cycle(left-thumb, standard, right-thumb)
+    //   grid  — 2-up grid duos all the way down
+    //   list  — dense thumb rows, alternating thumbnail side
+    final fullCoverage = <Widget>[];
+    switch (_view) {
+      case _ClusterView.list:
+        for (var i = 0; i < story.length; i++) {
+          fullCoverage.add(
+              _CompactClusterCard(cluster: story[i], thumbLeft: i.isEven));
+          fullCoverage.add(i + 1 < story.length
+              ? _hairline(context)
+              : const BlockDivider());
+        }
+      case _ClusterView.grid:
+        for (var i = 0; i < story.length; i += 2) {
+          fullCoverage.add(_GridDuo(
+              a: story[i], b: i + 1 < story.length ? story[i + 1] : null));
+        }
+        fullCoverage.add(const BlockDivider());
+      case _ClusterView.mixed:
+        if (story.isNotEmpty) {
+          fullCoverage.add(story[0].image != null
+              ? _HeroClusterCard(cluster: story[0])
+              : _ClusterCard(cluster: story[0]));
+          var i = 1;
+          if (i + 1 < story.length) {
+            // Grid duo directly after the big header card.
+            fullCoverage.add(_GridDuo(a: story[i], b: story[i + 1]));
+            i += 2;
+            fullCoverage.add(const BlockDivider());
+          } else {
+            fullCoverage.add(const BlockDivider());
+            if (i < story.length) {
+              fullCoverage
+                  .add(_CompactClusterCard(cluster: story[i], thumbLeft: true));
+              fullCoverage.add(const BlockDivider());
+              i += 1;
+            }
+          }
+          // Remaining clusters cycle through the full-width variants.
+          var slot = 0;
+          while (i < story.length) {
+            final cl = story[i];
+            final last = i + 1 >= story.length;
+            switch (slot % 3) {
+              case 0:
+                fullCoverage
+                    .add(_CompactClusterCard(cluster: cl, thumbLeft: true));
+                fullCoverage
+                    .add(last ? const BlockDivider() : _hairline(context));
+              case 1:
+                fullCoverage.add(_ClusterCard(cluster: cl));
+                fullCoverage.add(cl.image != null || last
+                    ? const BlockDivider()
+                    : _hairline(context));
+              default:
+                fullCoverage.add(_CompactClusterCard(cluster: cl));
+                fullCoverage
+                    .add(last ? const BlockDivider() : _hairline(context));
+            }
+            slot++;
+            i++;
+          }
+        }
+    }
 
     return <Widget>[
       // ── Thin stats strip: the clustering engine's live numbers.
@@ -150,23 +318,7 @@ class ClustersPage extends ConsumerWidget {
         sources: sourceCounts.length,
       ),
 
-      // ── Full coverage: hero → standard → compact rhythm, edge to edge.
-      // Band after image cards; nothing between two stacked image cards;
-      // hairline after compact rows — same rules as Home / News Feed.
-      for (var i = 0; i < story.length; i++) ...[
-        if (i == 0 && story[i].image != null)
-          _HeroClusterCard(cluster: story[i])
-        else if (isCompact(i))
-          _CompactClusterCard(cluster: story[i])
-        else
-          _ClusterCard(cluster: story[i]),
-        if (isBigImage(i) && i + 1 < story.length && isBigImage(i + 1))
-          const SizedBox.shrink()
-        else if (isBigImage(i) || i + 1 >= story.length)
-          const BlockDivider()
-        else
-          _hairline(context),
-      ],
+      ...fullCoverage,
 
       // ── Developing now: what moved in the last hours.
       if (developing.isNotEmpty) ...[
@@ -193,7 +345,7 @@ class ClustersPage extends ConsumerWidget {
         const _SectionHeader('Connected coverage'),
         for (var i = 0; i < related.length; i++) ...[
           if (i.isOdd)
-            _CompactClusterCard(cluster: related[i])
+            _CompactClusterCard(cluster: related[i], thumbLeft: true)
           else
             _ClusterCard(cluster: related[i]),
           if (i.isEven && related[i].image != null)
@@ -325,7 +477,50 @@ class _ClusterStatsStrip extends StatelessWidget {
   }
 }
 
-/// Shared source favicon line: real logos + names + optional trailing time.
+/// Overlapping stack of source favicons — each logo sits on the previous one
+/// with a thin background ring so the overlap reads cleanly.
+class _FaviconStack extends StatelessWidget {
+  const _FaviconStack({
+    required this.sources,
+    this.size = 16,
+    this.max = 4,
+    this.light = false,
+  });
+  final List<String> sources;
+  final double size;
+  final int max;
+  final bool light;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final shown = sources.take(max).toList();
+    if (shown.isEmpty) return const SizedBox.shrink();
+    final step = size * 0.62;
+    final ring = light ? Colors.white : c.bg;
+    return SizedBox(
+      width: size + step * (shown.length - 1) + 3,
+      height: size + 3,
+      child: Stack(children: [
+        for (var i = 0; i < shown.length; i++)
+          Positioned(
+            left: i * step,
+            child: Container(
+              padding: const EdgeInsets.all(1.5),
+              decoration: BoxDecoration(
+                color: ring,
+                borderRadius: BorderRadius.circular(4.5),
+              ),
+              child: SourceFavicon(url: null, source: shown[i], size: size),
+            ),
+          ),
+      ]),
+    );
+  }
+}
+
+/// Shared source line: names (+N more) on the left, the overlapping favicon
+/// stack pinned to the right, optional time between them.
 class _SourceLogoLine extends StatelessWidget {
   const _SourceLogoLine({
     required this.sources,
@@ -345,12 +540,6 @@ class _SourceLogoLine extends StatelessWidget {
         ? Colors.white.withValues(alpha: 0.85)
         : c.textSecondary;
     return Row(children: [
-      for (final s in shown)
-        Padding(
-          padding: const EdgeInsets.only(right: 4),
-          child: SourceFavicon(url: null, source: s, size: 16),
-        ),
-      const SizedBox(width: 4),
       Expanded(
         child: Text(
           extra > 0 ? '${shown.join(", ")} +$extra more' : shown.join(', '),
@@ -359,12 +548,15 @@ class _SourceLogoLine extends StatelessWidget {
           style: AppText.caption.copyWith(color: textColor),
         ),
       ),
-      if (trailing != null)
+      if (trailing != null) ...[
         Text(trailing!,
             style: AppText.caption.copyWith(
                 color: light
                     ? Colors.white.withValues(alpha: 0.7)
                     : c.textFaint)),
+        const SizedBox(width: AppSpace.sm),
+      ],
+      _FaviconStack(sources: sources, light: light),
     ]);
   }
 }
@@ -606,14 +798,31 @@ class _HeroClusterCard extends StatelessWidget {
   }
 }
 
-/// COMPACT — dense edge-to-edge row: text left, thumbnail right (feed-style).
+/// COMPACT — dense edge-to-edge row (feed-style). Thumbnail sits right by
+/// default; [thumbLeft] flips it for the left-thumbnail variant.
 class _CompactClusterCard extends StatelessWidget {
-  const _CompactClusterCard({required this.cluster});
+  const _CompactClusterCard({required this.cluster, this.thumbLeft = false});
   final StoryCluster cluster;
+  final bool thumbLeft;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final thumb = cluster.image == null
+        ? null
+        : ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: SizedBox(
+              width: 92,
+              height: 92,
+              child: CachedNetworkImage(
+                imageUrl: cluster.image!,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => Container(color: c.bgInset),
+                errorWidget: (_, __, ___) => Container(color: c.bgInset),
+              ),
+            ),
+          );
     return InkWell(
       onTap: () => context.push('/cluster/${cluster.id}'),
       child: Padding(
@@ -622,6 +831,10 @@ class _CompactClusterCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (thumb != null && thumbLeft) ...[
+              thumb,
+              const SizedBox(width: AppSpace.md),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -645,24 +858,93 @@ class _CompactClusterCard extends StatelessWidget {
                 ],
               ),
             ),
-            if (cluster.image != null) ...[
+            if (thumb != null && !thumbLeft) ...[
               const SizedBox(width: AppSpace.md),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  width: 92,
-                  height: 92,
-                  child: CachedNetworkImage(
-                    imageUrl: cluster.image!,
-                    fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(color: c.bgInset),
-                    errorWidget: (_, __, ___) => Container(color: c.bgInset),
-                  ),
-                ),
-              ),
+              thumb,
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// GRID DUO — two half-width grid cards side by side, padded like the feed's
+/// grid view. [b] may be null for an odd trailing cluster.
+class _GridDuo extends StatelessWidget {
+  const _GridDuo({required this.a, this.b});
+  final StoryCluster a;
+  final StoryCluster? b;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpace.lg, AppSpace.lg, AppSpace.lg, AppSpace.lg),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: _GridClusterCard(cluster: a)),
+          const SizedBox(width: AppSpace.lg),
+          Expanded(
+              child: b != null
+                  ? _GridClusterCard(cluster: b!)
+                  : const SizedBox.shrink()),
+        ],
+      ),
+    );
+  }
+}
+
+/// Half-width grid card: image, title, source count + favicon stack right.
+class _GridClusterCard extends StatelessWidget {
+  const _GridClusterCard({required this.cluster});
+  final StoryCluster cluster;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return InkWell(
+      onTap: () => context.push('/cluster/${cluster.id}'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: AspectRatio(
+              aspectRatio: 16 / 10,
+              child: cluster.image != null
+                  ? CachedNetworkImage(
+                      imageUrl: cluster.image!,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(color: c.bgInset),
+                      errorWidget: (_, __, ___) => Container(color: c.bgInset),
+                    )
+                  : Container(
+                      color: c.bgInset,
+                      alignment: Alignment.center,
+                      child: Icon(Icons.account_tree,
+                          color: c.textFaint, size: 28),
+                    ),
+            ),
+          ),
+          const SizedBox(height: AppSpace.sm),
+          Text(cluster.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppText.callout
+                  .copyWith(color: c.text, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 4),
+          Row(children: [
+            Expanded(
+              child: Text('${cluster.sourceCount} sources',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.caption.copyWith(color: c.textSecondary)),
+            ),
+            _FaviconStack(sources: cluster.sources, size: 14, max: 3),
+          ]),
+        ],
       ),
     );
   }
@@ -783,6 +1065,10 @@ class _DevelopingRow extends StatelessWidget {
                 ],
               ),
             ),
+            if (cluster.sources.isNotEmpty) ...[
+              const SizedBox(width: AppSpace.md),
+              _FaviconStack(sources: cluster.sources, size: 15, max: 3),
+            ],
           ],
         ),
       ),
@@ -853,12 +1139,6 @@ class _ClusterRailCard extends StatelessWidget {
                     .copyWith(color: c.text, fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
             Row(children: [
-              for (final s in cluster.sources.take(3))
-                Padding(
-                  padding: const EdgeInsets.only(right: 3),
-                  child: SourceFavicon(url: null, source: s, size: 13),
-                ),
-              const SizedBox(width: 3),
               Expanded(
                 child: Text('${cluster.sourceCount} sources',
                     maxLines: 1,
@@ -866,6 +1146,7 @@ class _ClusterRailCard extends StatelessWidget {
                     style:
                         AppText.caption.copyWith(color: c.textSecondary)),
               ),
+              _FaviconStack(sources: cluster.sources, size: 13, max: 3),
             ]),
           ],
         ),
