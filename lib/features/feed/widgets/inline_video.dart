@@ -5,6 +5,7 @@ import 'package:visibility_detector/visibility_detector.dart';
 
 import '../../../models/article.dart';
 import '../../../theme/tokens.dart';
+import '../../../utils/link_out.dart';
 
 /// Muted autoplay inline player for a self-hosted, license-permissive article
 /// video (`article.videoUrl`). It starts **muted** when the card scrolls into
@@ -21,13 +22,18 @@ class InlineVideo extends StatefulWidget {
     this.muteController,
     this.showMuteButton = true,
     this.previewLoop,
+    this.endCard = false,
   });
   final Article article;
   final double aspectRatio;
-  /// When set, playback loops only the first N seconds — the news-video
+  /// When set, playback covers only the first N seconds — the news-video
   /// preview treatment (cards tease the clip; the full video lives on the
-  /// publisher page / reel). Null = loop the whole video (reel behavior).
+  /// publisher page). Null = loop the whole video.
   final Duration? previewLoop;
+  /// What happens when the preview window elapses: false = seek back and
+  /// loop forever (reels/shorts); true = stop on a "Watch on <source>"
+  /// end overlay that links out to the publisher story (horizontal cards).
+  final bool endCard;
   /// When supplied, mute state is driven by this shared notifier instead of
   /// per-instance local state — so the full-screen reel can own one prominent
   /// sound toggle that applies to every page. Tapping the speaker (or the
@@ -52,6 +58,7 @@ class _InlineVideoState extends State<InlineVideo> {
   bool _loading = false;
   bool _error = false;
   bool _localMuted = true;
+  bool _ended = false; // endCard mode: preview elapsed → end overlay shown
 
   /// Effective mute: the shared controller wins when present, else local state.
   bool get _muted => widget.muteController?.value ?? _localMuted;
@@ -117,12 +124,21 @@ class _InlineVideoState extends State<InlineVideo> {
   }
 
   void _tick() {
-    // Preview mode: loop over the first few seconds only. setLooping(true)
-    // stays on as the backstop for clips shorter than the preview window.
+    // Preview mode: only the first few seconds play. setLooping(true) stays
+    // on as the backstop for clips shorter than the preview window.
     final pl = widget.previewLoop;
     final ctrl = _ctrl;
-    if (pl != null && ctrl != null && ctrl.value.isInitialized) {
-      if (ctrl.value.position >= pl) ctrl.seekTo(Duration.zero);
+    if (pl != null && ctrl != null && ctrl.value.isInitialized && !_ended) {
+      if (ctrl.value.position >= pl) {
+        if (widget.endCard) {
+          // Horizontal cards: stop on the "Watch on <source>" end overlay.
+          ctrl.pause();
+          _ended = true;
+        } else {
+          // Reels/shorts: loop the preview window forever.
+          ctrl.seekTo(Duration.zero);
+        }
+      }
     }
     if (mounted) setState(() {});
   }
@@ -134,7 +150,7 @@ class _InlineVideoState extends State<InlineVideo> {
     if (f > 0.6) {
       if (ctrl == null) {
         _ensureStarted();
-      } else if (!ctrl.value.isPlaying) {
+      } else if (!ctrl.value.isPlaying && !_ended) {
         ctrl.play();
       }
     } else if (f < 0.15 && ctrl != null && ctrl.value.isPlaying) {
@@ -175,10 +191,13 @@ class _InlineVideoState extends State<InlineVideo> {
         aspectRatio: widget.aspectRatio,
         child: ready
             ? GestureDetector(
-                onTap: widget.tapToToggle
-                    ? () => setState(() =>
-                        ctrl.value.isPlaying ? ctrl.pause() : ctrl.play())
-                    : null,
+                onTap: _ended
+                    ? () => openArticle(widget.article.sourceUrl,
+                        track: widget.article)
+                    : widget.tapToToggle
+                        ? () => setState(() =>
+                            ctrl.value.isPlaying ? ctrl.pause() : ctrl.play())
+                        : null,
                 child: Stack(fit: StackFit.expand, children: [
                   FittedBox(
                     fit: widget.fit,
@@ -188,10 +207,29 @@ class _InlineVideoState extends State<InlineVideo> {
                       child: VideoPlayer(ctrl),
                     ),
                   ),
-                  if (!ctrl.value.isPlaying)
+                  if (!ctrl.value.isPlaying && !_ended)
                     const Center(
                         child: Icon(Icons.play_circle_fill,
                             size: 56, color: Colors.white70)),
+                  // Preview finished — dark scrim + link-out end card.
+                  if (_ended)
+                    Container(
+                      color: Colors.black.withValues(alpha: 0.55),
+                      alignment: Alignment.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.open_in_new,
+                              size: 30, color: Colors.white),
+                          const SizedBox(height: AppSpace.sm),
+                          Text('Watch on ${widget.article.source}',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                    ),
                   if (widget.showMuteButton)
                     Positioned(
                       right: AppSpace.sm,

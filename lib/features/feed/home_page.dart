@@ -15,9 +15,9 @@ import '../../data/settings_controller.dart';
 import '../../models/article.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
+import '../../utils/link_out.dart';
 import '../discover/discover_page.dart' show FeedView;
 import '../shell/app_drawer.dart';
-import 'video_reel_page.dart';
 import 'widgets/article_card.dart';
 import 'widgets/card_extras.dart';
 import 'widgets/card_variants.dart';
@@ -330,15 +330,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                         itemCount: shorts.length,
                         separatorBuilder: (_, __) =>
                             const SizedBox(width: AppSpace.md),
+                        // Reel cards click through to the SOURCE story page
+                        // (not the full-screen reel) — the preview loop is
+                        // the in-app experience, the publisher has the full
+                        // video.
                         itemBuilder: (_, i) => VerticalCard(
                           article: shorts[i],
                           width: 152,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => VideoReelPage(
-                                  videos: shorts, initialIndex: i),
-                            ),
-                          ),
+                          onTap: () => openArticle(shorts[i].sourceUrl,
+                              track: shorts[i]),
                         ),
                       ),
                     ),

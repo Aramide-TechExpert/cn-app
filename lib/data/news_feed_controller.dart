@@ -1,13 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/article.dart';
+import '../utils/interleave.dart';
 import 'feed_controller.dart' show apiClientProvider;
 
-/// A small pool of playable (license-safe) videos used to interleave into the
-/// main News Feed so video feels woven in rather than dumped in one list.
+/// A small pool of playable news videos used for the Shorts rail + Reel.
+/// Source-interleaved so one publisher's clips don't fill the whole rail.
 final videoPoolProvider = FutureProvider.autoDispose<List<Article>>((ref) async {
   final page = await ref.read(apiClientProvider).feed(limit: 10, video: true);
-  return page.items.where((a) => a.hasPlayableVideo && a.hasImage).toList();
+  final playable =
+      page.items.where((a) => a.hasPlayableVideo && a.hasImage).toList();
+  return interleaveBySource(playable, flush: true).emitted;
 });
 
 /// Distinct source names for the News Feed source picker (most frequent first).
@@ -64,6 +67,7 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
   String? _cursor;
   bool _hasMore = true;
   bool _loadingMore = false;
+  List<Article> _deferred = const [];
 
   NewsFilters get filters => _filters;
   bool get hasMore => _hasMore;
@@ -83,16 +87,27 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
         );
     _cursor = page.nextCursor;
     _hasMore = page.nextCursor != null;
-    return page.items.where(_passesImpact).toList();
+    final items = page.items.where(_passesImpact).toList();
+    // One source at a time — except in the single-source filter view, where
+    // interleaving is meaningless and deferral would starve the list.
+    if (_filters.source != null) return items;
+    final r =
+        interleaveBySource([..._deferred, ...items], flush: !_hasMore);
+    _deferred = r.deferred;
+    return r.emitted;
   }
 
   @override
-  Future<List<Article>> build() => _fetch();
+  Future<List<Article>> build() {
+    _deferred = const [];
+    return _fetch();
+  }
 
   Future<void> setFilters(NewsFilters next) async {
     _filters = next;
     _cursor = null;
     _hasMore = true;
+    _deferred = const [];
     state = const AsyncLoading();
     state = await AsyncValue.guard(() => _fetch());
   }
@@ -100,6 +115,7 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
   Future<void> refresh() async {
     _cursor = null;
     _hasMore = true;
+    _deferred = const [];
     state = await AsyncValue.guard(() => _fetch());
   }
 
