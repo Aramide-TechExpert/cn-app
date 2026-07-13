@@ -178,8 +178,6 @@ const List<(String, String)> _sourceDomains = [
   ('hindustan', 'hindustantimes.com'),
   ('economic times', 'economictimes.indiatimes.com'),
   ('times of israel', 'timesofisrael.com'),
-  ('premium times', 'premiumtimesng.com'),
-  ('punch', 'punchng.com'),
   ('business insider', 'businessinsider.com'),
   ('yahoo', 'finance.yahoo.com'),
   ('espn', 'espn.com'),

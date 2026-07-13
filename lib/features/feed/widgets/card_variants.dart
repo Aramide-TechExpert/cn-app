@@ -348,11 +348,11 @@ class VideoCard extends ConsumerWidget {
       // Media: stream inline when the source carries a self-hosted video,
       // otherwise a link-out poster with the VIDEO tag + play overlay.
       if (article.hasPlayableVideo)
-        // News-video preview: 5s once, then the "Watch on <source>" end
+        // News-video preview: 4s once, then the "Watch on <source>" end
         // card that links out to the publisher story.
         InlineVideo(
             article: article,
-            previewLoop: const Duration(seconds: 5),
+            previewLoop: const Duration(seconds: 4),
             endCard: true)
       else
         InkWell(
@@ -574,7 +574,7 @@ class VerticalCard extends ConsumerWidget {
                 article: article,
                 aspectRatio: 9 / 16,
                 tapToToggle: onTap == null,
-                previewLoop: const Duration(seconds: 5)),
+                previewLoop: const Duration(seconds: 4)),
             const Positioned.fill(
               child: IgnorePointer(
                 child: DecoratedBox(

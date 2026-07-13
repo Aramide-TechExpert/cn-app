@@ -82,9 +82,9 @@ class _VideoReelPageState extends ConsumerState<VideoReelPage> {
                     fit: BoxFit.contain,
                     muteController: _muted,
                     showMuteButton: false,
-                    // Reels loop the 5s preview forever; the caption's
+                    // Reels loop the 4s preview forever; the caption's
                     // read-on-source link carries to the full video.
-                    previewLoop: const Duration(seconds: 5),
+                    previewLoop: const Duration(seconds: 4),
                   ),
                 ),
                 const Positioned.fill(

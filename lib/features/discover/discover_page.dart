@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/dismissed_controller.dart';
 import '../../data/news_feed_controller.dart';
 import '../../data/source_signals.dart';
+import '../../utils/interleave.dart' show throttleVideoCards;
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../feed/widgets/card_extras.dart';
@@ -29,6 +30,7 @@ class DiscoverPage extends ConsumerStatefulWidget {
 class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   final _scroll = ScrollController();
   FeedView _view = FeedView.mixed; // feed layout
+  Set<String> _videoOk = const {}; // ids allowed to render as video cards
 
   @override
   void initState() {
@@ -110,7 +112,9 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   Widget _cardFor(int i, Article a, {bool flushBelow = false}) {
     // Play icon ONLY for a real, captured, playable video — never the loose
     // hasVideo detector (which fires on ads / embeds / thumbnail players).
-    if (a.hasPlayableVideo && a.hasImage) {
+    // Throttled: news sources now carry lots of video, so only the ids in
+    // _videoOk (≈1 per 10 items) promote — the rest render as image cards.
+    if (a.hasPlayableVideo && a.hasImage && _videoOk.contains(a.id)) {
       return VideoCard(article: a, flushBelow: flushBelow);
     }
     if (!a.hasImage) {
@@ -319,6 +323,11 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                 final items = allItems
                     .where((a) => !dismissed.contains(a.id))
                     .toList();
+                // Few inline video cards, not walls of them — except in the
+                // dedicated Videos filter view, where video IS the content.
+                _videoOk = filters.video
+                    ? items.map((a) => a.id).toSet()
+                    : throttleVideoCards(items);
                 if (items.isEmpty) {
                   return SliverFillRemaining(
                     hasScrollBody: false,

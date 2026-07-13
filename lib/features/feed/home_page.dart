@@ -14,6 +14,7 @@ import '../../data/personalization_controller.dart';
 import '../../data/settings_controller.dart';
 import '../../models/article.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/interleave.dart' show throttleVideoCards;
 import '../../theme/tokens.dart';
 import '../../utils/link_out.dart';
 import '../discover/discover_page.dart' show FeedView;
@@ -147,11 +148,16 @@ class _HomePageState extends ConsumerState<HomePage> {
           final used = {
             ...spotlight.map((a) => a.id),
             ...rail.map((a) => a.id),
-            ...shorts.map((a) => a.id),
+            // Shorts are NOT excluded: horizontal news-video cards belong on
+            // Home too (throttled below) — the 9:16 rail is a different
+            // presentation of the clip, not a replacement.
           };
           // Everything else flows into the interleaved feed (magazine / overlay
           // / row) so the varied cards are the bulk of Home, not a grid block.
           final rest = items.where((a) => !used.contains(a.id)).toList();
+          // Few video cards, not walls — ~1 per 10 items; the rest of the
+          // playable-video articles render as normal image cards.
+          final videoOk = throttleVideoCards(rest);
 
           return RefreshIndicator.adaptive(
             onRefresh: () async {
@@ -397,9 +403,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                         // Grey band ONLY between two stacked big image cards.
                         final next = i + 1 < rest.length ? rest[i + 1] : null;
                         final flushBelow = next != null &&
-                            _isBigImageCardAt(i, rest[i]) &&
-                            _isBigImageCardAt(i + 1, next);
-                        return _feedCard(i, rest[i], flushBelow: flushBelow);
+                            _isBigImageCardAt(i, rest[i],
+                                videoOk: videoOk.contains(rest[i].id)) &&
+                            _isBigImageCardAt(i + 1, next,
+                                videoOk: videoOk.contains(next.id));
+                        return _feedCard(i, rest[i],
+                            flushBelow: flushBelow,
+                            videoOk: videoOk.contains(rest[i].id));
                       },
                     ),
                 },
@@ -432,10 +442,12 @@ Widget _feedLoader(bool hasMore) => Padding(
           : const SizedBox(height: AppSpace.lg),
     );
 
-Widget _feedCard(int i, Article a, {bool flushBelow = false}) {
-  // Real in-article video (flagged at ingest) always renders as the video
-  // card — the variant is driven by content, never by position.
-  if (a.hasPlayableVideo && a.hasImage) {
+Widget _feedCard(int i, Article a,
+    {bool flushBelow = false, bool videoOk = false}) {
+  // Real in-article video renders as the video card only when the throttle
+  // allows it (~1 per 10 items) — news sources carry a LOT of video now,
+  // and autoplay should be an accent, not the whole feed.
+  if (a.hasPlayableVideo && a.hasImage && videoOk) {
     return VideoCard(article: a, flushBelow: flushBelow);
   }
   Widget overlay() => Padding(
@@ -468,8 +480,8 @@ Widget _feedCard(int i, Article a, {bool flushBelow = false}) {
 
 /// Whether the card at position [i] renders as a big full-bleed image card
 /// (used to decide if a band-carrying card above it should drop to a thin line).
-bool _isBigImageCardAt(int i, Article a) {
-  if (a.hasPlayableVideo && a.hasImage) return true; // VideoCard
+bool _isBigImageCardAt(int i, Article a, {bool videoOk = false}) {
+  if (a.hasPlayableVideo && a.hasImage && videoOk) return true; // VideoCard
   switch (i % 7) {
     case 0: // Wide
     case 1: // Default

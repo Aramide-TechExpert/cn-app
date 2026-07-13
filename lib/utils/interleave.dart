@@ -46,3 +46,20 @@ import '../models/article.dart';
   final deferred = [for (final s in order) ...queues[s]!];
   return (emitted: emitted, deferred: deferred);
 }
+
+/// Ids of the video articles allowed to render as inline VIDEO cards — at
+/// most one every [gap] items, so autoplaying video is an accent woven into
+/// the feed, never a wall. Video articles outside this set render as normal
+/// image cards.
+Set<String> throttleVideoCards(List<Article> items, {int gap = 10}) {
+  final ok = <String>{};
+  var last = -gap;
+  for (var i = 0; i < items.length; i++) {
+    final a = items[i];
+    if (a.hasPlayableVideo && a.hasImage && i - last >= gap) {
+      ok.add(a.id);
+      last = i;
+    }
+  }
+  return ok;
+}

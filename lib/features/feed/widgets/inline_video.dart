@@ -199,8 +199,12 @@ class _InlineVideoState extends State<InlineVideo> {
                             ctrl.value.isPlaying ? ctrl.pause() : ctrl.play())
                         : null,
                 child: Stack(fit: StackFit.expand, children: [
+                  // clipBehavior is REQUIRED: FittedBox doesn't clip by
+                  // default, so a vertical (9:16) news clip cover-fitted
+                  // into this 16:9 box would paint far outside the card.
                   FittedBox(
                     fit: widget.fit,
+                    clipBehavior: Clip.hardEdge,
                     child: SizedBox(
                       width: ctrl.value.size.width,
                       height: ctrl.value.size.height,
