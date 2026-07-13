@@ -50,6 +50,9 @@ class YouPage extends ConsumerWidget {
                 if (user != null)
                   _AccountCard(
                     email: email,
+                    name: (user.userMetadata?['display_name'] as String?)
+                            ?.trim() ??
+                        '',
                     onSignOut: () => ref.read(authServiceProvider).signOut(),
                   )
                 else
@@ -69,14 +72,17 @@ class YouPage extends ConsumerWidget {
 }
 
 class _AccountCard extends StatelessWidget {
-  const _AccountCard({required this.email, required this.onSignOut});
+  const _AccountCard(
+      {required this.email, this.name = '', required this.onSignOut});
   final String email;
+  final String name;
   final VoidCallback onSignOut;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final hue = hueFromString(email).toDouble();
+    final seed = name.isNotEmpty ? name : email;
+    final hue = hueFromString(seed).toDouble();
     final avatar = HSLColor.fromAHSL(1, hue, 0.55, 0.45).toColor();
     return _Card(
       child: Column(
@@ -86,7 +92,7 @@ class _AccountCard extends StatelessWidget {
             CircleAvatar(
               radius: 23,
               backgroundColor: avatar,
-              child: Text(initialOf(email),
+              child: Text(initialOf(seed),
                   style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -97,12 +103,19 @@ class _AccountCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(email.isEmpty ? 'Signed in' : email,
+                  Text(
+                      name.isNotEmpty
+                          ? name
+                          : (email.isEmpty ? 'Signed in' : email),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppText.body
                           .copyWith(color: c.text, fontWeight: FontWeight.w600)),
-                  Text('Synced account',
+                  Text(name.isNotEmpty && email.isNotEmpty
+                          ? email
+                          : 'Synced account',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: AppText.caption.copyWith(color: c.textFaint)),
                 ],
               ),

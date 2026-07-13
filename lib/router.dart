@@ -12,6 +12,7 @@ import 'features/feed/stack_feed_page.dart';
 import 'features/insights/insights_page.dart';
 import 'features/legal/legal_sources_page.dart';
 import 'features/onboarding/onboarding_page.dart';
+import 'features/onboarding/setup_flow_page.dart';
 import 'features/personalization/interests_page.dart';
 import 'features/personalization/watchlists_page.dart';
 import 'features/saved/saved_page.dart';
@@ -69,6 +70,7 @@ final router = GoRouter(
         path: '/legal-sources',
         builder: (_, __) => const LegalSourcesPage()),
     GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingPage()),
+    GoRoute(path: '/setup', builder: (_, __) => const SetupFlowPage()),
     GoRoute(
       path: '/cluster/:id',
       builder: (_, s) => ClusterDetailPage(id: s.pathParameters['id']!),

@@ -76,7 +76,14 @@ class AppDrawer extends ConsumerWidget {
                       CircleAvatar(
                         radius: 17,
                         backgroundColor: Colors.white,
-                        child: Text(initialOf(email),
+                        child: Text(
+                            initialOf(
+                                (user.userMetadata?['display_name'] as String?)
+                                        ?.trim()
+                                        .isNotEmpty ==
+                                    true
+                                    ? user.userMetadata!['display_name'] as String
+                                    : email),
                             style: TextStyle(
                                 color: c.brand,
                                 fontWeight: FontWeight.w800,
@@ -87,15 +94,26 @@ class AppDrawer extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Signed in',
-                                style: AppText.micro.copyWith(
-                                    color:
-                                        Colors.white.withValues(alpha: 0.8))),
+                            Text(
+                                ((user.userMetadata?['display_name']
+                                                as String?)
+                                            ?.trim()
+                                            .isNotEmpty ==
+                                        true)
+                                    ? user.userMetadata!['display_name']
+                                        as String
+                                    : 'Signed in',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppText.caption.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700)),
                             Text(email,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: AppText.caption
-                                    .copyWith(color: Colors.white)),
+                                style: AppText.micro.copyWith(
+                                    color:
+                                        Colors.white.withValues(alpha: 0.85))),
                           ],
                         ),
                       ),

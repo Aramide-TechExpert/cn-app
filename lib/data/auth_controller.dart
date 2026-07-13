@@ -35,9 +35,23 @@ class AuthService {
 
   /// Returns true if a session was created immediately (i.e. email confirmation
   /// is off). When confirmation is on, the caller prompts to check the inbox.
-  Future<bool> signUpWithEmail(String email, String password) async {
-    final res = await _client.auth.signUp(email: email, password: password);
+  Future<bool> signUpWithEmail(String email, String password,
+      {String? displayName}) async {
+    final res = await _client.auth.signUp(
+      email: email,
+      password: password,
+      data: {
+        if (displayName != null && displayName.isNotEmpty)
+          'display_name': displayName,
+      },
+    );
     return res.session != null;
+  }
+
+  /// Merge keys into the user's metadata (display_name, preferred_sources,
+  /// alert prefs, setup_complete…) — synced across devices by Supabase auth.
+  Future<void> updateProfile(Map<String, dynamic> data) async {
+    await _client.auth.updateUser(UserAttributes(data: data));
   }
 
   Future<void> signInWithGoogle() async {

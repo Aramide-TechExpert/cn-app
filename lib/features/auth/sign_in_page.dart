@@ -16,15 +16,18 @@ class SignInPage extends ConsumerStatefulWidget {
 enum _Mode { signIn, signUp }
 
 class _SignInPageState extends ConsumerState<SignInPage> {
+  final _name = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
   _Mode _mode = _Mode.signIn;
   String? _busy; // 'email' | 'google'
   String? _error;
   String? _notice;
+  bool _showPassword = false;
 
   @override
   void dispose() {
+    _name.dispose();
     _email.dispose();
     _password.dispose();
     super.dispose();
@@ -53,10 +56,17 @@ class _SignInPageState extends ConsumerState<SignInPage> {
       if (email.isEmpty || pw.isEmpty) {
         throw 'Enter your email and password.';
       }
+      if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
+        throw 'That email address doesn’t look right.';
+      }
       if (_mode == _Mode.signIn) {
         await auth.signInWithEmail(email, pw);
       } else {
-        final hasSession = await auth.signUpWithEmail(email, pw);
+        if (pw.length < 8) {
+          throw 'Password needs at least 8 characters.';
+        }
+        final hasSession = await auth.signUpWithEmail(email, pw,
+            displayName: _name.text.trim());
         if (!hasSession && mounted) {
           setState(() {
             _notice = 'Check your inbox to confirm your email, then sign in.';
@@ -71,9 +81,19 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   Widget build(BuildContext context) {
     final c = context.colors;
 
-    // Dismiss when authenticated.
+    // On auth: brand-new accounts (email signup OR first Google sign-in,
+    // detected by creation time) land in the setup wizard; returning
+    // sign-ins just dismiss back to where they were.
     ref.listen(currentUserProvider, (_, user) {
-      if (user != null && context.canPop()) context.pop();
+      if (user == null) return;
+      final created = DateTime.tryParse(user.createdAt);
+      final isNew = created != null &&
+          DateTime.now().toUtc().difference(created.toUtc()).inMinutes < 3;
+      if (isNew) {
+        context.go('/setup');
+      } else if (context.canPop()) {
+        context.pop();
+      }
     });
 
     final disabled = _busy != null;
@@ -105,6 +125,15 @@ class _SignInPageState extends ConsumerState<SignInPage> {
               Text('Sync your saved stories, interests, and briefing across devices.',
                   style: AppText.body.copyWith(color: c.textSecondary)),
               const SizedBox(height: AppSpace.xl),
+              if (!isSignIn) ...[
+                _Field(
+                  controller: _name,
+                  hint: 'Your name',
+                  keyboardType: TextInputType.name,
+                  enabled: !disabled,
+                ),
+                const SizedBox(height: AppSpace.md),
+              ],
               _Field(
                 controller: _email,
                 hint: 'Email',
@@ -114,10 +143,20 @@ class _SignInPageState extends ConsumerState<SignInPage> {
               const SizedBox(height: AppSpace.md),
               _Field(
                 controller: _password,
-                hint: 'Password',
-                obscure: true,
+                hint: isSignIn ? 'Password' : 'Password (8+ characters)',
+                obscure: !_showPassword,
                 enabled: !disabled,
                 onSubmitted: (_) => _submitEmail(),
+                suffix: IconButton(
+                  icon: Icon(
+                      _showPassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      size: 20,
+                      color: c.textFaint),
+                  onPressed: () =>
+                      setState(() => _showPassword = !_showPassword),
+                ),
               ),
               if (_error != null) ...[
                 const SizedBox(height: AppSpace.md),
@@ -210,6 +249,7 @@ class _Field extends StatelessWidget {
     this.enabled = true,
     this.keyboardType,
     this.onSubmitted,
+    this.suffix,
   });
 
   final TextEditingController controller;
@@ -218,6 +258,7 @@ class _Field extends StatelessWidget {
   final bool enabled;
   final TextInputType? keyboardType;
   final ValueChanged<String>? onSubmitted;
+  final Widget? suffix;
 
   @override
   Widget build(BuildContext context) {
@@ -234,6 +275,7 @@ class _Field extends StatelessWidget {
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: c.textFaint),
+        suffixIcon: suffix,
         filled: true,
         fillColor: c.bgInset,
         contentPadding: const EdgeInsets.symmetric(

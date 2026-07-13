@@ -105,15 +105,30 @@ class OnboardingPage extends ConsumerWidget {
             ),
             Padding(
               padding: const EdgeInsets.all(AppSpace.lg),
-              child: FilledButton(
-                onPressed: finish,
-                style: FilledButton.styleFrom(
-                  backgroundColor: c.brand,
-                  minimumSize: const Size.fromHeight(52),
-                  shape: const RoundedRectangleBorder(),
+              child: Column(children: [
+                if (user != null) ...[
+                  // Signed in — offer the full 5-step setup wizard.
+                  OutlinedButton(
+                    onPressed: () => context.push('/setup'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: c.brand,
+                      side: BorderSide(color: c.border),
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                    child: const Text('Full setup (profile, sources, alerts)'),
+                  ),
+                  const SizedBox(height: AppSpace.sm),
+                ],
+                FilledButton(
+                  onPressed: finish,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: c.brand,
+                    minimumSize: const Size.fromHeight(52),
+                    shape: const RoundedRectangleBorder(),
+                  ),
+                  child: Text(user == null ? 'Browse for now' : 'Get started'),
                 ),
-                child: Text(user == null ? 'Browse for now' : 'Get started'),
-              ),
+              ]),
             ),
           ],
         ),
