@@ -8,8 +8,9 @@ import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../utils/format.dart';
 
-/// The app-wide side menu (mirrors the web sidebar): primary nav, tools,
-/// categories, and account. Opened from the menu button on every tab.
+/// The app-wide side menu — modernized (Bing-style): brand/profile header,
+/// a rounded grid of quick-access tiles, then grouped rounded cards for
+/// tools, category chips, and account.
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
 
@@ -30,148 +31,209 @@ class AppDrawer extends ConsumerWidget {
     }
 
     return Drawer(
-      backgroundColor: c.bgElevated,
-      shape: const RoundedRectangleBorder(),
+      backgroundColor: c.bg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(24)),
+      ),
       child: SafeArea(
         child: ListView(
-          padding: EdgeInsets.zero,
+          padding: const EdgeInsets.fromLTRB(
+              AppSpace.md, AppSpace.md, AppSpace.md, AppSpace.lg),
           children: [
-            // Brand + account header.
+            // ── Brand + profile header card.
             Container(
-              padding: const EdgeInsets.fromLTRB(
-                  AppSpace.lg, AppSpace.xl, AppSpace.lg, AppSpace.lg),
+              padding: const EdgeInsets.all(AppSpace.lg),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [c.brand, c.brand.withValues(alpha: 0.75)],
+                ),
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [
                     Container(
-                      width: 32,
-                      height: 32,
+                      width: 34,
+                      height: 34,
                       alignment: Alignment.center,
-                      color: c.brand,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       child: Text('C',
-                          style: AppText.headline.copyWith(color: c.onBrand)),
+                          style: AppText.headline.copyWith(color: c.brand)),
                     ),
                     const SizedBox(width: AppSpace.sm),
                     Text('Clustez',
-                        style: AppText.title.copyWith(color: c.text)),
+                        style: AppText.title.copyWith(color: Colors.white)),
                   ]),
                   const SizedBox(height: AppSpace.lg),
                   if (user != null)
                     Row(children: [
                       CircleAvatar(
-                        radius: 16,
-                        backgroundColor: HSLColor.fromAHSL(
-                                1, hueFromString(email).toDouble(), 0.55, 0.45)
-                            .toColor(),
+                        radius: 17,
+                        backgroundColor: Colors.white,
                         child: Text(initialOf(email),
-                            style: const TextStyle(
-                                color: Colors.white,
+                            style: TextStyle(
+                                color: c.brand,
                                 fontWeight: FontWeight.w800,
-                                fontSize: 14)),
+                                fontSize: 15)),
                       ),
                       const SizedBox(width: AppSpace.sm),
                       Expanded(
-                        child: Text(email,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppText.caption.copyWith(color: c.textSecondary)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Signed in',
+                                style: AppText.micro.copyWith(
+                                    color:
+                                        Colors.white.withValues(alpha: 0.8))),
+                            Text(email,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppText.caption
+                                    .copyWith(color: Colors.white)),
+                          ],
+                        ),
+                      ),
+                      InkResponse(
+                        onTap: () => go('/you'),
+                        child: const Icon(Icons.chevron_right,
+                            color: Colors.white70),
                       ),
                     ])
                   else
                     FilledButton(
                       onPressed: () => push('/sign-in'),
                       style: FilledButton.styleFrom(
-                        backgroundColor: c.brand,
+                        backgroundColor: Colors.white,
+                        foregroundColor: c.brand,
                         minimumSize: const Size.fromHeight(42),
-                        shape: const RoundedRectangleBorder(),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('Sign in'),
+                      child: const Text('Sign in',
+                          style: TextStyle(fontWeight: FontWeight.w700)),
                     ),
                 ],
               ),
             ),
-            Divider(height: 1, color: c.border),
+            const SizedBox(height: AppSpace.lg),
 
-            // Primary nav (tabs).
-            _Item(icon: Icons.home_outlined, label: 'Home', onTap: () => go('/')),
-            _Item(
-                icon: Icons.dynamic_feed_outlined,
-                label: 'News Feed',
-                onTap: () => go('/discover')),
-            _Item(
-                icon: Icons.account_tree_outlined,
-                label: 'Clusters',
-                onTap: () => go('/clusters')),
-            _Item(
-                icon: Icons.newspaper_outlined,
-                label: 'Briefing',
-                onTap: () => go('/briefing')),
-            Divider(height: 1, color: c.border),
+            // ── Quick access grid (Bing-style feature tiles).
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 4,
+              mainAxisSpacing: AppSpace.md,
+              crossAxisSpacing: AppSpace.md,
+              childAspectRatio: 0.86,
+              children: [
+                _Tile(icon: Icons.home_outlined, label: 'Home', onTap: () => go('/')),
+                _Tile(
+                    icon: Icons.dynamic_feed_outlined,
+                    label: 'Feed',
+                    onTap: () => go('/discover')),
+                _Tile(
+                    icon: Icons.play_circle_outline,
+                    label: 'Reel',
+                    onTap: () => go('/stack')),
+                _Tile(
+                    icon: Icons.account_tree_outlined,
+                    label: 'Clusters',
+                    onTap: () => go('/clusters')),
+                _Tile(
+                    icon: Icons.newspaper_outlined,
+                    label: 'Briefing',
+                    onTap: () => go('/briefing')),
+                _Tile(
+                    icon: Icons.search,
+                    label: 'Search',
+                    onTap: () => push('/search')),
+                _Tile(
+                    icon: Icons.bookmark_outline,
+                    label: 'Saved',
+                    onTap: () => push('/saved')),
+                _Tile(
+                    icon: Icons.insights_outlined,
+                    label: 'Insights',
+                    onTap: () => push('/insights')),
+              ],
+            ),
+            const SizedBox(height: AppSpace.lg),
 
-            // Tools.
-            _Item(
-                icon: Icons.search,
-                label: 'Search',
-                onTap: () => push('/search')),
-            _Item(
-                icon: Icons.insights_outlined,
-                label: 'Insights',
-                onTap: () => push('/insights')),
-            _Item(
-                icon: Icons.bookmark_outline,
-                label: 'Saved',
-                onTap: () => push('/saved')),
-            _Item(
-                icon: Icons.auto_awesome_outlined,
-                label: 'Your interests',
-                onTap: () => push('/interests')),
-            _Item(
-                icon: Icons.bookmarks_outlined,
-                label: 'Watchlists',
-                onTap: () => push('/watchlists')),
-            _Item(
-                icon: Icons.notifications_outlined,
-                label: 'Alerts',
-                onTap: () => push('/alerts')),
-            Divider(height: 1, color: c.border),
+            // ── Personalization group.
+            _Group(children: [
+              _Row(
+                  icon: Icons.auto_awesome_outlined,
+                  label: 'Your interests',
+                  onTap: () => push('/interests')),
+              _Row(
+                  icon: Icons.bookmarks_outlined,
+                  label: 'Watchlists',
+                  onTap: () => push('/watchlists')),
+              _Row(
+                  icon: Icons.notifications_outlined,
+                  label: 'Alerts',
+                  onTap: () => push('/alerts')),
+            ]),
+            const SizedBox(height: AppSpace.lg),
 
-            // Categories.
+            // ── Categories as chips (compact, modern — no endless list).
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpace.lg, AppSpace.md, AppSpace.lg, AppSpace.sm),
+                  AppSpace.sm, 0, AppSpace.sm, AppSpace.sm),
               child: Text('CATEGORIES',
-                  style: AppText.micro.copyWith(color: c.textFaint)),
+                  style: AppText.micro
+                      .copyWith(color: c.textFaint, letterSpacing: 1)),
             ),
-            for (final (slug, label) in kNewsCategories)
-              _Item(
-                icon: Icons.label_outline,
-                label: label,
-                dense: true,
-                onTap: () =>
-                    push('/topic/$slug?name=${Uri.encodeComponent(label)}'),
-              ),
-            Divider(height: 1, color: c.border),
-
-            // Account.
-            _Item(
-                icon: Icons.person_outline,
-                label: 'Account',
-                onTap: () => go('/you')),
-            _Item(
-                icon: Icons.gavel_outlined,
-                label: 'Sources & attribution',
-                onTap: () => push('/legal-sources')),
-            if (user != null)
-              _Item(
-                icon: Icons.logout,
-                label: 'Sign out',
-                onTap: () {
-                  Navigator.pop(context);
-                  ref.read(authServiceProvider).signOut();
-                },
-              ),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final (slug, label) in kNewsCategories)
+                  InkWell(
+                    borderRadius: BorderRadius.circular(999),
+                    onTap: () => push(
+                        '/topic/$slug?name=${Uri.encodeComponent(label)}'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: c.bgInset,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(label,
+                          style: AppText.caption.copyWith(color: c.text)),
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(height: AppSpace.lg),
+
+            // ── Account group.
+            _Group(children: [
+              _Row(
+                  icon: Icons.person_outline,
+                  label: 'Account',
+                  onTap: () => go('/you')),
+              _Row(
+                  icon: Icons.gavel_outlined,
+                  label: 'Sources & attribution',
+                  onTap: () => push('/legal-sources')),
+              if (user != null)
+                _Row(
+                  icon: Icons.logout,
+                  label: 'Sign out',
+                  onTap: () {
+                    Navigator.pop(context);
+                    ref.read(authServiceProvider).signOut();
+                  },
+                ),
+            ]),
           ],
         ),
       ),
@@ -179,26 +241,91 @@ class AppDrawer extends ConsumerWidget {
   }
 }
 
-class _Item extends StatelessWidget {
-  const _Item({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.dense = false,
-  });
+/// Rounded quick-access tile: filled icon square + tiny label.
+class _Tile extends StatelessWidget {
+  const _Tile({required this.icon, required this.label, required this.onTap});
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final bool dense;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return ListTile(
-      dense: dense,
-      leading: Icon(icon, size: 20, color: c.textSecondary),
-      title: Text(label, style: AppText.body.copyWith(color: c.text)),
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
       onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: c.bgInset,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, size: 22, color: c.text),
+          ),
+          const SizedBox(height: 5),
+          Text(label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppText.micro.copyWith(color: c.textSecondary)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Rounded card grouping a few rows (Bing-style settings groups).
+class _Group extends StatelessWidget {
+  const _Group({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Container(
+      decoration: BoxDecoration(
+        color: c.bgElevated,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: c.border),
+      ),
+      child: Column(children: [
+        for (var i = 0; i < children.length; i++) ...[
+          children[i],
+          if (i + 1 < children.length)
+            Divider(height: 1, indent: 52, color: c.border),
+        ],
+      ]),
+    );
+  }
+}
+
+class _Row extends StatelessWidget {
+  const _Row({required this.icon, required this.label, required this.onTap});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.lg, vertical: 13),
+        child: Row(children: [
+          Icon(icon, size: 20, color: c.textSecondary),
+          const SizedBox(width: AppSpace.md),
+          Expanded(
+            child: Text(label, style: AppText.body.copyWith(color: c.text))),
+          Icon(Icons.chevron_right, size: 18, color: c.textFaint),
+        ]),
+      ),
     );
   }
 }
