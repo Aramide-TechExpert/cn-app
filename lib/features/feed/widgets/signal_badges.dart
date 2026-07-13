@@ -127,6 +127,7 @@ const List<(String, String)> _sourceDomains = [
   ('cnbc', 'cnbc.com'),
   ('cnn', 'cnn.com'),
   ('cbs', 'cbsnews.com'),
+  ('telemundo', 'telemundo.com'),
   ('nbc', 'nbcnews.com'),
   ('abc', 'abcnews.go.com'),
   ('axios', 'axios.com'),

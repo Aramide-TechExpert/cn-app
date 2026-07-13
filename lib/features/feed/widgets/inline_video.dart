@@ -20,9 +20,14 @@ class InlineVideo extends StatefulWidget {
     this.fit = BoxFit.cover,
     this.muteController,
     this.showMuteButton = true,
+    this.previewLoop,
   });
   final Article article;
   final double aspectRatio;
+  /// When set, playback loops only the first N seconds — the news-video
+  /// preview treatment (cards tease the clip; the full video lives on the
+  /// publisher page / reel). Null = loop the whole video (reel behavior).
+  final Duration? previewLoop;
   /// When supplied, mute state is driven by this shared notifier instead of
   /// per-instance local state — so the full-screen reel can own one prominent
   /// sound toggle that applies to every page. Tapping the speaker (or the
@@ -112,6 +117,13 @@ class _InlineVideoState extends State<InlineVideo> {
   }
 
   void _tick() {
+    // Preview mode: loop over the first few seconds only. setLooping(true)
+    // stays on as the backstop for clips shorter than the preview window.
+    final pl = widget.previewLoop;
+    final ctrl = _ctrl;
+    if (pl != null && ctrl != null && ctrl.value.isInitialized) {
+      if (ctrl.value.position >= pl) ctrl.seekTo(Duration.zero);
+    }
     if (mounted) setState(() {});
   }
 
