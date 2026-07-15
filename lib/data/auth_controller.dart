@@ -1,9 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Deep-link the OAuth redirect returns to. Must be allow-listed in Supabase
-/// (Authentication → URL Configuration) AND registered as an intent-filter /
-/// URL scheme in the native platform config (added after `flutter create`).
+import '../config.dart';
+
+/// Deep-link the OAuth redirect returns to (web-browser OAuth FALLBACK only —
+/// the primary Google path is native signInWithIdToken, no browser). Must be
+/// allow-listed in Supabase (Authentication → URL Configuration) AND
+/// registered as a URL scheme in the native platform config.
 const String kAuthRedirect = 'clustez://login-callback';
 
 final supabaseProvider = Provider<SupabaseClient>(
@@ -61,10 +65,35 @@ class AuthService {
     await _client.auth.updateUser(UserAttributes(data: data));
   }
 
+  /// NATIVE in-app Google sign-in: the iOS account sheet produces an id
+  /// token that Supabase verifies directly (signInWithIdToken) — no browser,
+  /// no redirect round-trip. Falls back to browser OAuth only when the
+  /// native client ids aren't configured. Requires "skip nonce check" ON in
+  /// Supabase's Google provider (Google's iOS SDK owns the nonce).
   Future<void> signInWithGoogle() async {
-    await _client.auth.signInWithOAuth(
-      OAuthProvider.google,
-      redirectTo: kAuthRedirect,
+    if (!Config.hasNativeGoogle) {
+      await _client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: kAuthRedirect,
+      );
+      return;
+    }
+    final google = GoogleSignIn(
+      clientId: Config.googleIosClientId,
+      serverClientId: Config.googleWebClientId,
+    );
+    final account = await google.signIn();
+    if (account == null) return; // user dismissed the sheet
+    final tokens = await account.authentication;
+    final idToken = tokens.idToken;
+    if (idToken == null) {
+      throw const AuthException(
+          'Google did not return an ID token — try again.');
+    }
+    await _client.auth.signInWithIdToken(
+      provider: OAuthProvider.google,
+      idToken: idToken,
+      accessToken: tokens.accessToken,
     );
   }
 

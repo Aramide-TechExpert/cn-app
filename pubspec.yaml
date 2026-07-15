@@ -15,6 +15,8 @@ dependencies:
   go_router: ^14.2.7
   # Auth + direct RLS data (channel 1 of the hybrid backend)
   supabase_flutter: ^2.6.0
+  # Native in-app Google sign-in (id-token flow — no browser round-trip)
+  google_sign_in: ^6.2.1
   # /api/v1 client (channel 2)
   dio: ^5.7.0
   # Images with caching + monogram fallback
