@@ -45,6 +45,13 @@ class AuthService {
           'display_name': displayName,
       },
     );
+    // Supabase anti-enumeration: signing up an EXISTING email "succeeds"
+    // with a user that has no identities — surface the truth instead of a
+    // bogus "check your inbox" (which sends no email and dead-ends the user).
+    if (res.user != null && (res.user!.identities?.isEmpty ?? false)) {
+      throw const AuthException(
+          'This email already has an account — sign in instead.');
+    }
     return res.session != null;
   }
 

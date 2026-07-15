@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show AuthException;
 
 import '../../data/auth_controller.dart';
 import '../../theme/app_theme.dart';
@@ -33,6 +34,24 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     super.dispose();
   }
 
+  /// Human-readable auth errors — never surface raw AuthApiException dumps.
+  static String _friendly(Object e) {
+    if (e is AuthException) {
+      return switch (e.code) {
+        'invalid_credentials' => 'Wrong email or password.',
+        'email_not_confirmed' =>
+          'Confirm your email first — check your inbox (and spam).',
+        'user_already_exists' =>
+          'This email already has an account — sign in instead.',
+        'over_email_send_rate_limit' =>
+          'Too many attempts — wait a minute and try again.',
+        'weak_password' => 'That password is too weak — use 8+ characters.',
+        _ => e.message,
+      };
+    }
+    return e.toString();
+  }
+
   Future<void> _run(String kind, Future<void> Function() action) async {
     setState(() {
       _busy = kind;
@@ -42,7 +61,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     try {
       await action();
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = _friendly(e));
     } finally {
       if (mounted) setState(() => _busy = null);
     }
