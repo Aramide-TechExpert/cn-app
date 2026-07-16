@@ -12,8 +12,11 @@ import 'feed_controller.dart' show apiClientProvider;
 final clustersProvider = FutureProvider.autoDispose<List<StoryCluster>>(
   (ref) async {
     final list = await ref.read(apiClientProvider).clusters();
-    return shapeClustersForUser(list,
+    final shaped = shapeClustersForUser(list,
         meta: ref.read(currentUserProvider)?.userMetadata);
+    // Never-empty guard: if every cluster got gated (corpus mostly foreign
+    // nationals for this user), the full set beats a blank page.
+    return shaped.isEmpty ? list : shaped;
   },
 );
 

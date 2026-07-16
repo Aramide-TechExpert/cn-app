@@ -8,8 +8,9 @@ import 'feed_controller.dart' show apiClientProvider, applyRegionPreference;
 
 /// A small pool of playable news videos used for the Shorts rail + Reel.
 /// Source-interleaved so one publisher's clips don't fill the whole rail.
+/// Fetches deep (the strict gate + playability checks both thin the pool).
 final videoPoolProvider = FutureProvider.autoDispose<List<Article>>((ref) async {
-  final page = await ref.read(apiClientProvider).feed(limit: 10, video: true);
+  final page = await ref.read(apiClientProvider).feed(limit: 24, video: true);
   final playable = applyRegionPreference(
       ref, page.items.where((a) => a.hasPlayableVideo && a.hasImage).toList());
   return interleaveBySource(playable, flush: true).emitted;
@@ -81,27 +82,38 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
       _filters.impact == null || a.impact == _filters.impact;
 
   Future<List<Article>> _fetch({String? cursor}) async {
-    final page = await ref.read(apiClientProvider).feed(
-          cursor: cursor,
-          limit: 20,
-          category: _filters.category,
-          source: _filters.source,
-          sort: _filters.sort == 'latest' ? null : _filters.sort,
-          since: _filters.since,
-          video: _filters.video,
-        );
-    _cursor = page.nextCursor;
-    _hasMore = page.nextCursor != null;
-    final items = page.items.where(_passesImpact).toList();
+    final meta = ref.read(currentUserProvider)?.userMetadata;
+    final collected = <Article>[];
+    var next = cursor;
+    // The strict source gate can wipe out entire pages (feeds are newest-
+    // first, and ingestion bursts make whole pages one or two publishers),
+    // so keep pulling until enough VISIBLE stories accumulate or the
+    // corpus ends. Bounded hops keep a worst-case refresh cheap.
+    for (var hop = 0; hop < 5; hop++) {
+      final page = await ref.read(apiClientProvider).feed(
+            cursor: next,
+            limit: 20,
+            category: _filters.category,
+            source: _filters.source,
+            sort: _filters.sort == 'latest' ? null : _filters.sort,
+            since: _filters.since,
+            video: _filters.video,
+          );
+      next = page.nextCursor;
+      _cursor = page.nextCursor;
+      _hasMore = page.nextCursor != null;
+      collected.addAll(page.items.where(_passesImpact));
+      if (_filters.source != null || !_hasMore) break;
+      if (gateSourcesForUser(collected, meta: meta).length >= 8) break;
+    }
     // One source at a time — except in the single-source filter view, where
     // interleaving is meaningless and deferral would starve the list. The
     // strict gate still applies (the picker hides gated sources anyway).
     if (_filters.source != null) {
-      return gateSourcesForUser(items,
-          meta: ref.read(currentUserProvider)?.userMetadata);
+      return gateSourcesForUser(collected, meta: meta);
     }
     final r = interleaveBySource(
-        applyRegionPreference(ref, [..._deferred, ...items]),
+        applyRegionPreference(ref, [..._deferred, ...collected]),
         flush: !_hasMore);
     _deferred = r.deferred;
     return r.emitted;

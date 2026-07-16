@@ -34,14 +34,36 @@ class FeedController extends AsyncNotifier<List<Article>> {
   bool get loadingMore => _loadingMore;
   String? get since => _since;
 
+  /// Fetch pages until at least [minVisible] stories survive the strict
+  /// source gate (or the corpus ends). Feeds are newest-first and ingestion
+  /// bursts make whole pages one or two publishers, so a single gated page
+  /// can come back empty. Bounded hops keep a worst-case refresh cheap.
+  Future<List<Article>> _collect({
+    String? cursor,
+    required int limit,
+    required int minVisible,
+  }) async {
+    final collected = <Article>[];
+    var next = cursor;
+    for (var hop = 0; hop < 5; hop++) {
+      final page = await ref
+          .read(apiClientProvider)
+          .feed(cursor: next, limit: limit, since: _since);
+      next = page.nextCursor;
+      _cursor = page.nextCursor;
+      _hasMore = page.nextCursor != null;
+      collected.addAll(page.items);
+      if (!_hasMore) break;
+      if (applyRegionPreference(ref, collected).length >= minVisible) break;
+    }
+    return collected;
+  }
+
   Future<List<Article>> _firstPage() async {
     _deferred = const [];
     // Larger first page so Home can fill hero + rail + bento + latest.
-    final page =
-        await ref.read(apiClientProvider).feed(limit: 24, since: _since);
-    _cursor = page.nextCursor;
-    _hasMore = page.nextCursor != null;
-    final r = interleaveBySource(applyRegionPreference(ref, page.items),
+    final items = await _collect(limit: 24, minVisible: 12);
+    final r = interleaveBySource(applyRegionPreference(ref, items),
         flush: !_hasMore);
     _deferred = r.deferred;
     return r.emitted;
@@ -54,15 +76,10 @@ class FeedController extends AsyncNotifier<List<Article>> {
     if (!_hasMore || _loadingMore) return;
     _loadingMore = true;
     try {
-      final page = await ref.read(apiClientProvider).feed(
-            cursor: _cursor,
-            limit: 12,
-            since: _since,
-          );
-      _cursor = page.nextCursor;
-      _hasMore = page.nextCursor != null;
+      final items =
+          await _collect(cursor: _cursor, limit: 12, minVisible: 6);
       final r = interleaveBySource(
-          applyRegionPreference(ref, [..._deferred, ...page.items]),
+          applyRegionPreference(ref, [..._deferred, ...items]),
           flush: !_hasMore);
       _deferred = r.deferred;
       state = AsyncData([...(state.value ?? const []), ...r.emitted]);
