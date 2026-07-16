@@ -62,8 +62,12 @@ class YouPage extends ConsumerWidget {
                     name: (user.userMetadata?['display_name'] as String?)
                             ?.trim() ??
                         '',
+                    // Country beats region on the chip when localized.
                     region: user.userMetadata?['news_scope'] == 'region'
-                        ? (user.userMetadata?['preferred_region'] as String?)
+                        ? ((user.userMetadata?['preferred_country']
+                                    as String?) ??
+                                (user.userMetadata?['preferred_region']
+                                    as String?))
                         : null,
                     onEdit: () => context.push('/setup?edit=1'),
                     onSignOut: () => ref.read(authServiceProvider).signOut(),

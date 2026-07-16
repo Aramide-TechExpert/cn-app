@@ -7,20 +7,14 @@ import 'auth_controller.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
 
-/// Segment-aware shaping for any article list: the Africa gate first (Africa
-/// sources only surface for Africa-segment users), then — when the user
-/// picked a news region in setup (US, UK, Canada, Africa, …) — a stable
-/// partition so that segment's outlets lead ahead of the source interleave.
-List<Article> applyRegionPreference(Ref ref, List<Article> items) {
-  final meta = ref.read(currentUserProvider)?.userMetadata;
-  final gated = gateAfricaSources(items, meta: meta);
-  if (meta?['news_scope'] != 'region') return gated;
-  final segment = meta?['preferred_region'] as String?;
-  if (segment == null || segment.isEmpty || segment == 'Worldwide') {
-    return gated;
-  }
-  return segmentFirst(gated, segment: segment);
-}
+/// Strict preference shaping for any article list: national outlets from
+/// other regions are DROPPED (a US-preference user never sees a Philippine
+/// national outlet), then the kept articles are tiered — user's country
+/// first, their region, global desks, topical verticals — ahead of the
+/// source interleave.
+List<Article> applyRegionPreference(Ref ref, List<Article> items) =>
+    shapeArticlesForUser(items,
+        meta: ref.read(currentUserProvider)?.userMetadata);
 
 /// Home feed: keyset-cursor infinite list over `/api/v1/feed`. The cursor +
 /// has-more flags live on the notifier; the public state is the article list.

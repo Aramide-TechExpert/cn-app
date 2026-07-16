@@ -15,6 +15,6 @@ final searchResultsProvider =
   final q = ref.watch(searchQueryProvider).trim();
   if (q.length < 2) return const [];
   final results = await ref.read(apiClientProvider).search(q);
-  return gateAfricaSources(results,
+  return gateSourcesForUser(results,
       meta: ref.read(currentUserProvider)?.userMetadata);
 });

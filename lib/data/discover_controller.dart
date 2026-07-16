@@ -42,7 +42,7 @@ final topicFeedProvider =
     FutureProvider.autoDispose.family<List<Article>, String>(
   (ref, slug) async {
     final items = await ref.read(apiClientProvider).categoryFeed(slug);
-    return gateAfricaSources(items,
+    return gateSourcesForUser(items,
         meta: ref.read(currentUserProvider)?.userMetadata);
   },
 );

@@ -33,7 +33,7 @@ final forYouFeedProvider = FutureProvider.autoDispose<List<Article>>((ref) async
     }
   }
   merged.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
-  return gateAfricaSources(merged, meta: user.userMetadata)
+  return gateSourcesForUser(merged, meta: user.userMetadata)
       .take(12)
       .toList();
 });

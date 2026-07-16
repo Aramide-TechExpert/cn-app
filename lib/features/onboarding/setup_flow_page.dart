@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,6 +43,8 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
   bool _breakingWatchlist = true;
   bool _highImpactOnly = false;
   String _segment = 'Worldwide'; // a newsSegments label
+  String? _country; // country inside the segment, when localized
+  bool _detecting = false;
   bool _finishing = false;
 
   @override
@@ -68,7 +71,43 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
     if (meta['news_scope'] == 'region' &&
         newsSegments.any((s) => s.$1 == saved)) {
       _segment = saved!;
+      final savedCountry = meta['preferred_country'] as String?;
+      if (segmentCountries[_segment]?.contains(savedCountry) ?? false) {
+        _country = savedCountry;
+      }
     }
+  }
+
+  /// Country-level location detect (IP lookup, no permission dialog): sets
+  /// both the segment and, when we carry that country's outlets, the country.
+  Future<void> _detectLocation() async {
+    setState(() => _detecting = true);
+    String? detected;
+    try {
+      final res = await Dio().get(
+        'https://ipapi.co/json/',
+        options: Options(receiveTimeout: const Duration(seconds: 8)),
+      );
+      detected =
+          res.data is Map ? res.data['country_name'] as String? : null;
+    } catch (_) {
+      // fall through to the manual picker
+    }
+    if (!mounted) return;
+    final segment = detected == null ? null : countryToSegment[detected];
+    setState(() {
+      _detecting = false;
+      if (segment != null) {
+        _segment = segment;
+        _country = (segmentCountries[segment]?.contains(detected) ?? false)
+            ? detected
+            : null;
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(segment == null
+            ? "Couldn't detect your location. Pick your region manually."
+            : 'Set to ${_country ?? _segment} from your location.')));
   }
 
   @override
@@ -108,6 +147,7 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
         'alerts_high_impact_only': _highImpactOnly,
         'news_scope': _segment == 'Worldwide' ? 'worldwide' : 'region',
         'preferred_region': _segment,
+        'preferred_country': _country,
         'setup_complete': true,
       });
       // Starter watchlist so Alerts has something to match from day one —
@@ -190,7 +230,14 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
                 const _InterestsStep(),
                 _RegionStep(
                   segment: _segment,
-                  onSelect: (v) => setState(() => _segment = v),
+                  country: _country,
+                  detecting: _detecting,
+                  onDetect: _detectLocation,
+                  onSelect: (v) => setState(() {
+                    _segment = v;
+                    _country = null;
+                  }),
+                  onCountry: (v) => setState(() => _country = v),
                 ),
                 _SourcesStep(
                   picked: _pickedSources,
@@ -434,37 +481,135 @@ class _InterestsStep extends ConsumerWidget {
 
 // ── Step 3: region ──────────────────────────────────────────────────────────
 class _RegionStep extends StatelessWidget {
-  const _RegionStep({required this.segment, required this.onSelect});
+  const _RegionStep({
+    required this.segment,
+    required this.country,
+    required this.detecting,
+    required this.onDetect,
+    required this.onSelect,
+    required this.onCountry,
+  });
   final String segment;
+  final String? country;
+  final bool detecting;
+  final VoidCallback onDetect;
   final ValueChanged<String> onSelect;
+  final ValueChanged<String?> onCountry;
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
+    final countries = segmentCountries[segment];
     return _Step(
       icon: Icons.public,
       kicker: 'Step 3 · Region',
-      title: 'Pick your news region',
+      title: 'Make it local',
       subtitle:
-          'Local stories from your region lead your feed. Worldwide keeps it fully global.',
-      child: GridView.count(
-        crossAxisCount: 2,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: AppSpace.sm,
-        crossAxisSpacing: AppSpace.sm,
-        childAspectRatio: 2.6,
+          'Stories from your country and region lead your feed. Worldwide keeps it fully global.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final (label, emoji) in newsSegments)
-            _SegmentTile(
-              label: label,
-              emoji: emoji,
-              selected: segment == label,
-              onTap: () {
-                HapticFeedback.selectionClick();
-                onSelect(label);
-              },
+          FilledButton.tonalIcon(
+            onPressed: detecting ? null : onDetect,
+            style: FilledButton.styleFrom(
+              backgroundColor: c.brand.withValues(alpha: 0.14),
+              foregroundColor: c.brand,
+              minimumSize: const Size.fromHeight(48),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999)),
             ),
+            icon: detecting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.my_location, size: 18),
+            label: Text(detecting ? 'Detecting…' : 'Use my location'),
+          ),
+          const SizedBox(height: AppSpace.lg),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: AppSpace.sm,
+            crossAxisSpacing: AppSpace.sm,
+            childAspectRatio: 2.6,
+            children: [
+              for (final (label, emoji) in newsSegments)
+                _SegmentTile(
+                  label: label,
+                  emoji: emoji,
+                  selected: segment == label,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    onSelect(label);
+                  },
+                ),
+            ],
+          ),
+          if (countries != null) ...[
+            const SizedBox(height: AppSpace.xl),
+            Text('Your country',
+                style: AppText.bodyStrong.copyWith(color: c.text)),
+            const SizedBox(height: 3),
+            Text('Local stories from your country come first.',
+                style: AppText.caption.copyWith(color: c.textFaint)),
+            const SizedBox(height: AppSpace.md),
+            Wrap(
+              spacing: AppSpace.sm,
+              runSpacing: AppSpace.sm,
+              children: [
+                _CountryChip(
+                  label: 'All $segment',
+                  selected: country == null,
+                  onTap: () => onCountry(null),
+                ),
+                for (final name in countries)
+                  _CountryChip(
+                    label: name,
+                    selected: country == name,
+                    onTap: () => onCountry(name),
+                  ),
+              ],
+            ),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+class _CountryChip extends StatelessWidget {
+  const _CountryChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.lg, vertical: 9),
+        decoration: BoxDecoration(
+          color: selected ? c.brand : c.bgInset,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(label,
+            style: AppText.callout.copyWith(
+                color: selected ? c.onBrand : c.text,
+                fontWeight: FontWeight.w600)),
       ),
     );
   }

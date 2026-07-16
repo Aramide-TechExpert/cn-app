@@ -290,7 +290,7 @@ class WatchlistDetailPage extends ConsumerWidget {
       ),
       body: FutureBuilder<List<Article>>(
         future: ref.read(apiClientProvider).search(query, limit: 30).then(
-            (r) => gateAfricaSources(r,
+            (r) => gateSourcesForUser(r,
                 meta: ref.read(currentUserProvider)?.userMetadata)),
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {

@@ -16,13 +16,11 @@ final videoPoolProvider = FutureProvider.autoDispose<List<Article>>((ref) async 
 });
 
 /// Distinct source names for the News Feed source picker (most frequent
-/// first). Africa sources are hidden unless the user is on the Africa segment.
+/// first). Strictly gated: other regions' national outlets never appear.
 final sourcesProvider = FutureProvider.autoDispose<List<String>>((ref) async {
   final names = await ref.read(apiClientProvider).sources();
-  if (africaSegmentUser(ref.read(currentUserProvider)?.userMetadata)) {
-    return names;
-  }
-  return names.where((s) => segmentOfSource(s) != 'Africa').toList();
+  final meta = ref.read(currentUserProvider)?.userMetadata;
+  return names.where((s) => sourceVisible(s, meta)).toList();
 });
 
 /// Active filters for the News Feed (Discover). Mirrors the web feed filter bar:
@@ -97,9 +95,9 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
     final items = page.items.where(_passesImpact).toList();
     // One source at a time — except in the single-source filter view, where
     // interleaving is meaningless and deferral would starve the list. The
-    // Africa gate still applies (the picker hides gated sources anyway).
+    // strict gate still applies (the picker hides gated sources anyway).
     if (_filters.source != null) {
-      return gateAfricaSources(items,
+      return gateSourcesForUser(items,
           meta: ref.read(currentUserProvider)?.userMetadata);
     }
     final r = interleaveBySource(
