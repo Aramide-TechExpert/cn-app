@@ -88,6 +88,21 @@ const Map<String, String> _sourceSegments = {
 String? segmentOfSource(String source) =>
     _sourceSegments[source.toLowerCase()];
 
+/// True when the signed-in user's chosen news region is Africa.
+bool africaSegmentUser(Map<String, dynamic>? meta) =>
+    meta?['news_scope'] == 'region' && meta?['preferred_region'] == 'Africa';
+
+/// Africa sources are GATED (user decision 2026-07-16): they surface only
+/// for users on the Africa segment. Everyone else, including signed-out
+/// readers, gets them filtered out of article lists.
+List<Article> gateAfricaSources(
+  List<Article> items, {
+  required Map<String, dynamic>? meta,
+}) =>
+    africaSegmentUser(meta)
+        ? items
+        : items.where((a) => segmentOfSource(a.source) != 'Africa').toList();
+
 /// Stable partition: articles from the user's segment first, everything else
 /// after, order preserved within each tier. The result feeds
 /// interleaveBySource, so local outlets lead each cycle without pushing the

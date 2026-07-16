@@ -6,6 +6,7 @@ import '../../data/feed_controller.dart' show apiClientProvider;
 import '../../data/personalization_controller.dart';
 import '../../models/article.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/source_regions.dart';
 import '../../theme/tokens.dart';
 import '../feed/widgets/card_variants.dart';
 import '../shell/sign_in_required.dart';
@@ -288,7 +289,9 @@ class WatchlistDetailPage extends ConsumerWidget {
         title: Text(watchlist.name, style: AppText.title.copyWith(color: c.text)),
       ),
       body: FutureBuilder<List<Article>>(
-        future: ref.read(apiClientProvider).search(query, limit: 30),
+        future: ref.read(apiClientProvider).search(query, limit: 30).then(
+            (r) => gateAfricaSources(r,
+                meta: ref.read(currentUserProvider)?.userMetadata)),
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator.adaptive());

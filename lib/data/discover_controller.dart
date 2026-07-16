@@ -5,6 +5,8 @@ import '../models/briefing.dart';
 import '../models/cluster.dart';
 import '../models/stats.dart';
 import '../models/widgets_data.dart';
+import '../utils/source_regions.dart';
+import 'auth_controller.dart';
 import 'feed_controller.dart' show apiClientProvider;
 
 final clustersProvider = FutureProvider.autoDispose<List<StoryCluster>>(
@@ -34,5 +36,9 @@ final clusterDetailProvider =
 
 final topicFeedProvider =
     FutureProvider.autoDispose.family<List<Article>, String>(
-  (ref, slug) => ref.read(apiClientProvider).categoryFeed(slug),
+  (ref, slug) async {
+    final items = await ref.read(apiClientProvider).categoryFeed(slug);
+    return gateAfricaSources(items,
+        meta: ref.read(currentUserProvider)?.userMetadata);
+  },
 );

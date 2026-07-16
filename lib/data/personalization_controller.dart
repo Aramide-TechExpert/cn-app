@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/article.dart';
+import '../utils/source_regions.dart';
 import 'auth_controller.dart';
 import 'feed_controller.dart' show apiClientProvider;
 import 'reading_history.dart';
@@ -32,7 +33,9 @@ final forYouFeedProvider = FutureProvider.autoDispose<List<Article>>((ref) async
     }
   }
   merged.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
-  return merged.take(12).toList();
+  return gateAfricaSources(merged, meta: user.userMetadata)
+      .take(12)
+      .toList();
 });
 
 /// "What you missed" — followed-topic stories the user hasn't opened yet

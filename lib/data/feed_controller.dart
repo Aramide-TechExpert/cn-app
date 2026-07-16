@@ -7,17 +7,19 @@ import 'auth_controller.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
 
-/// When the signed-in user picked a news region in setup (US, UK, Canada,
-/// Africa, …), lead each page with that segment's outlets (stable partition
-/// ahead of the source interleave). Worldwide or signed-out: unchanged.
+/// Segment-aware shaping for any article list: the Africa gate first (Africa
+/// sources only surface for Africa-segment users), then — when the user
+/// picked a news region in setup (US, UK, Canada, Africa, …) — a stable
+/// partition so that segment's outlets lead ahead of the source interleave.
 List<Article> applyRegionPreference(Ref ref, List<Article> items) {
   final meta = ref.read(currentUserProvider)?.userMetadata;
-  if (meta?['news_scope'] != 'region') return items;
+  final gated = gateAfricaSources(items, meta: meta);
+  if (meta?['news_scope'] != 'region') return gated;
   final segment = meta?['preferred_region'] as String?;
   if (segment == null || segment.isEmpty || segment == 'Worldwide') {
-    return items;
+    return gated;
   }
-  return segmentFirst(items, segment: segment);
+  return segmentFirst(gated, segment: segment);
 }
 
 /// Home feed: keyset-cursor infinite list over `/api/v1/feed`. The cursor +

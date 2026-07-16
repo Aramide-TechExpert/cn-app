@@ -2,21 +2,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/article.dart';
 import '../utils/interleave.dart';
+import '../utils/source_regions.dart';
+import 'auth_controller.dart';
 import 'feed_controller.dart' show apiClientProvider, applyRegionPreference;
 
 /// A small pool of playable news videos used for the Shorts rail + Reel.
 /// Source-interleaved so one publisher's clips don't fill the whole rail.
 final videoPoolProvider = FutureProvider.autoDispose<List<Article>>((ref) async {
   final page = await ref.read(apiClientProvider).feed(limit: 10, video: true);
-  final playable =
-      page.items.where((a) => a.hasPlayableVideo && a.hasImage).toList();
+  final playable = applyRegionPreference(
+      ref, page.items.where((a) => a.hasPlayableVideo && a.hasImage).toList());
   return interleaveBySource(playable, flush: true).emitted;
 });
 
-/// Distinct source names for the News Feed source picker (most frequent first).
-final sourcesProvider = FutureProvider.autoDispose<List<String>>(
-  (ref) => ref.read(apiClientProvider).sources(),
-);
+/// Distinct source names for the News Feed source picker (most frequent
+/// first). Africa sources are hidden unless the user is on the Africa segment.
+final sourcesProvider = FutureProvider.autoDispose<List<String>>((ref) async {
+  final names = await ref.read(apiClientProvider).sources();
+  if (africaSegmentUser(ref.read(currentUserProvider)?.userMetadata)) {
+    return names;
+  }
+  return names.where((s) => segmentOfSource(s) != 'Africa').toList();
+});
 
 /// Active filters for the News Feed (Discover). Mirrors the web feed filter bar:
 /// category, sort, and impact level. Null = "All".
@@ -89,8 +96,12 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
     _hasMore = page.nextCursor != null;
     final items = page.items.where(_passesImpact).toList();
     // One source at a time — except in the single-source filter view, where
-    // interleaving is meaningless and deferral would starve the list.
-    if (_filters.source != null) return items;
+    // interleaving is meaningless and deferral would starve the list. The
+    // Africa gate still applies (the picker hides gated sources anyway).
+    if (_filters.source != null) {
+      return gateAfricaSources(items,
+          meta: ref.read(currentUserProvider)?.userMetadata);
+    }
     final r = interleaveBySource(
         applyRegionPreference(ref, [..._deferred, ...items]),
         flush: !_hasMore);
