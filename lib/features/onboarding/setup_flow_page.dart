@@ -16,26 +16,32 @@ import '../feed/widgets/signal_badges.dart';
 /// time (each skippable):
 ///   1 Profile     — display name
 ///   2 Interests   — follow topics (powers For You)
-///   3 Sources     — favorite publishers (stored in profile metadata)
-///   4 Alerts      — breaking-news starter watchlist + high-impact filter
-///   5 Appearance  — theme + text size
+///   3 Region      — home country + local-first vs worldwide news
+///   4 Sources     — favorite publishers (stored in profile metadata)
+///   5 Alerts      — breaking-news starter watchlist + high-impact filter
+///   6 Appearance  — theme + text size
 /// Prefs land in Supabase auth metadata (synced across devices); interests
-/// and the starter watchlist land in their own tables.
+/// and the starter watchlist land in their own tables. With [edit] true
+/// (Settings → Preferences) every step prefills from saved metadata and
+/// finishing returns to Settings instead of Home.
 class SetupFlowPage extends ConsumerStatefulWidget {
-  const SetupFlowPage({super.key});
+  const SetupFlowPage({super.key, this.edit = false});
+  final bool edit;
 
   @override
   ConsumerState<SetupFlowPage> createState() => _SetupFlowPageState();
 }
 
 class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
-  static const _steps = 5;
+  static const _steps = 6;
   final _page = PageController();
   final _name = TextEditingController();
   int _step = 0;
   final Set<String> _pickedSources = {};
   bool _breakingWatchlist = true;
   bool _highImpactOnly = false;
+  String _newsScope = 'worldwide'; // 'worldwide' | 'region'
+  _Country? _country;
   bool _finishing = false;
 
   @override
@@ -43,10 +49,26 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
     super.initState();
     final user = ref.read(currentUserProvider);
     final meta = user?.userMetadata ?? const {};
-    final fromMeta = (meta['display_name'] as String?)?.trim();
+    // Google accounts arrive with full_name/name — use it before falling back
+    // to the email prefix.
+    final fromMeta = ((meta['display_name'] ??
+            meta['full_name'] ??
+            meta['name']) as String?)
+        ?.trim();
     _name.text = (fromMeta?.isNotEmpty ?? false)
         ? fromMeta!
         : (user?.email?.split('@').first ?? '');
+    // Prefill everything the user already saved, so re-running the wizard
+    // from Settings edits preferences instead of resetting them.
+    _pickedSources
+        .addAll(((meta['preferred_sources'] as List?) ?? const []).cast<String>());
+    _breakingWatchlist = meta['alerts_breaking'] as bool? ?? true;
+    _highImpactOnly = meta['alerts_high_impact_only'] as bool? ?? false;
+    _newsScope = meta['news_scope'] as String? ?? 'worldwide';
+    final savedCountry = meta['preferred_country'] as String?;
+    for (final x in _countries) {
+      if (x.name == savedCountry) _country = x;
+    }
   }
 
   @override
@@ -62,6 +84,16 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
         duration: const Duration(milliseconds: 260), curve: Curves.easeOut);
   }
 
+  /// Closing the wizard still counts as done — mark it so sign-in never
+  /// re-traps this account; every preference stays editable in Settings.
+  void _dismiss() {
+    ref
+        .read(authServiceProvider)
+        .updateProfile({'setup_complete': true}).catchError((_) {});
+    ref.read(settingsControllerProvider.notifier).markFirstRunSeen();
+    context.canPop() ? context.pop() : context.go('/');
+  }
+
   Future<void> _finish() async {
     if (_finishing) return;
     setState(() => _finishing = true);
@@ -74,10 +106,14 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
         'preferred_sources': _pickedSources.toList(),
         'alerts_breaking': _breakingWatchlist,
         'alerts_high_impact_only': _highImpactOnly,
+        'news_scope': _newsScope,
+        'preferred_country': _country?.name,
+        'preferred_region': _country?.region,
         'setup_complete': true,
       });
-      // Starter watchlist so Alerts has something to match from day one.
-      if (_breakingWatchlist && followed.isNotEmpty) {
+      // Starter watchlist so Alerts has something to match from day one —
+      // first run only; editing prefs must not spawn duplicates.
+      if (!widget.edit && _breakingWatchlist && followed.isNotEmpty) {
         final cats =
             ref.read(categoriesProvider).valueOrNull ?? const <CategoryOption>[];
         final names = [
@@ -97,7 +133,13 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
       // Setup must never trap the user — prefs can be edited later.
     }
     ref.read(settingsControllerProvider.notifier).markFirstRunSeen();
-    if (mounted) context.go('/');
+    if (!mounted) return;
+    // Edit flow returns to Settings; first run heads Home.
+    if (widget.edit && context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/');
+    }
   }
 
   @override
@@ -115,9 +157,7 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
                 AppSpace.sm, AppSpace.sm, AppSpace.sm, 0),
             child: Row(children: [
               IconButton(
-                onPressed: _step == 0
-                    ? (() => context.canPop() ? context.pop() : context.go('/'))
-                    : () => _goTo(_step - 1),
+                onPressed: _step == 0 ? _dismiss : () => _goTo(_step - 1),
                 icon: Icon(
                     _step == 0 ? Icons.close : Icons.arrow_back_ios_new,
                     size: 20,
@@ -149,6 +189,12 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
               children: [
                 _ProfileStep(name: _name),
                 const _InterestsStep(),
+                _RegionStep(
+                  scope: _newsScope,
+                  country: _country,
+                  onScope: (v) => setState(() => _newsScope = v),
+                  onCountry: (v) => setState(() => _country = v),
+                ),
                 _SourcesStep(
                   picked: _pickedSources,
                   onToggle: (s) => setState(() =>
@@ -370,7 +416,282 @@ class _InterestsStep extends ConsumerWidget {
   }
 }
 
-// ── Step 3: sources ─────────────────────────────────────────────────────────
+// ── Step 3: region ──────────────────────────────────────────────────────────
+class _Country {
+  const _Country(this.name, this.region);
+  final String name;
+  final String region;
+}
+
+const _countries = [
+  _Country('Argentina', 'Americas'),
+  _Country('Australia', 'Asia-Pacific'),
+  _Country('Austria', 'Europe'),
+  _Country('Bangladesh', 'Asia-Pacific'),
+  _Country('Belgium', 'Europe'),
+  _Country('Brazil', 'Americas'),
+  _Country('Canada', 'Americas'),
+  _Country('Chile', 'Americas'),
+  _Country('China', 'Asia-Pacific'),
+  _Country('Colombia', 'Americas'),
+  _Country('Denmark', 'Europe'),
+  _Country('Egypt', 'Middle East'),
+  _Country('Ethiopia', 'Africa'),
+  _Country('Finland', 'Europe'),
+  _Country('France', 'Europe'),
+  _Country('Germany', 'Europe'),
+  _Country('Ghana', 'Africa'),
+  _Country('Greece', 'Europe'),
+  _Country('Hong Kong', 'Asia-Pacific'),
+  _Country('India', 'Asia-Pacific'),
+  _Country('Indonesia', 'Asia-Pacific'),
+  _Country('Ireland', 'Europe'),
+  _Country('Israel', 'Middle East'),
+  _Country('Italy', 'Europe'),
+  _Country('Japan', 'Asia-Pacific'),
+  _Country('Kenya', 'Africa'),
+  _Country('Malaysia', 'Asia-Pacific'),
+  _Country('Mexico', 'Americas'),
+  _Country('Netherlands', 'Europe'),
+  _Country('New Zealand', 'Asia-Pacific'),
+  _Country('Nigeria', 'Africa'),
+  _Country('Norway', 'Europe'),
+  _Country('Pakistan', 'Asia-Pacific'),
+  _Country('Peru', 'Americas'),
+  _Country('Philippines', 'Asia-Pacific'),
+  _Country('Poland', 'Europe'),
+  _Country('Portugal', 'Europe'),
+  _Country('Qatar', 'Middle East'),
+  _Country('Saudi Arabia', 'Middle East'),
+  _Country('Singapore', 'Asia-Pacific'),
+  _Country('South Africa', 'Africa'),
+  _Country('South Korea', 'Asia-Pacific'),
+  _Country('Spain', 'Europe'),
+  _Country('Sweden', 'Europe'),
+  _Country('Switzerland', 'Europe'),
+  _Country('Taiwan', 'Asia-Pacific'),
+  _Country('Thailand', 'Asia-Pacific'),
+  _Country('Turkey', 'Middle East'),
+  _Country('Ukraine', 'Europe'),
+  _Country('United Arab Emirates', 'Middle East'),
+  _Country('United Kingdom', 'Europe'),
+  _Country('United States', 'Americas'),
+  _Country('Vietnam', 'Asia-Pacific'),
+];
+
+class _RegionStep extends StatelessWidget {
+  const _RegionStep({
+    required this.scope,
+    required this.country,
+    required this.onScope,
+    required this.onCountry,
+  });
+  final String scope;
+  final _Country? country;
+  final ValueChanged<String> onScope;
+  final ValueChanged<_Country?> onCountry;
+
+  Future<void> _pick(BuildContext context) async {
+    final picked = await showModalBottomSheet<_Country>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.colors.bgElevated,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => const _CountrySheet(),
+    );
+    if (picked != null) onCountry(picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+
+    Widget scopeCard({
+      required String value,
+      required IconData icon,
+      required String title,
+      required String sub,
+    }) {
+      final on = scope == value;
+      return InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onScope(value);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          margin: const EdgeInsets.only(bottom: AppSpace.md),
+          padding: const EdgeInsets.all(AppSpace.lg),
+          decoration: BoxDecoration(
+            color: c.bgElevated,
+            borderRadius: BorderRadius.circular(16),
+            border:
+                Border.all(color: on ? c.brand : c.border, width: on ? 1.6 : 1),
+          ),
+          child: Row(children: [
+            Icon(icon, size: 24, color: on ? c.brand : c.textSecondary),
+            const SizedBox(width: AppSpace.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: AppText.bodyStrong.copyWith(color: c.text)),
+                  const SizedBox(height: 3),
+                  Text(sub,
+                      style: AppText.caption
+                          .copyWith(color: c.textSecondary, height: 1.35)),
+                ],
+              ),
+            ),
+            if (on) Icon(Icons.check_circle, size: 20, color: c.brand),
+          ]),
+        ),
+      );
+    }
+
+    return _Step(
+      kicker: 'Step 3 · Region',
+      title: 'Where is home?',
+      subtitle:
+          'Set your country, then choose whether your feed leads with local coverage or the whole world.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => _pick(context),
+            child: Container(
+              padding: const EdgeInsets.all(AppSpace.lg),
+              decoration: BoxDecoration(
+                color: c.bgElevated,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: c.border),
+              ),
+              child: Row(children: [
+                Icon(Icons.public, size: 24, color: c.brand),
+                const SizedBox(width: AppSpace.md),
+                Expanded(
+                  child: country == null
+                      ? Text('Choose your country',
+                          style: AppText.bodyStrong
+                              .copyWith(color: c.textSecondary))
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(country!.name,
+                                style: AppText.bodyStrong
+                                    .copyWith(color: c.text)),
+                            const SizedBox(height: 3),
+                            Text(country!.region,
+                                style: AppText.caption
+                                    .copyWith(color: c.textSecondary)),
+                          ],
+                        ),
+                ),
+                Icon(Icons.chevron_right, color: c.textFaint),
+              ]),
+            ),
+          ),
+          const SizedBox(height: AppSpace.lg),
+          scopeCard(
+            value: 'region',
+            icon: Icons.location_on_outlined,
+            title: 'My country & region first',
+            sub:
+                'Lead with stories tied to your country and region, then the world.',
+          ),
+          scopeCard(
+            value: 'worldwide',
+            icon: Icons.language,
+            title: 'Worldwide',
+            sub: 'The biggest stories from everywhere, no local weighting.',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Searchable country picker sheet — pops with the tapped [_Country].
+class _CountrySheet extends StatefulWidget {
+  const _CountrySheet();
+
+  @override
+  State<_CountrySheet> createState() => _CountrySheetState();
+}
+
+class _CountrySheetState extends State<_CountrySheet> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final q = _query.trim().toLowerCase();
+    final list = q.isEmpty
+        ? _countries
+        : _countries
+            .where((x) =>
+                x.name.toLowerCase().contains(q) ||
+                x.region.toLowerCase().contains(q))
+            .toList();
+    return Padding(
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.72,
+        child: Column(children: [
+          const SizedBox(height: AppSpace.sm),
+          Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: c.border,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSpace.lg),
+            child: TextField(
+              autofocus: false,
+              onChanged: (v) => setState(() => _query = v),
+              style: AppText.body.copyWith(color: c.text),
+              decoration: InputDecoration(
+                hintText: 'Search countries…',
+                hintStyle: TextStyle(color: c.textFaint),
+                prefixIcon: Icon(Icons.search, color: c.textFaint),
+                filled: true,
+                fillColor: c.bgInset,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: list.length,
+              itemBuilder: (_, i) {
+                final x = list[i];
+                return ListTile(
+                  title:
+                      Text(x.name, style: AppText.body.copyWith(color: c.text)),
+                  subtitle: Text(x.region,
+                      style: AppText.caption.copyWith(color: c.textFaint)),
+                  onTap: () => Navigator.pop(context, x),
+                );
+              },
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+// ── Step 4: sources ─────────────────────────────────────────────────────────
 class _SourcesStep extends ConsumerWidget {
   const _SourcesStep({required this.picked, required this.onToggle});
   final Set<String> picked;
@@ -381,7 +702,7 @@ class _SourcesStep extends ConsumerWidget {
     final c = context.colors;
     final sources = ref.watch(sourcesProvider);
     return _Step(
-      kicker: 'Step 3 · Sources',
+      kicker: 'Step 4 · Sources',
       title: 'Favorite your publishers',
       subtitle:
           'Choose the outlets you trust most — saved to your profile for a feed tuned to them.',
@@ -481,7 +802,7 @@ class _AlertsStep extends StatelessWidget {
     }
 
     return _Step(
-      kicker: 'Step 4 · Alerts',
+      kicker: 'Step 5 · Alerts',
       title: 'Never miss the big one',
       subtitle:
           'We build a starter watchlist from your topics — matches land on your Alerts page.',
@@ -515,7 +836,7 @@ class _AppearanceStep extends ConsumerWidget {
     final settings = ref.watch(settingsControllerProvider);
     final notifier = ref.read(settingsControllerProvider.notifier);
     return _Step(
-      kicker: 'Step 5 · Appearance',
+      kicker: 'Step 6 · Appearance',
       title: 'Make it yours',
       subtitle: 'Theme and reading size — you can change these any time in Settings.',
       child: Column(

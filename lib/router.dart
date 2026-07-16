@@ -70,7 +70,11 @@ final router = GoRouter(
         path: '/legal-sources',
         builder: (_, __) => const LegalSourcesPage()),
     GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingPage()),
-    GoRoute(path: '/setup', builder: (_, __) => const SetupFlowPage()),
+    GoRoute(
+      path: '/setup',
+      builder: (_, s) =>
+          SetupFlowPage(edit: s.uri.queryParameters['edit'] == '1'),
+    ),
     GoRoute(
       path: '/cluster/:id',
       builder: (_, s) => ClusterDetailPage(id: s.pathParameters['id']!),

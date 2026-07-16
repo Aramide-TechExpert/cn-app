@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -78,8 +80,10 @@ class AuthService {
       );
       return;
     }
+    // iOS identifies via its own client id; Android resolves its OAuth client
+    // by package + SHA-1, so only the web (audience) id is passed there.
     final google = GoogleSignIn(
-      clientId: Config.googleIosClientId,
+      clientId: Platform.isIOS ? Config.googleIosClientId : null,
       serverClientId: Config.googleWebClientId,
     );
     final account = await google.signIn();

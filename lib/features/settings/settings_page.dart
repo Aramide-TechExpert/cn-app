@@ -210,6 +210,29 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ],
             ),
 
+            // ── Preferences (re-run the setup wizard, prefilled) ──
+            _Section(
+              icon: Icons.tune,
+              title: 'Preferences',
+              children: [
+                Text(
+                    'Interests, favorite sources, country & region, and alerts '
+                    '— walk through the setup again any time to change them.',
+                    style: AppText.body.copyWith(color: c.textSecondary)),
+                const SizedBox(height: AppSpace.md),
+                FilledButton.icon(
+                  onPressed: () => context.push('/setup?edit=1'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: c.brand,
+                    minimumSize: const Size.fromHeight(46),
+                    shape: const RoundedRectangleBorder(),
+                  ),
+                  icon: const Icon(Icons.tune, size: 18),
+                  label: const Text('Edit preferences'),
+                ),
+              ],
+            ),
+
             // ── Email digest (Supabase) ──
             _Section(
               icon: Icons.mail_outline,

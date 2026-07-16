@@ -100,18 +100,16 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   Widget build(BuildContext context) {
     final c = context.colors;
 
-    // On auth: brand-new accounts (email signup OR first Google sign-in,
-    // detected by creation time) land in the setup wizard; returning
-    // sign-ins just dismiss back to where they were.
+    // On auth: accounts that never finished the setup wizard (email signup OR
+    // first Google sign-in) land in it; anyone with setup_complete in their
+    // metadata just dismisses back to where they were. Age-based detection is
+    // wrong here — it re-trapped fresh accounts that signed out and back in.
     ref.listen(currentUserProvider, (_, user) {
       if (user == null) return;
-      final created = DateTime.tryParse(user.createdAt);
-      final isNew = created != null &&
-          DateTime.now().toUtc().difference(created.toUtc()).inMinutes < 3;
-      if (isNew) {
+      if (user.userMetadata?['setup_complete'] == true) {
+        if (context.canPop()) context.pop();
+      } else {
         context.go('/setup');
-      } else if (context.canPop()) {
-        context.pop();
       }
     });
 

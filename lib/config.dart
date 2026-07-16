@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 /// Runtime config, injected via `--dart-define-from-file=env.json`.
 /// The anon key is client-safe (RLS is the boundary); never put secrets here.
 class Config {
@@ -23,6 +25,9 @@ class Config {
   static bool get hasSupabase =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
 
+  /// Android needs no client id in code — its OAuth client is discovered by
+  /// package name + signing SHA-1 registered in the Google Cloud project.
   static bool get hasNativeGoogle =>
-      googleWebClientId.isNotEmpty && googleIosClientId.isNotEmpty;
+      googleWebClientId.isNotEmpty &&
+      (!Platform.isIOS || googleIosClientId.isNotEmpty);
 }
