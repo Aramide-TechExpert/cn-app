@@ -216,8 +216,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               title: 'Preferences',
               children: [
                 Text(
-                    'Interests, favorite sources, country & region, and alerts '
-                    '— walk through the setup again any time to change them.',
+                    'Interests, favorite sources, country & region, and '
+                    'alerts. Walk through the setup again any time.',
                     style: AppText.body.copyWith(color: c.textSecondary)),
                 const SizedBox(height: AppSpace.md),
                 FilledButton.icon(

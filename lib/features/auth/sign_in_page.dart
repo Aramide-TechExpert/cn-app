@@ -40,12 +40,12 @@ class _SignInPageState extends ConsumerState<SignInPage> {
       return switch (e.code) {
         'invalid_credentials' => 'Wrong email or password.',
         'email_not_confirmed' =>
-          'Confirm your email first — check your inbox (and spam).',
+          'Confirm your email first. Check your inbox and spam.',
         'user_already_exists' =>
-          'This email already has an account — sign in instead.',
+          'This email already has an account. Sign in instead.',
         'over_email_send_rate_limit' =>
-          'Too many attempts — wait a minute and try again.',
-        'weak_password' => 'That password is too weak — use 8+ characters.',
+          'Too many attempts. Wait a minute and try again.',
+        'weak_password' => 'That password is too weak. Use 8 or more characters.',
         _ => e.message,
       };
     }
@@ -101,13 +101,12 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     final c = context.colors;
 
     // On auth: accounts that never finished the setup wizard (email signup OR
-    // first Google sign-in) land in it; anyone with setup_complete in their
-    // metadata just dismisses back to where they were. Age-based detection is
-    // wrong here — it re-trapped fresh accounts that signed out and back in.
+    // first Google sign-in) land in it; everyone else lands on Home. Popping
+    // back to whichever page opened sign-in (often You/account) felt wrong.
     ref.listen(currentUserProvider, (_, user) {
       if (user == null) return;
       if (user.userMetadata?['setup_complete'] == true) {
-        if (context.canPop()) context.pop();
+        context.go('/');
       } else {
         context.go('/setup');
       }
@@ -246,7 +245,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
               ),
               const SizedBox(height: AppSpace.xl),
               Text(
-                'You can keep reading without an account — sign in only to save and sync.',
+                'You can keep reading without an account. Sign in when you want to save and sync.',
                 textAlign: TextAlign.center,
                 style: AppText.caption.copyWith(color: c.textFaint),
               ),

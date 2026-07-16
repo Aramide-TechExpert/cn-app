@@ -1,9 +1,24 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/article.dart';
 import '../utils/interleave.dart';
+import '../utils/source_regions.dart';
 import 'api_client.dart';
+import 'auth_controller.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
+
+/// When the signed-in user picked "My country & region first" in setup,
+/// lead each page with their local and regional outlets (stable partition
+/// ahead of the source interleave). Worldwide scope or signed-out: unchanged.
+List<Article> applyRegionPreference(Ref ref, List<Article> items) {
+  final meta = ref.read(currentUserProvider)?.userMetadata;
+  if (meta?['news_scope'] != 'region') return items;
+  return regionFirst(
+    items,
+    country: meta?['preferred_country'] as String?,
+    region: meta?['preferred_region'] as String?,
+  );
+}
 
 /// Home feed: keyset-cursor infinite list over `/api/v1/feed`. The cursor +
 /// has-more flags live on the notifier; the public state is the article list.
@@ -30,7 +45,8 @@ class FeedController extends AsyncNotifier<List<Article>> {
         await ref.read(apiClientProvider).feed(limit: 24, since: _since);
     _cursor = page.nextCursor;
     _hasMore = page.nextCursor != null;
-    final r = interleaveBySource(page.items, flush: !_hasMore);
+    final r = interleaveBySource(applyRegionPreference(ref, page.items),
+        flush: !_hasMore);
     _deferred = r.deferred;
     return r.emitted;
   }
@@ -49,7 +65,8 @@ class FeedController extends AsyncNotifier<List<Article>> {
           );
       _cursor = page.nextCursor;
       _hasMore = page.nextCursor != null;
-      final r = interleaveBySource([..._deferred, ...page.items],
+      final r = interleaveBySource(
+          applyRegionPreference(ref, [..._deferred, ...page.items]),
           flush: !_hasMore);
       _deferred = r.deferred;
       state = AsyncData([...(state.value ?? const []), ...r.emitted]);

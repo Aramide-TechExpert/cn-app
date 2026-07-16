@@ -56,7 +56,7 @@ class AuthService {
     // bogus "check your inbox" (which sends no email and dead-ends the user).
     if (res.user != null && (res.user!.identities?.isEmpty ?? false)) {
       throw const AuthException(
-          'This email already has an account — sign in instead.');
+          'This email already has an account. Sign in instead.');
     }
     return res.session != null;
   }
@@ -92,7 +92,7 @@ class AuthService {
     final idToken = tokens.idToken;
     if (idToken == null) {
       throw const AuthException(
-          'Google did not return an ID token — try again.');
+          'Google did not return an ID token. Please try again.');
     }
     await _client.auth.signInWithIdToken(
       provider: OAuthProvider.google,

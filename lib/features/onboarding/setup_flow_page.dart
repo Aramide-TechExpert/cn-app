@@ -216,13 +216,17 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
           Padding(
             padding: const EdgeInsets.all(AppSpace.lg),
             child: FilledButton(
-              onPressed:
-                  _finishing ? null : (last ? _finish : () => _goTo(_step + 1)),
+              onPressed: _finishing
+                  ? null
+                  : () {
+                      HapticFeedback.lightImpact();
+                      last ? _finish() : _goTo(_step + 1);
+                    },
               style: FilledButton.styleFrom(
                 backgroundColor: c.brand,
                 minimumSize: const Size.fromHeight(52),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(999)),
               ),
               child: _finishing
                   ? const SizedBox(
@@ -239,14 +243,16 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
   }
 }
 
-/// Shared step scaffold: kicker · title · subtitle · body.
+/// Shared step scaffold: tonal icon · kicker · title · subtitle · body.
 class _Step extends StatelessWidget {
   const _Step({
+    required this.icon,
     required this.kicker,
     required this.title,
     required this.subtitle,
     required this.child,
   });
+  final IconData icon;
   final String kicker;
   final String title;
   final String subtitle;
@@ -259,8 +265,20 @@ class _Step extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(
           AppSpace.lg, AppSpace.xl, AppSpace.lg, AppSpace.lg),
       children: [
+        Container(
+          width: 60,
+          height: 60,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: c.brand.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 28, color: c.brand),
+        ),
+        const SizedBox(height: AppSpace.lg),
         Text(kicker.toUpperCase(),
-            style: AppText.micro.copyWith(color: c.brand, letterSpacing: 1.2)),
+            style:
+                AppText.micro.copyWith(color: c.brand, letterSpacing: 1.2)),
         const SizedBox(height: AppSpace.xs),
         Text(title, style: AppText.display.copyWith(color: c.text)),
         const SizedBox(height: AppSpace.sm),
@@ -283,6 +301,7 @@ class _ProfileStep extends ConsumerWidget {
     final c = context.colors;
     final email = ref.watch(currentUserProvider)?.email ?? '';
     return _Step(
+      icon: Icons.person_outline,
       kicker: 'Step 1 · Profile',
       title: 'What should we call you?',
       subtitle: 'Your name shows on your account and comments.',
@@ -349,10 +368,11 @@ class _InterestsStep extends ConsumerWidget {
     final followed =
         ref.watch(interestsControllerProvider).valueOrNull ?? const <String>{};
     return _Step(
+      icon: Icons.auto_awesome_outlined,
       kicker: 'Step 2 · Interests',
       title: 'Follow your topics',
       subtitle:
-          'Pick at least 3 — they power your For You rail and daily briefing.',
+          'Pick at least 3. They power your For You rail and daily briefing.',
       child: cats.when(
         loading: () => const Padding(
           padding: EdgeInsets.all(AppSpace.xl),
@@ -403,7 +423,7 @@ class _InterestsStep extends ConsumerWidget {
             const SizedBox(height: AppSpace.lg),
             Text(
               followed.length >= 3
-                  ? '${followed.length} topics followed — nice.'
+                  ? '${followed.length} topics followed. Nice.'
                   : '${followed.length} of 3 picked',
               style: AppText.caption.copyWith(
                   color: followed.length >= 3 ? c.success : c.textFaint,
@@ -552,6 +572,7 @@ class _RegionStep extends StatelessWidget {
     }
 
     return _Step(
+      icon: Icons.public,
       kicker: 'Step 3 · Region',
       title: 'Where is home?',
       subtitle:
@@ -702,10 +723,11 @@ class _SourcesStep extends ConsumerWidget {
     final c = context.colors;
     final sources = ref.watch(sourcesProvider);
     return _Step(
+      icon: Icons.newspaper_outlined,
       kicker: 'Step 4 · Sources',
       title: 'Favorite your publishers',
       subtitle:
-          'Choose the outlets you trust most — saved to your profile for a feed tuned to them.',
+          'Choose the outlets you trust most. Your feed gets tuned to them.',
       child: sources.when(
         loading: () => const Padding(
           padding: EdgeInsets.all(AppSpace.xl),
@@ -802,21 +824,22 @@ class _AlertsStep extends StatelessWidget {
     }
 
     return _Step(
+      icon: Icons.notifications_active_outlined,
       kicker: 'Step 5 · Alerts',
       title: 'Never miss the big one',
       subtitle:
-          'We build a starter watchlist from your topics — matches land on your Alerts page.',
+          'We build a starter watchlist from your topics. Matches land on your Alerts page.',
       child: Column(children: [
         card(
           icon: Icons.bolt_outlined,
-          title: 'Breaking-news watchlist',
+          title: 'Breaking news watchlist',
           sub: 'A "My big stories" watchlist matching breaking coverage of your topics.',
           value: breaking,
           onChanged: onBreaking,
         ),
         card(
           icon: Icons.priority_high,
-          title: 'High-impact only',
+          title: 'High impact only',
           sub: 'Limit matches to Critical and High impact stories.',
           value: highImpact,
           onChanged: onHighImpact,
@@ -836,9 +859,11 @@ class _AppearanceStep extends ConsumerWidget {
     final settings = ref.watch(settingsControllerProvider);
     final notifier = ref.read(settingsControllerProvider.notifier);
     return _Step(
+      icon: Icons.palette_outlined,
       kicker: 'Step 6 · Appearance',
       title: 'Make it yours',
-      subtitle: 'Theme and reading size — you can change these any time in Settings.',
+      subtitle:
+          'Theme and reading size. You can change these any time in Settings.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -38,20 +38,32 @@ class OnboardingPage extends ConsumerWidget {
                     AppSpace.lg, AppSpace.x2, AppSpace.lg, AppSpace.lg),
                 children: [
                   Container(
-                    width: 44,
-                    height: 44,
+                    width: 56,
+                    height: 56,
                     alignment: Alignment.center,
-                    color: c.brand,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          c.brand,
+                          Color.lerp(c.brand, Colors.black, 0.3)!,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     child: Text('C',
-                        style: AppText.title.copyWith(color: c.onBrand)),
+                        style: AppText.title
+                            .copyWith(color: c.onBrand, fontSize: 26)),
                   ),
                   const SizedBox(height: AppSpace.lg),
                   Text('Welcome to Clustez',
                       style: AppText.display.copyWith(color: c.text)),
                   const SizedBox(height: AppSpace.sm),
                   Text(
-                      'News with signals — impact, trust, and multi-source '
-                      'clusters — that links out to the original publishers.',
+                      'The biggest stories, clustered from many sources and '
+                      'scored for impact and trust. We always link you to the '
+                      'original publisher.',
                       style: AppText.body
                           .copyWith(color: c.textSecondary, height: 1.5)),
                   const SizedBox(height: AppSpace.xl),
@@ -75,25 +87,38 @@ class OnboardingPage extends ConsumerWidget {
                         runSpacing: AppSpace.sm,
                         children: list.map((cat) {
                           final on = followed.contains(cat.slug);
-                          return Material(
-                            color: on ? c.brand : c.bgInset,
-                            child: InkWell(
-                              onTap: () {
-                                HapticFeedback.selectionClick();
-                                ref
-                                    .read(interestsControllerProvider.notifier)
-                                    .toggle(cat.slug);
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpace.lg, vertical: AppSpace.sm),
-                                decoration:
-                                    BoxDecoration(border: Border.all(color: c.border)),
-                                child: Text(cat.name,
-                                    style: AppText.callout.copyWith(
-                                        color: on ? c.onBrand : c.text,
-                                        fontWeight: FontWeight.w600)),
+                          return InkWell(
+                            borderRadius: BorderRadius.circular(999),
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              ref
+                                  .read(interestsControllerProvider.notifier)
+                                  .toggle(cat.slug);
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpace.lg,
+                                  vertical: AppSpace.sm),
+                              decoration: BoxDecoration(
+                                color: on ? c.brand : c.bgInset,
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(
+                                    color: on ? c.brand : c.border),
                               ),
+                              child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (on) ...[
+                                      const Icon(Icons.check,
+                                          size: 15, color: Colors.white),
+                                      const SizedBox(width: 5),
+                                    ],
+                                    Text(cat.name,
+                                        style: AppText.callout.copyWith(
+                                            color: on ? c.onBrand : c.text,
+                                            fontWeight: FontWeight.w600)),
+                                  ]),
                             ),
                           );
                         }).toList(),
@@ -107,13 +132,15 @@ class OnboardingPage extends ConsumerWidget {
               padding: const EdgeInsets.all(AppSpace.lg),
               child: Column(children: [
                 if (user != null) ...[
-                  // Signed in — offer the full 5-step setup wizard.
+                  // Signed in — offer the full setup wizard.
                   OutlinedButton(
                     onPressed: () => context.push('/setup'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: c.brand,
                       side: BorderSide(color: c.border),
                       minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(999)),
                     ),
                     child: const Text('Full setup (profile, sources, alerts)'),
                   ),
@@ -124,7 +151,8 @@ class OnboardingPage extends ConsumerWidget {
                   style: FilledButton.styleFrom(
                     backgroundColor: c.brand,
                     minimumSize: const Size.fromHeight(52),
-                    shape: const RoundedRectangleBorder(),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999)),
                   ),
                   child: Text(user == null ? 'Browse for now' : 'Get started'),
                 ),
@@ -146,7 +174,14 @@ class _SignInCard extends StatelessWidget {
     final c = context.colors;
     return Container(
       padding: const EdgeInsets.all(AppSpace.lg),
-      decoration: BoxDecoration(color: c.bgInset),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [c.brand.withValues(alpha: 0.14), c.bgInset],
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -161,7 +196,8 @@ class _SignInCard extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: c.brand,
               minimumSize: const Size.fromHeight(46),
-              shape: const RoundedRectangleBorder(),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999)),
             ),
             child: const Text('Sign in or create account'),
           ),

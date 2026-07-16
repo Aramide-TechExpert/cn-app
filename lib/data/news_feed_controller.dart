@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/article.dart';
 import '../utils/interleave.dart';
-import 'feed_controller.dart' show apiClientProvider;
+import 'feed_controller.dart' show apiClientProvider, applyRegionPreference;
 
 /// A small pool of playable news videos used for the Shorts rail + Reel.
 /// Source-interleaved so one publisher's clips don't fill the whole rail.
@@ -91,8 +91,9 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
     // One source at a time — except in the single-source filter view, where
     // interleaving is meaningless and deferral would starve the list.
     if (_filters.source != null) return items;
-    final r =
-        interleaveBySource([..._deferred, ...items], flush: !_hasMore);
+    final r = interleaveBySource(
+        applyRegionPreference(ref, [..._deferred, ...items]),
+        flush: !_hasMore);
     _deferred = r.deferred;
     return r.emitted;
   }

@@ -125,6 +125,8 @@ const List<(String, String)> _sourceDomains = [
   ('al jazeera', 'aljazeera.com'),
   ('npr', 'npr.org'),
   ('cnbc', 'cnbc.com'),
+  // 'cbc' AFTER 'cnbc' — it's a substring of it.
+  ('cbc', 'cbc.ca'),
   ('cnn', 'cnn.com'),
   ('cbs', 'cbsnews.com'),
   ('telemundo', 'telemundo.com'),
@@ -188,6 +190,17 @@ const List<(String, String)> _sourceDomains = [
   ('live science', 'livescience.com'),
   ('register', 'theregister.com'),
   ('zdnet', 'zdnet.com'),
+  ('global news', 'globalnews.ca'),
+  ('mexico news daily', 'mexiconewsdaily.com'),
+  ('buenos aires', 'batimes.com.ar'),
+  ('mercopress', 'en.mercopress.com'),
+  ('arab news', 'arabnews.com'),
+  ('the national', 'thenationalnews.com'),
+  ('korea herald', 'koreaherald.com'),
+  ('cna', 'channelnewsasia.com'),
+  ('bangkok post', 'bangkokpost.com'),
+  ('inquirer', 'inquirer.net'),
+  ('rnz', 'rnz.co.nz'),
   // 'time' must stay LAST — it's a substring of every "* Times" source above.
   ('time', 'time.com'),
 ];
