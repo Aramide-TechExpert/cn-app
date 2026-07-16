@@ -7,17 +7,17 @@ import 'auth_controller.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
 
-/// When the signed-in user picked "My country & region first" in setup,
-/// lead each page with their local and regional outlets (stable partition
-/// ahead of the source interleave). Worldwide scope or signed-out: unchanged.
+/// When the signed-in user picked a news region in setup (US, UK, Canada,
+/// Africa, …), lead each page with that segment's outlets (stable partition
+/// ahead of the source interleave). Worldwide or signed-out: unchanged.
 List<Article> applyRegionPreference(Ref ref, List<Article> items) {
   final meta = ref.read(currentUserProvider)?.userMetadata;
   if (meta?['news_scope'] != 'region') return items;
-  return regionFirst(
-    items,
-    country: meta?['preferred_country'] as String?,
-    region: meta?['preferred_region'] as String?,
-  );
+  final segment = meta?['preferred_region'] as String?;
+  if (segment == null || segment.isEmpty || segment == 'Worldwide') {
+    return items;
+  }
+  return segmentFirst(items, segment: segment);
 }
 
 /// Home feed: keyset-cursor infinite list over `/api/v1/feed`. The cursor +

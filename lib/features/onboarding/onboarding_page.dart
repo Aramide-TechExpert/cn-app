@@ -103,8 +103,6 @@ class OnboardingPage extends ConsumerWidget {
                               decoration: BoxDecoration(
                                 color: on ? c.brand : c.bgInset,
                                 borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                    color: on ? c.brand : c.border),
                               ),
                               child: Row(
                                   mainAxisSize: MainAxisSize.min,

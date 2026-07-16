@@ -201,6 +201,12 @@ const List<(String, String)> _sourceDomains = [
   ('bangkok post', 'bangkokpost.com'),
   ('inquirer', 'inquirer.net'),
   ('rnz', 'rnz.co.nz'),
+  ('punch', 'punchng.com'),
+  ('premium times', 'premiumtimesng.com'),
+  ('vanguard', 'vanguardngr.com'),
+  ('nation africa', 'nation.africa'),
+  ('daily maverick', 'dailymaverick.co.za'),
+  ('allafrica', 'allafrica.com'),
   // 'time' must stay LAST — it's a substring of every "* Times" source above.
   ('time', 'time.com'),
 ];

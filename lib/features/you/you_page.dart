@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/alerts_controller.dart';
 import '../../data/auth_controller.dart';
-import '../../data/engagement_controller.dart';
 import '../../data/personalization_controller.dart';
 import '../../data/reading_history.dart';
 import '../../theme/app_theme.dart';
@@ -31,10 +30,12 @@ class YouPage extends ConsumerWidget {
           parent: BouncingScrollPhysics(),
         ),
         slivers: [
-          SliverAppBar.large(
+          // Compact pinned+floating bar — same rhythm as Home / News Feed.
+          SliverAppBar(
             backgroundColor: c.bg,
             surfaceTintColor: Colors.transparent,
             pinned: true,
+            floating: true,
             leading: Builder(
               builder: (ctx) => IconButton(
                 icon: Icon(Icons.menu, color: c.text),
@@ -42,10 +43,17 @@ class YouPage extends ConsumerWidget {
               ),
             ),
             title: Text('You', style: AppText.title.copyWith(color: c.text)),
+            actions: [
+              IconButton(
+                icon: Icon(Icons.settings_outlined, color: c.text),
+                onPressed: () => context.push('/settings'),
+              ),
+              const SizedBox(width: AppSpace.xs),
+            ],
           ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
-                AppSpace.lg, 0, AppSpace.lg, AppSpace.x3),
+                AppSpace.lg, AppSpace.sm, AppSpace.lg, AppSpace.x3),
             sliver: SliverList.list(
               children: [
                 if (user != null)
@@ -54,15 +62,15 @@ class YouPage extends ConsumerWidget {
                     name: (user.userMetadata?['display_name'] as String?)
                             ?.trim() ??
                         '',
-                    country:
-                        user.userMetadata?['preferred_country'] as String?,
+                    region: user.userMetadata?['news_scope'] == 'region'
+                        ? (user.userMetadata?['preferred_region'] as String?)
+                        : null,
                     onEdit: () => context.push('/setup?edit=1'),
                     onSignOut: () => ref.read(authServiceProvider).signOut(),
                   )
                 else
                   _SignInCard(onSignIn: () => context.push('/sign-in')),
                 const _StreakBadge(),
-                if (user != null) const _StatsGrid(),
                 if (user != null) const _WhatYouMissed(),
                 const SizedBox(height: AppSpace.xl),
                 const _MenuGroup(),
@@ -81,13 +89,13 @@ class _ProfileHero extends StatelessWidget {
   const _ProfileHero({
     required this.email,
     this.name = '',
-    this.country,
+    this.region,
     required this.onEdit,
     required this.onSignOut,
   });
   final String email;
   final String name;
-  final String? country;
+  final String? region;
   final VoidCallback onEdit;
   final VoidCallback onSignOut;
 
@@ -139,7 +147,7 @@ class _ProfileHero extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: AppText.caption.copyWith(color: c.textSecondary)),
         ],
-        if (country != null && country!.isNotEmpty) ...[
+        if (region != null && region!.isNotEmpty) ...[
           const SizedBox(height: AppSpace.sm),
           Container(
             padding: const EdgeInsets.symmetric(
@@ -151,7 +159,7 @@ class _ProfileHero extends StatelessWidget {
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(Icons.public, size: 13, color: c.brand),
               const SizedBox(width: 4),
-              Text(country!,
+              Text('$region news',
                   style: AppText.micro.copyWith(
                       color: c.brand, fontWeight: FontWeight.w700)),
             ]),
@@ -350,99 +358,6 @@ class _MenuRow extends StatelessWidget {
               )
             else if (item.route != null)
               Icon(Icons.chevron_right, size: 18, color: c.textFaint),
-          ]),
-        ),
-      ),
-    );
-  }
-}
-
-/// Personal dashboard — at-a-glance counts (saved / following / watchlists /
-/// unread alerts), each a shortcut to its screen. Signed-in only.
-class _StatsGrid extends ConsumerWidget {
-  const _StatsGrid();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final saved =
-        ref.watch(engagementProvider).valueOrNull?.bookmarked.length ?? 0;
-    final following =
-        ref.watch(interestsControllerProvider).valueOrNull?.length ?? 0;
-    final watchlists =
-        ref.watch(watchlistsControllerProvider).valueOrNull?.length ?? 0;
-    final alerts = ref
-            .watch(alertsControllerProvider)
-            .valueOrNull
-            ?.where((a) => a.unread)
-            .length ??
-        0;
-
-    final tiles = <(String, int, IconData, String)>[
-      ('Saved', saved, Icons.bookmark_outline, '/saved'),
-      ('Following', following, Icons.auto_awesome_outlined, '/interests'),
-      ('Watchlists', watchlists, Icons.bookmarks_outlined, '/watchlists'),
-      ('Unread alerts', alerts, Icons.notifications_outlined, '/alerts'),
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpace.md),
-      child: GridView.count(
-        crossAxisCount: 2,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: AppSpace.md,
-        crossAxisSpacing: AppSpace.md,
-        childAspectRatio: 2.4,
-        children: [for (final t in tiles) _StatTile(t)],
-      ),
-    );
-  }
-}
-
-class _StatTile extends StatelessWidget {
-  const _StatTile(this.data);
-  final (String, int, IconData, String) data;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    final (label, value, icon, route) = data;
-    return Material(
-      color: c.bgElevated,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          HapticFeedback.selectionClick();
-          context.push(route);
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpace.md),
-          child: Row(children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: c.brand.withValues(alpha: 0.10),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 18, color: c.brand),
-            ),
-            const SizedBox(width: AppSpace.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('$value',
-                      style: AppText.title.copyWith(color: c.text)),
-                  Text(label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.caption.copyWith(color: c.textFaint)),
-                ],
-              ),
-            ),
           ]),
         ),
       ),

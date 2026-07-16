@@ -10,13 +10,14 @@ import '../../data/settings_controller.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../utils/format.dart';
+import '../../utils/source_regions.dart';
 import '../feed/widgets/signal_badges.dart';
 
 /// Post-signup setup wizard — everything a new account needs, one step at a
 /// time (each skippable):
 ///   1 Profile     — display name
 ///   2 Interests   — follow topics (powers For You)
-///   3 Region      — home country + local-first vs worldwide news
+///   3 Region      — news region segment (US, UK, Canada, Africa, …) or Worldwide
 ///   4 Sources     — favorite publishers (stored in profile metadata)
 ///   5 Alerts      — breaking-news starter watchlist + high-impact filter
 ///   6 Appearance  — theme + text size
@@ -40,8 +41,7 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
   final Set<String> _pickedSources = {};
   bool _breakingWatchlist = true;
   bool _highImpactOnly = false;
-  String _newsScope = 'worldwide'; // 'worldwide' | 'region'
-  _Country? _country;
+  String _segment = 'Worldwide'; // a newsSegments label
   bool _finishing = false;
 
   @override
@@ -64,10 +64,10 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
         .addAll(((meta['preferred_sources'] as List?) ?? const []).cast<String>());
     _breakingWatchlist = meta['alerts_breaking'] as bool? ?? true;
     _highImpactOnly = meta['alerts_high_impact_only'] as bool? ?? false;
-    _newsScope = meta['news_scope'] as String? ?? 'worldwide';
-    final savedCountry = meta['preferred_country'] as String?;
-    for (final x in _countries) {
-      if (x.name == savedCountry) _country = x;
+    final saved = meta['preferred_region'] as String?;
+    if (meta['news_scope'] == 'region' &&
+        newsSegments.any((s) => s.$1 == saved)) {
+      _segment = saved!;
     }
   }
 
@@ -106,9 +106,8 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
         'preferred_sources': _pickedSources.toList(),
         'alerts_breaking': _breakingWatchlist,
         'alerts_high_impact_only': _highImpactOnly,
-        'news_scope': _newsScope,
-        'preferred_country': _country?.name,
-        'preferred_region': _country?.region,
+        'news_scope': _segment == 'Worldwide' ? 'worldwide' : 'region',
+        'preferred_region': _segment,
         'setup_complete': true,
       });
       // Starter watchlist so Alerts has something to match from day one —
@@ -190,10 +189,8 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
                 _ProfileStep(name: _name),
                 const _InterestsStep(),
                 _RegionStep(
-                  scope: _newsScope,
-                  country: _country,
-                  onScope: (v) => setState(() => _newsScope = v),
-                  onCountry: (v) => setState(() => _country = v),
+                  segment: _segment,
+                  onSelect: (v) => setState(() => _segment = v),
                 ),
                 _SourcesStep(
                   picked: _pickedSources,
@@ -335,15 +332,15 @@ class _ProfileStep extends ConsumerWidget {
             filled: true,
             fillColor: c.bgInset,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: c.border),
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: c.border),
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(color: c.brand),
             ),
           ),
@@ -403,7 +400,6 @@ class _InterestsStep extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: on ? c.brand : c.bgInset,
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: on ? c.brand : c.border),
                     ),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       if (on) ...[
@@ -437,275 +433,80 @@ class _InterestsStep extends ConsumerWidget {
 }
 
 // ── Step 3: region ──────────────────────────────────────────────────────────
-class _Country {
-  const _Country(this.name, this.region);
-  final String name;
-  final String region;
-}
-
-const _countries = [
-  _Country('Argentina', 'Americas'),
-  _Country('Australia', 'Asia-Pacific'),
-  _Country('Austria', 'Europe'),
-  _Country('Bangladesh', 'Asia-Pacific'),
-  _Country('Belgium', 'Europe'),
-  _Country('Brazil', 'Americas'),
-  _Country('Canada', 'Americas'),
-  _Country('Chile', 'Americas'),
-  _Country('China', 'Asia-Pacific'),
-  _Country('Colombia', 'Americas'),
-  _Country('Denmark', 'Europe'),
-  _Country('Egypt', 'Middle East'),
-  _Country('Ethiopia', 'Africa'),
-  _Country('Finland', 'Europe'),
-  _Country('France', 'Europe'),
-  _Country('Germany', 'Europe'),
-  _Country('Ghana', 'Africa'),
-  _Country('Greece', 'Europe'),
-  _Country('Hong Kong', 'Asia-Pacific'),
-  _Country('India', 'Asia-Pacific'),
-  _Country('Indonesia', 'Asia-Pacific'),
-  _Country('Ireland', 'Europe'),
-  _Country('Israel', 'Middle East'),
-  _Country('Italy', 'Europe'),
-  _Country('Japan', 'Asia-Pacific'),
-  _Country('Kenya', 'Africa'),
-  _Country('Malaysia', 'Asia-Pacific'),
-  _Country('Mexico', 'Americas'),
-  _Country('Netherlands', 'Europe'),
-  _Country('New Zealand', 'Asia-Pacific'),
-  _Country('Nigeria', 'Africa'),
-  _Country('Norway', 'Europe'),
-  _Country('Pakistan', 'Asia-Pacific'),
-  _Country('Peru', 'Americas'),
-  _Country('Philippines', 'Asia-Pacific'),
-  _Country('Poland', 'Europe'),
-  _Country('Portugal', 'Europe'),
-  _Country('Qatar', 'Middle East'),
-  _Country('Saudi Arabia', 'Middle East'),
-  _Country('Singapore', 'Asia-Pacific'),
-  _Country('South Africa', 'Africa'),
-  _Country('South Korea', 'Asia-Pacific'),
-  _Country('Spain', 'Europe'),
-  _Country('Sweden', 'Europe'),
-  _Country('Switzerland', 'Europe'),
-  _Country('Taiwan', 'Asia-Pacific'),
-  _Country('Thailand', 'Asia-Pacific'),
-  _Country('Turkey', 'Middle East'),
-  _Country('Ukraine', 'Europe'),
-  _Country('United Arab Emirates', 'Middle East'),
-  _Country('United Kingdom', 'Europe'),
-  _Country('United States', 'Americas'),
-  _Country('Vietnam', 'Asia-Pacific'),
-];
-
 class _RegionStep extends StatelessWidget {
-  const _RegionStep({
-    required this.scope,
-    required this.country,
-    required this.onScope,
-    required this.onCountry,
-  });
-  final String scope;
-  final _Country? country;
-  final ValueChanged<String> onScope;
-  final ValueChanged<_Country?> onCountry;
-
-  Future<void> _pick(BuildContext context) async {
-    final picked = await showModalBottomSheet<_Country>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.colors.bgElevated,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => const _CountrySheet(),
-    );
-    if (picked != null) onCountry(picked);
-  }
+  const _RegionStep({required this.segment, required this.onSelect});
+  final String segment;
+  final ValueChanged<String> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
-
-    Widget scopeCard({
-      required String value,
-      required IconData icon,
-      required String title,
-      required String sub,
-    }) {
-      final on = scope == value;
-      return InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          HapticFeedback.selectionClick();
-          onScope(value);
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          margin: const EdgeInsets.only(bottom: AppSpace.md),
-          padding: const EdgeInsets.all(AppSpace.lg),
-          decoration: BoxDecoration(
-            color: c.bgElevated,
-            borderRadius: BorderRadius.circular(16),
-            border:
-                Border.all(color: on ? c.brand : c.border, width: on ? 1.6 : 1),
-          ),
-          child: Row(children: [
-            Icon(icon, size: 24, color: on ? c.brand : c.textSecondary),
-            const SizedBox(width: AppSpace.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: AppText.bodyStrong.copyWith(color: c.text)),
-                  const SizedBox(height: 3),
-                  Text(sub,
-                      style: AppText.caption
-                          .copyWith(color: c.textSecondary, height: 1.35)),
-                ],
-              ),
-            ),
-            if (on) Icon(Icons.check_circle, size: 20, color: c.brand),
-          ]),
-        ),
-      );
-    }
-
     return _Step(
       icon: Icons.public,
       kicker: 'Step 3 · Region',
-      title: 'Where is home?',
+      title: 'Pick your news region',
       subtitle:
-          'Set your country, then choose whether your feed leads with local coverage or the whole world.',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+          'Local stories from your region lead your feed. Worldwide keeps it fully global.',
+      child: GridView.count(
+        crossAxisCount: 2,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        mainAxisSpacing: AppSpace.sm,
+        crossAxisSpacing: AppSpace.sm,
+        childAspectRatio: 2.6,
         children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () => _pick(context),
-            child: Container(
-              padding: const EdgeInsets.all(AppSpace.lg),
-              decoration: BoxDecoration(
-                color: c.bgElevated,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: c.border),
-              ),
-              child: Row(children: [
-                Icon(Icons.public, size: 24, color: c.brand),
-                const SizedBox(width: AppSpace.md),
-                Expanded(
-                  child: country == null
-                      ? Text('Choose your country',
-                          style: AppText.bodyStrong
-                              .copyWith(color: c.textSecondary))
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(country!.name,
-                                style: AppText.bodyStrong
-                                    .copyWith(color: c.text)),
-                            const SizedBox(height: 3),
-                            Text(country!.region,
-                                style: AppText.caption
-                                    .copyWith(color: c.textSecondary)),
-                          ],
-                        ),
-                ),
-                Icon(Icons.chevron_right, color: c.textFaint),
-              ]),
+          for (final (label, emoji) in newsSegments)
+            _SegmentTile(
+              label: label,
+              emoji: emoji,
+              selected: segment == label,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                onSelect(label);
+              },
             ),
-          ),
-          const SizedBox(height: AppSpace.lg),
-          scopeCard(
-            value: 'region',
-            icon: Icons.location_on_outlined,
-            title: 'My country & region first',
-            sub:
-                'Lead with stories tied to your country and region, then the world.',
-          ),
-          scopeCard(
-            value: 'worldwide',
-            icon: Icons.language,
-            title: 'Worldwide',
-            sub: 'The biggest stories from everywhere, no local weighting.',
-          ),
         ],
       ),
     );
   }
 }
 
-/// Searchable country picker sheet — pops with the tapped [_Country].
-class _CountrySheet extends StatefulWidget {
-  const _CountrySheet();
-
-  @override
-  State<_CountrySheet> createState() => _CountrySheetState();
-}
-
-class _CountrySheetState extends State<_CountrySheet> {
-  String _query = '';
+class _SegmentTile extends StatelessWidget {
+  const _SegmentTile({
+    required this.label,
+    required this.emoji,
+    required this.selected,
+    required this.onTap,
+  });
+  final String label;
+  final String emoji;
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final q = _query.trim().toLowerCase();
-    final list = q.isEmpty
-        ? _countries
-        : _countries
-            .where((x) =>
-                x.name.toLowerCase().contains(q) ||
-                x.region.toLowerCase().contains(q))
-            .toList();
-    return Padding(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.72,
-        child: Column(children: [
-          const SizedBox(height: AppSpace.sm),
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: c.border,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(AppSpace.lg),
-            child: TextField(
-              autofocus: false,
-              onChanged: (v) => setState(() => _query = v),
-              style: AppText.body.copyWith(color: c.text),
-              decoration: InputDecoration(
-                hintText: 'Search countries…',
-                hintStyle: TextStyle(color: c.textFaint),
-                prefixIcon: Icon(Icons.search, color: c.textFaint),
-                filled: true,
-                fillColor: c.bgInset,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpace.md),
+        decoration: BoxDecoration(
+          color: selected ? c.brand.withValues(alpha: 0.14) : c.bgInset,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(children: [
+          Text(emoji, style: const TextStyle(fontSize: 22)),
+          const SizedBox(width: AppSpace.sm),
           Expanded(
-            child: ListView.builder(
-              itemCount: list.length,
-              itemBuilder: (_, i) {
-                final x = list[i];
-                return ListTile(
-                  title:
-                      Text(x.name, style: AppText.body.copyWith(color: c.text)),
-                  subtitle: Text(x.region,
-                      style: AppText.caption.copyWith(color: c.textFaint)),
-                  onTap: () => Navigator.pop(context, x),
-                );
-              },
-            ),
+            child: Text(label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.callout.copyWith(
+                    color: selected ? c.brand : c.text,
+                    fontWeight: FontWeight.w700)),
           ),
+          if (selected) Icon(Icons.check_circle, size: 18, color: c.brand),
         ]),
       ),
     );
@@ -753,7 +554,6 @@ class _SourcesStep extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: on ? c.brand : c.bgInset,
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: on ? c.brand : c.border),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   SourceFavicon(url: null, source: s, size: 16),
@@ -800,7 +600,6 @@ class _AlertsStep extends StatelessWidget {
         decoration: BoxDecoration(
           color: c.bgElevated,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: c.border),
         ),
         child: Row(children: [
           Icon(icon, size: 24, color: c.brand),
