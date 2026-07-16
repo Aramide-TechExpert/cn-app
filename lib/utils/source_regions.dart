@@ -46,6 +46,10 @@ const Map<String, SourceInfo> _sources = {
   'sky news': SourceInfo('United Kingdom', 'United Kingdom', _n),
   'the independent': SourceInfo('United Kingdom', 'United Kingdom', _n),
   'the telegraph': SourceInfo('United Kingdom', 'United Kingdom', _n),
+  'daily mail': SourceInfo('United Kingdom', 'United Kingdom', _n),
+  'the mirror': SourceInfo('United Kingdom', 'United Kingdom', _n),
+  'metro': SourceInfo('United Kingdom', 'United Kingdom', _n),
+  'evening standard': SourceInfo('United Kingdom', 'United Kingdom', _n),
   'the guardian business': SourceInfo('United Kingdom', 'United Kingdom', _n),
   'the guardian tech': SourceInfo('United Kingdom', 'United Kingdom', _n),
   'bbc sport': SourceInfo('United Kingdom', 'United Kingdom', _t),
@@ -77,6 +81,8 @@ const Map<String, SourceInfo> _sources = {
   'axios': SourceInfo('United States', 'United States', _n),
   'politico': SourceInfo('United States', 'United States', _n),
   'the hill': SourceInfo('United States', 'United States', _n),
+  'la times': SourceInfo('United States', 'United States', _n),
+  'washington post': SourceInfo('United States', 'United States', _n),
   // ── US-based verticals (topical — everyone gets these) ──
   'cnbc top news': SourceInfo('United States', 'United States', _t),
   'marketwatch': SourceInfo('United States', 'United States', _t),
@@ -109,6 +115,7 @@ const Map<String, SourceInfo> _sources = {
   // ── Canada ──
   'cbc news': SourceInfo('Canada', 'Canada', _n),
   'global news': SourceInfo('Canada', 'Canada', _n),
+  'national post': SourceInfo('Canada', 'Canada', _n),
   // ── Europe (nationals) ──
   'the local germany': SourceInfo('Germany', 'Europe', _n),
   'rte': SourceInfo('Ireland', 'Europe', _n),
@@ -120,10 +127,26 @@ const Map<String, SourceInfo> _sources = {
   'punch': SourceInfo('Nigeria', 'Africa', _n),
   'premium times': SourceInfo('Nigeria', 'Africa', _n),
   'vanguard': SourceInfo('Nigeria', 'Africa', _n),
+  'daily post': SourceInfo('Nigeria', 'Africa', _n),
+  'daily trust': SourceInfo('Nigeria', 'Africa', _n),
+  'channels tv': SourceInfo('Nigeria', 'Africa', _n),
+  'businessday ng': SourceInfo('Nigeria', 'Africa', _n),
+  'legit.ng': SourceInfo('Nigeria', 'Africa', _n),
+  'sahara reporters': SourceInfo('Nigeria', 'Africa', _n),
+  'thisday': SourceInfo('Nigeria', 'Africa', _n),
+  'tribune online': SourceInfo('Nigeria', 'Africa', _n),
+  'leadership': SourceInfo('Nigeria', 'Africa', _n),
   'myjoyonline': SourceInfo('Ghana', 'Africa', _n),
+  '3news': SourceInfo('Ghana', 'Africa', _n),
+  'adom online': SourceInfo('Ghana', 'Africa', _n),
+  'ghanaian times': SourceInfo('Ghana', 'Africa', _n),
   'nation africa': SourceInfo('Kenya', 'Africa', _n),
   'the standard': SourceInfo('Kenya', 'Africa', _n),
+  'tuko': SourceInfo('Kenya', 'Africa', _n),
+  'kbc': SourceInfo('Kenya', 'Africa', _n),
+  'capital fm': SourceInfo('Kenya', 'Africa', _n),
   'daily maverick': SourceInfo('South Africa', 'Africa', _n),
+  'the south african': SourceInfo('South Africa', 'Africa', _n),
   'bbc africa': SourceInfo('Kenya', 'Africa', _n),
   'allafrica': SourceInfo('Nigeria', 'Africa', _n),
   // ── Middle East (nationals) ──
@@ -137,6 +160,7 @@ const Map<String, SourceInfo> _sources = {
   'ndtv': SourceInfo('India', 'India', _n),
   'hindustan times': SourceInfo('India', 'India', _n),
   'the economic times': SourceInfo('India', 'India', _n),
+  'the hindu': SourceInfo('India', 'India', _n),
   // ── Asia-Pacific (nationals) ──
   'south china morning post': SourceInfo('Hong Kong', 'Asia-Pacific', _n),
   'the japan times': SourceInfo('Japan', 'Asia-Pacific', _n),
@@ -227,6 +251,35 @@ const Map<String, String> countryToSegment = {
   'Peru': 'Latin America', 'Ecuador': 'Latin America',
   'Venezuela': 'Latin America', 'Bolivia': 'Latin America',
   'Paraguay': 'Latin America',
+};
+
+/// ISO 3166 alpha-2 → country name, for location providers that only return
+/// a code (country.is).
+const Map<String, String> isoToCountry = {
+  'NG': 'Nigeria', 'GH': 'Ghana', 'KE': 'Kenya', 'ZA': 'South Africa',
+  'EG': 'Egypt', 'ET': 'Ethiopia', 'UG': 'Uganda', 'TZ': 'Tanzania',
+  'CM': 'Cameroon', 'SN': 'Senegal', 'ZW': 'Zimbabwe', 'ZM': 'Zambia',
+  'RW': 'Rwanda', 'MA': 'Morocco', 'DZ': 'Algeria', 'TN': 'Tunisia',
+  'CI': 'Ivory Coast',
+  'US': 'United States', 'GB': 'United Kingdom', 'CA': 'Canada',
+  'IN': 'India',
+  'DE': 'Germany', 'FR': 'France', 'IE': 'Ireland', 'IT': 'Italy',
+  'NL': 'Netherlands', 'PL': 'Poland', 'RU': 'Russia', 'ES': 'Spain',
+  'PT': 'Portugal', 'SE': 'Sweden', 'NO': 'Norway', 'DK': 'Denmark',
+  'FI': 'Finland', 'BE': 'Belgium', 'AT': 'Austria', 'CH': 'Switzerland',
+  'GR': 'Greece', 'CZ': 'Czechia', 'UA': 'Ukraine', 'RO': 'Romania',
+  'HU': 'Hungary',
+  'IL': 'Israel', 'SA': 'Saudi Arabia', 'AE': 'United Arab Emirates',
+  'QA': 'Qatar', 'TR': 'Turkey', 'KW': 'Kuwait', 'JO': 'Jordan',
+  'LB': 'Lebanon', 'BH': 'Bahrain', 'OM': 'Oman',
+  'JP': 'Japan', 'KR': 'South Korea', 'SG': 'Singapore', 'HK': 'Hong Kong',
+  'CN': 'China', 'TW': 'Taiwan', 'TH': 'Thailand', 'PH': 'Philippines',
+  'ID': 'Indonesia', 'MY': 'Malaysia', 'VN': 'Vietnam', 'PK': 'Pakistan',
+  'BD': 'Bangladesh', 'LK': 'Sri Lanka', 'NP': 'Nepal',
+  'AU': 'Australia', 'NZ': 'New Zealand',
+  'MX': 'Mexico', 'AR': 'Argentina', 'BR': 'Brazil', 'CO': 'Colombia',
+  'UY': 'Uruguay', 'CL': 'Chile', 'PE': 'Peru', 'EC': 'Ecuador',
+  'VE': 'Venezuela', 'BO': 'Bolivia', 'PY': 'Paraguay',
 };
 
 /// The user's active segment: null when signed out, worldwide, or unset.

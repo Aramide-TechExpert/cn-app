@@ -80,18 +80,38 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
 
   /// Country-level location detect (IP lookup, no permission dialog): sets
   /// both the segment and, when we carry that country's outlets, the country.
+  /// Three independent free providers are tried in order — each one
+  /// rate-limits under load, so any failure or bad payload falls through.
   Future<void> _detectLocation() async {
     setState(() => _detecting = true);
+    final dio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 6),
+      receiveTimeout: const Duration(seconds: 6),
+    ));
     String? detected;
     try {
-      final res = await Dio().get(
-        'https://ipapi.co/json/',
-        options: Options(receiveTimeout: const Duration(seconds: 8)),
-      );
-      detected =
-          res.data is Map ? res.data['country_name'] as String? : null;
-    } catch (_) {
-      // fall through to the manual picker
+      final r = await dio.get('https://ipapi.co/json/');
+      final d = r.data;
+      // Rate limiting arrives as 200 + {"error": true} here.
+      if (d is Map && d['error'] != true) {
+        detected = d['country_name'] as String?;
+      }
+    } catch (_) {}
+    if (detected == null) {
+      try {
+        final r = await dio.get('https://ipwho.is/');
+        final d = r.data;
+        if (d is Map && d['success'] == true) {
+          detected = d['country'] as String?;
+        }
+      } catch (_) {}
+    }
+    if (detected == null) {
+      try {
+        final r = await dio.get('https://api.country.is/');
+        final d = r.data;
+        if (d is Map) detected = isoToCountry[d['country']];
+      } catch (_) {}
     }
     if (!mounted) return;
     final segment = detected == null ? null : countryToSegment[detected];
