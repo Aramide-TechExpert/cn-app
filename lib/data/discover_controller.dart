@@ -10,7 +10,11 @@ import 'auth_controller.dart';
 import 'feed_controller.dart' show apiClientProvider;
 
 final clustersProvider = FutureProvider.autoDispose<List<StoryCluster>>(
-  (ref) => ref.read(apiClientProvider).clusters(),
+  (ref) async {
+    final list = await ref.read(apiClientProvider).clusters();
+    return shapeClustersForUser(list,
+        meta: ref.read(currentUserProvider)?.userMetadata);
+  },
 );
 
 final statsProvider = FutureProvider.autoDispose<CorpusStats>(

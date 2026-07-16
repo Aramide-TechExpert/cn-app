@@ -1,4 +1,5 @@
 import '../models/article.dart';
+import '../models/cluster.dart';
 
 /// News region segments — the "editions" a user can make their local feed.
 /// Chosen in setup Step 3 (or Settings → Preferences); stored in profile
@@ -112,6 +113,40 @@ List<Article> segmentFirst(List<Article> items, {required String segment}) {
   final rest = <Article>[];
   for (final a in items) {
     (segmentOfSource(a.source) == segment ? local : rest).add(a);
+  }
+  return [...local, ...rest];
+}
+
+/// Cluster-level preference shaping for the Clusters page:
+/// - Africa gate: clusters sourced ENTIRELY from African outlets are hidden
+///   for non-Africa users (mixed clusters survive — the story exists beyond
+///   the gated sources).
+/// - Segment lead: clusters that include the user's segment sources come
+///   first, order preserved within each tier.
+List<StoryCluster> shapeClustersForUser(
+  List<StoryCluster> clusters, {
+  required Map<String, dynamic>? meta,
+}) {
+  var list = clusters;
+  if (!africaSegmentUser(meta)) {
+    list = [
+      for (final c in list)
+        if (c.sources.isEmpty ||
+            !c.sources.every((s) => segmentOfSource(s) == 'Africa'))
+          c,
+    ];
+  }
+  final segment = meta?['news_scope'] == 'region'
+      ? (meta?['preferred_region'] as String?)
+      : null;
+  if (segment == null || segment.isEmpty || segment == 'Worldwide') {
+    return list;
+  }
+  final local = <StoryCluster>[];
+  final rest = <StoryCluster>[];
+  for (final c in list) {
+    (c.sources.any((s) => segmentOfSource(s) == segment) ? local : rest)
+        .add(c);
   }
   return [...local, ...rest];
 }

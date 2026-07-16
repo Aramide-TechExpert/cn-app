@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'data/refresh.dart';
 import 'data/settings_controller.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
@@ -10,6 +11,9 @@ class ClustezApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Keeps the auth listener alive: preference saves / sign in / sign out
+    // auto-refresh every content surface (no manual pull-to-refresh).
+    ref.watch(preferenceRefreshListener);
     final settings = ref.watch(settingsControllerProvider);
     return MaterialApp.router(
       title: 'Clustez',
