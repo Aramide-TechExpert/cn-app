@@ -79,7 +79,9 @@ const Map<String, SourceInfo> _sources = {
   'new statesman': SourceInfo('United Kingdom', 'United Kingdom', _n),
   'the week': SourceInfo('United Kingdom', 'United Kingdom', _n),
   'the new european': SourceInfo('United Kingdom', 'United Kingdom', _n),
-  'politico europe': SourceInfo('United Kingdom', 'United Kingdom', _n),
+  // Politico Europe moved UK → Europe 2026-07-18 (Brussels/EU-institutions
+  // core; it headlines the user's pan-European list).
+  'politico europe': SourceInfo('Belgium', 'Europe', _n),
   'guido fawkes': SourceInfo('United Kingdom', 'United Kingdom', _n),
   'novara media': SourceInfo('United Kingdom', 'United Kingdom', _n),
   'unherd': SourceInfo('United Kingdom', 'United Kingdom', _n),
@@ -231,6 +233,30 @@ const Map<String, SourceInfo> _sources = {
   'dutchnews': SourceInfo('Netherlands', 'Europe', _n),
   'notes from poland': SourceInfo('Poland', 'Europe', _n),
   'the moscow times': SourceInfo('Russia', 'Europe', _n),
+  // Full roster from the user's Europe publisher list (2026-07-18) —
+  // English editions of national outlets, all strictly gated nationals.
+  'euractiv': SourceInfo('Belgium', 'Europe', _n),
+  'euobserver': SourceInfo('Belgium', 'Europe', _n),
+  'balkan insight': SourceInfo('Serbia', 'Europe', _n),
+  'spiegel international': SourceInfo('Germany', 'Europe', _n),
+  'rfi': SourceInfo('France', 'Europe', _n),
+  'le monde': SourceInfo('France', 'Europe', _n),
+  'el país': SourceInfo('Spain', 'Europe', _n),
+  'yle news': SourceInfo('Finland', 'Europe', _n),
+  'iceland monitor': SourceInfo('Iceland', 'Europe', _n),
+  'tvp world': SourceInfo('Poland', 'Europe', _n),
+  'kathimerini': SourceInfo('Greece', 'Europe', _n),
+  'times of malta': SourceInfo('Malta', 'Europe', _n),
+  'luxembourg times': SourceInfo('Luxembourg', 'Europe', _n),
+  'telex': SourceInfo('Hungary', 'Europe', _n),
+  'the irish times': SourceInfo('Ireland', 'Europe', _n),
+  'irish examiner': SourceInfo('Ireland', 'Europe', _n),
+  'irish independent': SourceInfo('Ireland', 'Europe', _n),
+  'kyiv independent': SourceInfo('Ukraine', 'Europe', _n),
+  'ukrayinska pravda': SourceInfo('Ukraine', 'Europe', _n),
+  'ukrinform': SourceInfo('Ukraine', 'Europe', _n),
+  'meduza': SourceInfo('Russia', 'Europe', _n),
+  'novaya gazeta europe': SourceInfo('Russia', 'Europe', _n),
   // ── Africa (nationals) ──
   'punch': SourceInfo('Nigeria', 'Africa', _n),
   'premium times': SourceInfo('Nigeria', 'Africa', _n),
@@ -301,7 +327,10 @@ SourceInfo? sourceInfo(String source) => _sources[source.toLowerCase()];
 /// countries we actually have national outlets for). Single-country segments
 /// (US, UK, Canada, India) need no picker.
 const Map<String, List<String>> segmentCountries = {
-  'Europe': ['Germany', 'Ireland', 'Italy', 'Netherlands', 'Poland', 'Russia'],
+  'Europe': [
+    'Belgium', 'France', 'Germany', 'Ireland', 'Italy', 'Netherlands',
+    'Poland', 'Spain', 'Finland', 'Greece', 'Hungary', 'Ukraine', 'Russia',
+  ],
   'Africa': ['Nigeria', 'Ghana', 'Kenya', 'South Africa'],
   'Middle East': ['Israel', 'Saudi Arabia', 'United Arab Emirates', 'Turkey'],
   'Asia-Pacific': [
@@ -329,6 +358,8 @@ const Map<String, String> countryToSegment = {
   'Finland': 'Europe', 'Belgium': 'Europe', 'Austria': 'Europe',
   'Switzerland': 'Europe', 'Greece': 'Europe', 'Czechia': 'Europe',
   'Ukraine': 'Europe', 'Romania': 'Europe', 'Hungary': 'Europe',
+  'Iceland': 'Europe', 'Malta': 'Europe', 'Luxembourg': 'Europe',
+  'Serbia': 'Europe',
   // Africa
   'Nigeria': 'Africa', 'Ghana': 'Africa', 'Kenya': 'Africa',
   'South Africa': 'Africa', 'Egypt': 'Africa', 'Ethiopia': 'Africa',
@@ -376,7 +407,8 @@ const Map<String, String> isoToCountry = {
   'PT': 'Portugal', 'SE': 'Sweden', 'NO': 'Norway', 'DK': 'Denmark',
   'FI': 'Finland', 'BE': 'Belgium', 'AT': 'Austria', 'CH': 'Switzerland',
   'GR': 'Greece', 'CZ': 'Czechia', 'UA': 'Ukraine', 'RO': 'Romania',
-  'HU': 'Hungary',
+  'HU': 'Hungary', 'IS': 'Iceland', 'MT': 'Malta', 'LU': 'Luxembourg',
+  'RS': 'Serbia',
   'IL': 'Israel', 'SA': 'Saudi Arabia', 'AE': 'United Arab Emirates',
   'QA': 'Qatar', 'TR': 'Turkey', 'KW': 'Kuwait', 'JO': 'Jordan',
   'LB': 'Lebanon', 'BH': 'Bahrain', 'OM': 'Oman',
