@@ -28,10 +28,15 @@ const newsSegments = <(String, String)>[
 enum SourceKind { national, global, topical }
 
 class SourceInfo {
-  const SourceInfo(this.country, this.segment, this.kind);
+  const SourceInfo(this.country, this.segment, this.kind, {this.local = false});
   final String country;
   final String segment;
   final SourceKind kind;
+
+  /// Publishes in the country's own language (not English). Shown ONLY to
+  /// users whose picked country matches — locals read in their local
+  /// language; everyone else keeps an English feed.
+  final bool local;
 }
 
 const _n = SourceKind.national;
@@ -257,6 +262,126 @@ const Map<String, SourceInfo> _sources = {
   'ukrinform': SourceInfo('Ukraine', 'Europe', _n),
   'meduza': SourceInfo('Russia', 'Europe', _n),
   'novaya gazeta europe': SourceInfo('Russia', 'Europe', _n),
+  // Country-depth pass (2026-07-18): every country ≥2 English outlets so
+  // the strict single-country roster is never thin.
+  'the local france': SourceInfo('France', 'Europe', _n),
+  'the local spain': SourceInfo('Spain', 'Europe', _n),
+  'the local italy': SourceInfo('Italy', 'Europe', _n),
+  'the local sweden': SourceInfo('Sweden', 'Europe', _n),
+  'the local denmark': SourceInfo('Denmark', 'Europe', _n),
+  'the local norway': SourceInfo('Norway', 'Europe', _n),
+  'the local austria': SourceInfo('Austria', 'Europe', _n),
+  'the local switzerland': SourceInfo('Switzerland', 'Europe', _n),
+  'nl times': SourceInfo('Netherlands', 'Europe', _n),
+  'brussels times': SourceInfo('Belgium', 'Europe', _n),
+  'copenhagen post': SourceInfo('Denmark', 'Europe', _n),
+  'helsinki times': SourceInfo('Finland', 'Europe', _n),
+  'sweden herald': SourceInfo('Sweden', 'Europe', _n),
+  'norway today': SourceInfo('Norway', 'Europe', _n),
+  'the first news': SourceInfo('Poland', 'Europe', _n),
+  'prague morning': SourceInfo('Czechia', 'Europe', _n),
+  'brno daily': SourceInfo('Czechia', 'Europe', _n),
+  'vindobona': SourceInfo('Austria', 'Europe', _n),
+  'swissinfo': SourceInfo('Switzerland', 'Europe', _n),
+  'the portugal news': SourceInfo('Portugal', 'Europe', _n),
+  'portugal resident': SourceInfo('Portugal', 'Europe', _n),
+  'greek reporter': SourceInfo('Greece', 'Europe', _n),
+  'hungary today': SourceInfo('Hungary', 'Europe', _n),
+  'daily news hungary': SourceInfo('Hungary', 'Europe', _n),
+  'romania insider': SourceInfo('Romania', 'Europe', _n),
+  "nine o'clock": SourceInfo('Romania', 'Europe', _n),
+  'cyprus mail': SourceInfo('Cyprus', 'Europe', _n),
+  'in-cyprus': SourceInfo('Cyprus', 'Europe', _n),
+  'malta today': SourceInfo('Malta', 'Europe', _n),
+  'rtl today': SourceInfo('Luxembourg', 'Europe', _n),
+  'iceland review': SourceInfo('Iceland', 'Europe', _n),
+  // Native-language outlets (2026-07-18, user decision: "use every
+  // sources... they're reading in their locals") — local: true means
+  // visible ONLY when the user's picked country matches.
+  'tagesschau': SourceInfo('Germany', 'Europe', _n, local: true),
+  'bild': SourceInfo('Germany', 'Europe', _n, local: true),
+  'die welt': SourceInfo('Germany', 'Europe', _n, local: true),
+  'süddeutsche zeitung': SourceInfo('Germany', 'Europe', _n, local: true),
+  'faz': SourceInfo('Germany', 'Europe', _n, local: true),
+  'die zeit': SourceInfo('Germany', 'Europe', _n, local: true),
+  'handelsblatt': SourceInfo('Germany', 'Europe', _n, local: true),
+  'stern': SourceInfo('Germany', 'Europe', _n, local: true),
+  'n-tv': SourceInfo('Germany', 'Europe', _n, local: true),
+  'france info': SourceInfo('France', 'Europe', _n, local: true),
+  'le figaro': SourceInfo('France', 'Europe', _n, local: true),
+  'libération': SourceInfo('France', 'Europe', _n, local: true),
+  'les échos': SourceInfo('France', 'Europe', _n, local: true),
+  'le parisien': SourceInfo('France', 'Europe', _n, local: true),
+  'mediapart': SourceInfo('France', 'Europe', _n, local: true),
+  'bfm tv': SourceInfo('France', 'Europe', _n, local: true),
+  'rai news': SourceInfo('Italy', 'Europe', _n, local: true),
+  'corriere della sera': SourceInfo('Italy', 'Europe', _n, local: true),
+  'la repubblica': SourceInfo('Italy', 'Europe', _n, local: true),
+  'la stampa': SourceInfo('Italy', 'Europe', _n, local: true),
+  'il sole 24 ore': SourceInfo('Italy', 'Europe', _n, local: true),
+  'il fatto quotidiano': SourceInfo('Italy', 'Europe', _n, local: true),
+  'tgcom24': SourceInfo('Italy', 'Europe', _n, local: true),
+  'rtve': SourceInfo('Spain', 'Europe', _n, local: true),
+  'el mundo': SourceInfo('Spain', 'Europe', _n, local: true),
+  'abc españa': SourceInfo('Spain', 'Europe', _n, local: true),
+  'la vanguardia': SourceInfo('Spain', 'Europe', _n, local: true),
+  'eldiario.es': SourceInfo('Spain', 'Europe', _n, local: true),
+  'expansión': SourceInfo('Spain', 'Europe', _n, local: true),
+  'nos': SourceInfo('Netherlands', 'Europe', _n, local: true),
+  'de volkskrant': SourceInfo('Netherlands', 'Europe', _n, local: true),
+  'de telegraaf': SourceInfo('Netherlands', 'Europe', _n, local: true),
+  'nrc': SourceInfo('Netherlands', 'Europe', _n, local: true),
+  'het laatste nieuws': SourceInfo('Belgium', 'Europe', _n, local: true),
+  'de morgen': SourceInfo('Belgium', 'Europe', _n, local: true),
+  'vrt nws': SourceInfo('Belgium', 'Europe', _n, local: true),
+  'rtbf': SourceInfo('Belgium', 'Europe', _n, local: true),
+  'svt nyheter': SourceInfo('Sweden', 'Europe', _n, local: true),
+  'aftonbladet': SourceInfo('Sweden', 'Europe', _n, local: true),
+  'svenska dagbladet': SourceInfo('Sweden', 'Europe', _n, local: true),
+  'dagens nyheter': SourceInfo('Sweden', 'Europe', _n, local: true),
+  'expressen': SourceInfo('Sweden', 'Europe', _n, local: true),
+  'nrk': SourceInfo('Norway', 'Europe', _n, local: true),
+  'vg': SourceInfo('Norway', 'Europe', _n, local: true),
+  'aftenposten': SourceInfo('Norway', 'Europe', _n, local: true),
+  'dr nyheder': SourceInfo('Denmark', 'Europe', _n, local: true),
+  'politiken': SourceInfo('Denmark', 'Europe', _n, local: true),
+  'jyllands-posten': SourceInfo('Denmark', 'Europe', _n, local: true),
+  'ekstra bladet': SourceInfo('Denmark', 'Europe', _n, local: true),
+  'helsingin sanomat': SourceInfo('Finland', 'Europe', _n, local: true),
+  'ilta-sanomat': SourceInfo('Finland', 'Europe', _n, local: true),
+  'tvp info': SourceInfo('Poland', 'Europe', _n, local: true),
+  'gazeta wyborcza': SourceInfo('Poland', 'Europe', _n, local: true),
+  'onet': SourceInfo('Poland', 'Europe', _n, local: true),
+  'rzeczpospolita': SourceInfo('Poland', 'Europe', _n, local: true),
+  'čt24': SourceInfo('Czechia', 'Europe', _n, local: true),
+  'idnes': SourceInfo('Czechia', 'Europe', _n, local: true),
+  'lidové noviny': SourceInfo('Czechia', 'Europe', _n, local: true),
+  'orf': SourceInfo('Austria', 'Europe', _n, local: true),
+  'kronen zeitung': SourceInfo('Austria', 'Europe', _n, local: true),
+  'kurier': SourceInfo('Austria', 'Europe', _n, local: true),
+  'die presse': SourceInfo('Austria', 'Europe', _n, local: true),
+  'nzz': SourceInfo('Switzerland', 'Europe', _n, local: true),
+  'blick': SourceInfo('Switzerland', 'Europe', _n, local: true),
+  'le temps': SourceInfo('Switzerland', 'Europe', _n, local: true),
+  '20 minuten': SourceInfo('Switzerland', 'Europe', _n, local: true),
+  'rtp': SourceInfo('Portugal', 'Europe', _n, local: true),
+  'expresso': SourceInfo('Portugal', 'Europe', _n, local: true),
+  'ert': SourceInfo('Greece', 'Europe', _n, local: true),
+  'to vima': SourceInfo('Greece', 'Europe', _n, local: true),
+  'ta nea': SourceInfo('Greece', 'Europe', _n, local: true),
+  '24.hu': SourceInfo('Hungary', 'Europe', _n, local: true),
+  'libertatea': SourceInfo('Romania', 'Europe', _n, local: true),
+  'hotnews': SourceInfo('Romania', 'Europe', _n, local: true),
+  'g4media': SourceInfo('Romania', 'Europe', _n, local: true),
+  'suspilne': SourceInfo('Ukraine', 'Europe', _n, local: true),
+  'phileleftheros': SourceInfo('Cyprus', 'Europe', _n, local: true),
+  'morgunblaðið': SourceInfo('Iceland', 'Europe', _n, local: true),
+  'rúv': SourceInfo('Iceland', 'Europe', _n, local: true),
+  'la presse': SourceInfo('Canada', 'Canada', _n, local: true),
+  'le devoir': SourceInfo('Canada', 'Canada', _n, local: true),
+  'le journal de montréal': SourceInfo('Canada', 'Canada', _n, local: true),
+  'tva nouvelles': SourceInfo('Canada', 'Canada', _n, local: true),
+  'radio-canada': SourceInfo('Canada', 'Canada', _n, local: true),
   // ── Africa (nationals) ──
   'punch': SourceInfo('Nigeria', 'Africa', _n),
   'premium times': SourceInfo('Nigeria', 'Africa', _n),
@@ -328,8 +453,10 @@ SourceInfo? sourceInfo(String source) => _sources[source.toLowerCase()];
 /// (US, UK, Canada, India) need no picker.
 const Map<String, List<String>> segmentCountries = {
   'Europe': [
-    'Belgium', 'France', 'Germany', 'Ireland', 'Italy', 'Netherlands',
-    'Poland', 'Spain', 'Finland', 'Greece', 'Hungary', 'Ukraine', 'Russia',
+    'Austria', 'Belgium', 'Cyprus', 'Czechia', 'Denmark', 'Finland',
+    'France', 'Germany', 'Greece', 'Hungary', 'Iceland', 'Ireland', 'Italy',
+    'Luxembourg', 'Malta', 'Netherlands', 'Norway', 'Poland', 'Portugal',
+    'Romania', 'Russia', 'Spain', 'Sweden', 'Switzerland', 'Ukraine',
   ],
   'Africa': ['Nigeria', 'Ghana', 'Kenya', 'South Africa'],
   'Middle East': ['Israel', 'Saudi Arabia', 'United Arab Emirates', 'Turkey'],
@@ -359,7 +486,7 @@ const Map<String, String> countryToSegment = {
   'Switzerland': 'Europe', 'Greece': 'Europe', 'Czechia': 'Europe',
   'Ukraine': 'Europe', 'Romania': 'Europe', 'Hungary': 'Europe',
   'Iceland': 'Europe', 'Malta': 'Europe', 'Luxembourg': 'Europe',
-  'Serbia': 'Europe',
+  'Serbia': 'Europe', 'Cyprus': 'Europe',
   // Africa
   'Nigeria': 'Africa', 'Ghana': 'Africa', 'Kenya': 'Africa',
   'South Africa': 'Africa', 'Egypt': 'Africa', 'Ethiopia': 'Africa',
@@ -408,7 +535,7 @@ const Map<String, String> isoToCountry = {
   'FI': 'Finland', 'BE': 'Belgium', 'AT': 'Austria', 'CH': 'Switzerland',
   'GR': 'Greece', 'CZ': 'Czechia', 'UA': 'Ukraine', 'RO': 'Romania',
   'HU': 'Hungary', 'IS': 'Iceland', 'MT': 'Malta', 'LU': 'Luxembourg',
-  'RS': 'Serbia',
+  'RS': 'Serbia', 'CY': 'Cyprus',
   'IL': 'Israel', 'SA': 'Saudi Arabia', 'AE': 'United Arab Emirates',
   'QA': 'Qatar', 'TR': 'Turkey', 'KW': 'Kuwait', 'JO': 'Jordan',
   'LB': 'Lebanon', 'BH': 'Bahrain', 'OM': 'Oman',
@@ -441,12 +568,21 @@ String? activeCountry(Map<String, dynamic>? meta) {
 /// - national outlets: visible ONLY to users on their segment; with no
 ///   segment (worldwide / signed out) every national except Africa's is
 ///   visible (Africa stays fully gated per the standing decision)
+/// - a picked country narrows further: ONLY that country's nationals show
+///   (single-country roster, user decision 2026-07-18); "All <segment>"
+///   (no country) keeps every national in the segment
 bool sourceVisible(String source, Map<String, dynamic>? meta) {
   final i = sourceInfo(source);
   if (i == null || i.kind != SourceKind.national) return true;
   final segment = activeSegment(meta);
-  if (segment == null) return i.segment != 'Africa';
-  return i.segment == segment;
+  if (segment == null) return i.segment != 'Africa' && !i.local;
+  if (i.segment != segment) return false;
+  final country = activeCountry(meta);
+  // No country picked: English nationals only — except single-country
+  // segments (US/UK/Canada/India), where the segment IS the country, so
+  // its local-language outlets (e.g. French Canada) are in scope.
+  if (country == null) return !i.local || i.country == segment;
+  return i.country == country;
 }
 
 /// Drop articles from sources the user must not see (strict gate).
