@@ -121,9 +121,13 @@ String? domainForSource(String source) {
 
 const List<(String, String)> _sourceDomains = [
   ('bbc', 'bbc.co.uk'),
+  // 'guardian nigeria' must precede the bare 'guardian' substring.
+  ('guardian nigeria', 'guardian.ng'),
   ('guardian', 'theguardian.com'),
   ('al jazeera', 'aljazeera.com'),
   ('npr', 'npr.org'),
+  // 'cnbc africa' must precede the bare 'cnbc' substring.
+  ('cnbc africa', 'cnbcafrica.com'),
   ('cnbc', 'cnbc.com'),
   // 'cbc' AFTER 'cnbc' — it's a substring of it.
   ('cbc', 'cbc.ca'),
@@ -185,6 +189,8 @@ const List<(String, String)> _sourceDomains = [
   // Irish/Kyiv variants must precede the bare 'independent' substring.
   ('irish independent', 'independent.ie'),
   ('kyiv independent', 'kyivindependent.com'),
+  ('egypt independent', 'egyptindependent.com'),
+  ('independent nigeria', 'independent.ng'),
   ('independent', 'independent.co.uk'),
   ('telegraph', 'telegraph.co.uk'),
   ('euronews', 'euronews.com'),
@@ -283,18 +289,26 @@ const List<(String, String)> _sourceDomains = [
   ('south african', 'thesouthafrican.com'),
   ('la times', 'latimes.com'),
   ('washington post', 'washingtonpost.com'),
+  // 'zambia daily mail' must precede the UK 'daily mail' substring.
+  ('zambia daily mail', 'daily-mail.co.zm'),
   ('daily mail', 'dailymail.co.uk'),
   // UK roster (2026-07-18). 'the times' + 'financial times' + 'byline times'
   // all contain 'time' — safe only because 'time' stays the LAST rule.
   ('the times', 'thetimes.com'),
+  // 'the sun nigeria' must precede the UK 'the sun' substring.
+  ('the sun nigeria', 'sunnewsonline.com'),
   ('the sun', 'thesun.co.uk'),
   ('i news', 'inews.co.uk'),
   ('daily express', 'express.co.uk'),
+  // Ghana's B&FT must precede the UK 'financial times' substring.
+  ('business & financial times', 'thebftonline.com'),
   ('financial times', 'ft.com'),
   ('itv news', 'itv.com'),
   ('channel 4', 'channel4.com'),
   ('gb news', 'gbnews.com'),
   ('stv news', 'stv.tv'),
+  // Zimbabwe's Herald must precede the Scottish 'the herald' substring.
+  ('the herald zimbabwe', 'herald.co.zw'),
   ('the herald', 'heraldscotland.com'),
   ('northern echo', 'thenorthernecho.co.uk'),
   ('oxford mail', 'oxfordmail.co.uk'),
@@ -381,11 +395,18 @@ const List<(String, String)> _sourceDomains = [
   ('bleacher report', 'bleacherreport.com'),
   ('hollywood reporter', 'hollywoodreporter.com'),
   ('entertainment weekly', 'ew.com'),
+  // Kenya's 'people daily' must precede the bare 'people' substring.
+  ('people daily', 'pd.co.ke'),
   ('people', 'people.com'),
   ('tmz', 'tmz.com'),
   ('billboard', 'billboard.com'),
   ('gizmodo', 'gizmodo.com'),
   ('forbes', 'forbes.com'),
+  // Africa Times-ish names (before the 'time' fallback).
+  ('timeslive', 'timeslive.co.za'),
+  ('times of zambia', 'times.co.zm'),
+  ('times of eswatini', 'times.co.sz'),
+  ('nyasa times', 'nyasatimes.com'),
   // 'time' must stay LAST — it's a substring of every "* Times" source above.
   ('time', 'time.com'),
 ];
