@@ -28,8 +28,14 @@ final widgetsDataProvider = FutureProvider.autoDispose<WidgetsData>(
   (ref) => ref.read(apiClientProvider).widgets(),
 );
 
+/// Region-edition briefing: scoped users get their segment's daily digest
+/// (server falls back to Worldwide when the region has none yet).
 final briefingProvider = FutureProvider.autoDispose<DailyBriefing?>(
-  (ref) => ref.read(apiClientProvider).briefing(),
+  (ref) {
+    final segment =
+        activeSegment(ref.read(currentUserProvider)?.userMetadata);
+    return ref.read(apiClientProvider).briefing(region: segment);
+  },
 );
 
 final trendingProvider = FutureProvider.autoDispose<List<TrendingTopic>>(

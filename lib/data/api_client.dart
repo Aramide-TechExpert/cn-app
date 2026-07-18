@@ -95,8 +95,15 @@ class ApiClient {
         .toList();
   }
 
-  Future<DailyBriefing?> briefing() async {
-    final res = await _dio.get<Map<String, dynamic>>('/briefing');
+  /// Latest daily briefing for a region edition (server falls back to
+  /// Worldwide when that region has none yet).
+  Future<DailyBriefing?> briefing({String? region}) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/briefing',
+      queryParameters: {
+        if (region != null && region.isNotEmpty) 'region': region,
+      },
+    );
     final b = res.data?['briefing'];
     return b == null ? null : DailyBriefing.fromJson(b as Map<String, dynamic>);
   }
