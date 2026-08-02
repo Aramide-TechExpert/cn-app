@@ -529,12 +529,81 @@ const Map<String, SourceInfo> _sources = {
   'midi madagasikara': SourceInfo('Madagascar', 'Africa', _n, local: true),
   "l'express maurice": SourceInfo('Mauritius', 'Africa', _n, local: true),
   'le mauricien': SourceInfo('Mauritius', 'Africa', _n, local: true),
-  // ── Middle East (nationals) ──
-  'times of israel': SourceInfo('Israel', 'Middle East', _n),
-  'arab news': SourceInfo('Saudi Arabia', 'Middle East', _n),
+  // ── Middle East (nationals) — full roster 2026-08-02 ──
+  // Pan-regional tier (country == segment: serves every ME country)
+  'al arabiya': SourceInfo('Middle East', 'Middle East', _n),
+  'al-monitor': SourceInfo('Middle East', 'Middle East', _n),
+  'asharq al-awsat': SourceInfo('Middle East', 'Middle East', _n),
+  'middle east eye': SourceInfo('Middle East', 'Middle East', _n),
+  'al-quds al-arabi': SourceInfo('Middle East', 'Middle East', _n, local: true),
+  'sky news arabia': SourceInfo('Middle East', 'Middle East', _n, local: true),
+  'asharq news': SourceInfo('Middle East', 'Middle East', _n, local: true),
+  // United Arab Emirates
   'the national': SourceInfo('United Arab Emirates', 'Middle East', _n),
+  'gulf news': SourceInfo('United Arab Emirates', 'Middle East', _n),
+  'khaleej times': SourceInfo('United Arab Emirates', 'Middle East', _n),
+  'arabian business': SourceInfo('United Arab Emirates', 'Middle East', _n),
+  'wam': SourceInfo('United Arab Emirates', 'Middle East', _n),
+  'al-bayan': SourceInfo('United Arab Emirates', 'Middle East', _n, local: true),
+  'emarat al youm': SourceInfo('United Arab Emirates', 'Middle East', _n, local: true),
+  // Saudi Arabia
+  'arab news': SourceInfo('Saudi Arabia', 'Middle East', _n),
+  'saudi press agency': SourceInfo('Saudi Arabia', 'Middle East', _n),
+  'al riyadh': SourceInfo('Saudi Arabia', 'Middle East', _n, local: true),
+  'okaz': SourceInfo('Saudi Arabia', 'Middle East', _n, local: true),
+  'al-watan saudi': SourceInfo('Saudi Arabia', 'Middle East', _n, local: true),
+  'al eqtisadiah': SourceInfo('Saudi Arabia', 'Middle East', _n, local: true),
+  'sabq': SourceInfo('Saudi Arabia', 'Middle East', _n, local: true),
+  // Egypt — tagged Africa (its home segment) but also surfaces under
+  // Middle East via _secondSegment (the user's ME list includes Egypt)
+  // (al-masry al-youm already tagged in the Africa block above)
+  'al-ahram': SourceInfo('Egypt', 'Africa', _n, local: true),
+  'al-akhbar egypt': SourceInfo('Egypt', 'Africa', _n, local: true),
+  'youm7': SourceInfo('Egypt', 'Africa', _n, local: true),
+  // Qatar
+  'the peninsula': SourceInfo('Qatar', 'Middle East', _n),
+  'gulf times': SourceInfo('Qatar', 'Middle East', _n),
+  'al-raya': SourceInfo('Qatar', 'Middle East', _n, local: true),
+  // Kuwait
+  'arab times': SourceInfo('Kuwait', 'Middle East', _n),
+  'al-anba': SourceInfo('Kuwait', 'Middle East', _n, local: true),
+  // Bahrain
+  'gulf daily news': SourceInfo('Bahrain', 'Middle East', _n),
+  'akhbar al-khaleej': SourceInfo('Bahrain', 'Middle East', _n, local: true),
+  'al ayam bahrain': SourceInfo('Bahrain', 'Middle East', _n, local: true),
+  'bahrain news agency': SourceInfo('Bahrain', 'Middle East', _n, local: true),
+  // Oman
+  'times of oman': SourceInfo('Oman', 'Middle East', _n),
+  'oman observer': SourceInfo('Oman', 'Middle East', _n),
+  // Lebanon
+  'al-akhbar': SourceInfo('Lebanon', 'Middle East', _n, local: true),
+  'an-nahar': SourceInfo('Lebanon', 'Middle East', _n, local: true),
+  "l'orient-le jour": SourceInfo('Lebanon', 'Middle East', _n, local: true),
+  // Jordan
+  'the jordan times': SourceInfo('Jordan', 'Middle East', _n),
+  'al-ghad': SourceInfo('Jordan', 'Middle East', _n, local: true),
+  // Syria
+  'sana': SourceInfo('Syria', 'Middle East', _n),
+  'al-watan syria': SourceInfo('Syria', 'Middle East', _n, local: true),
+  // Iraq
+  'rudaw': SourceInfo('Iraq', 'Middle East', _n),
+  'al mada': SourceInfo('Iraq', 'Middle East', _n, local: true),
+  // Israel
+  'times of israel': SourceInfo('Israel', 'Middle East', _n),
+  'the jerusalem post': SourceInfo('Israel', 'Middle East', _n),
+  'haaretz': SourceInfo('Israel', 'Middle East', _n),
+  'ynetnews': SourceInfo('Israel', 'Middle East', _n),
+  // Palestine
+  'wafa news agency': SourceInfo('Palestine', 'Middle East', _n),
+  "ma'an news agency": SourceInfo('Palestine', 'Middle East', _n, local: true),
+  // Turkey
   'hurriyet daily news': SourceInfo('Turkey', 'Middle East', _n),
   'daily sabah': SourceInfo('Turkey', 'Middle East', _n),
+  'trt world': SourceInfo('Turkey', 'Middle East', _n),
+  'anadolu agency': SourceInfo('Turkey', 'Middle East', _n),
+  // Iran
+  'tehran times': SourceInfo('Iran', 'Middle East', _n),
+  'irna': SourceInfo('Iran', 'Middle East', _n),
   // ── India ──
   'times of india': SourceInfo('India', 'India', _n),
   'ndtv': SourceInfo('India', 'India', _n),
@@ -587,7 +656,11 @@ const Map<String, List<String>> segmentCountries = {
     'Egypt', 'Morocco', 'Algeria', 'Tunisia', 'Libya', 'Cameroon',
     'DR Congo', 'Madagascar', 'Mauritius',
   ],
-  'Middle East': ['Israel', 'Saudi Arabia', 'United Arab Emirates', 'Turkey'],
+  'Middle East': [
+    'United Arab Emirates', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Bahrain',
+    'Oman', 'Egypt', 'Lebanon', 'Jordan', 'Syria', 'Iraq', 'Israel',
+    'Palestine', 'Turkey', 'Iran',
+  ],
   'Asia-Pacific': [
     'Japan', 'South Korea', 'Singapore', 'Hong Kong', 'Thailand',
     'Philippines', 'Indonesia', 'Malaysia', 'Vietnam', 'Pakistan',
@@ -634,6 +707,8 @@ const Map<String, String> countryToSegment = {
   'United Arab Emirates': 'Middle East', 'Qatar': 'Middle East',
   'Turkey': 'Middle East', 'Kuwait': 'Middle East', 'Jordan': 'Middle East',
   'Lebanon': 'Middle East', 'Bahrain': 'Middle East', 'Oman': 'Middle East',
+  'Syria': 'Middle East', 'Iraq': 'Middle East', 'Palestine': 'Middle East',
+  'Iran': 'Middle East', 'Yemen': 'Middle East',
   // Asia-Pacific
   'Japan': 'Asia-Pacific', 'South Korea': 'Asia-Pacific',
   'Singapore': 'Asia-Pacific', 'Hong Kong': 'Asia-Pacific',
@@ -678,7 +753,8 @@ const Map<String, String> isoToCountry = {
   'RS': 'Serbia', 'CY': 'Cyprus',
   'IL': 'Israel', 'SA': 'Saudi Arabia', 'AE': 'United Arab Emirates',
   'QA': 'Qatar', 'TR': 'Turkey', 'KW': 'Kuwait', 'JO': 'Jordan',
-  'LB': 'Lebanon', 'BH': 'Bahrain', 'OM': 'Oman',
+  'LB': 'Lebanon', 'BH': 'Bahrain', 'OM': 'Oman', 'SY': 'Syria',
+  'IQ': 'Iraq', 'PS': 'Palestine', 'IR': 'Iran', 'YE': 'Yemen',
   'JP': 'Japan', 'KR': 'South Korea', 'SG': 'Singapore', 'HK': 'Hong Kong',
   'CN': 'China', 'TW': 'Taiwan', 'TH': 'Thailand', 'PH': 'Philippines',
   'ID': 'Indonesia', 'MY': 'Malaysia', 'VN': 'Vietnam', 'PK': 'Pakistan',
@@ -711,12 +787,19 @@ String? activeCountry(Map<String, dynamic>? meta) {
 /// - a picked country narrows further: ONLY that country's nationals show
 ///   (single-country roster, user decision 2026-07-18); "All <segment>"
 ///   (no country) keeps every national in the segment
+/// Countries that belong to two segments: Egypt sits in both the Africa and
+/// Middle East pickers, so its outlets pass the segment check for either.
+const Map<String, String> _secondSegment = {'Egypt': 'Middle East'};
+
+bool _inSegment(SourceInfo i, String segment) =>
+    i.segment == segment || _secondSegment[i.country] == segment;
+
 bool sourceVisible(String source, Map<String, dynamic>? meta) {
   final i = sourceInfo(source);
   if (i == null || i.kind != SourceKind.national) return true;
   final segment = activeSegment(meta);
   if (segment == null) return i.segment != 'Africa' && !i.local;
-  if (i.segment != segment) return false;
+  if (!_inSegment(i, segment)) return false;
   final country = activeCountry(meta);
   // No country picked: English nationals only — except single-country
   // segments (US/UK/Canada/India), where the segment IS the country, so
