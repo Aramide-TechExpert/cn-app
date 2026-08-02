@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
 import '../models/article.dart';
 import '../models/cluster.dart';
 
@@ -858,6 +860,10 @@ const Map<String, SourceInfo> _sources = {
 };
 
 SourceInfo? sourceInfo(String source) => _sources[source.toLowerCase()];
+
+/// Full classifier map, exposed for the leakage regression test only.
+@visibleForTesting
+Map<String, SourceInfo> get classifiedSourcesForTest => _sources;
 
 /// Countries offered for country-level localization inside a segment (only
 /// countries we actually have national outlets for). Single-country segments

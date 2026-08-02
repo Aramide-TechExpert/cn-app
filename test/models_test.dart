@@ -44,8 +44,9 @@ void main() {
     });
 
     test('blurb falls back to excerpt when summary is absent', () {
-      final a = Article.fromJson({'id': 'x', 'excerpt': 'ex'});
-      expect(a.blurb, 'ex');
+      final a =
+          Article.fromJson({'id': 'x', 'excerpt': 'a real excerpt here'});
+      expect(a.blurb, 'a real excerpt here');
     });
   });
 
