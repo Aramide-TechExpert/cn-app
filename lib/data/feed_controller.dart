@@ -45,10 +45,14 @@ class FeedController extends AsyncNotifier<List<Article>> {
   }) async {
     final collected = <Article>[];
     var next = cursor;
+    // Server-side region pre-filter (defense in depth + denser pages);
+    // the strict per-country gate still applies client-side.
+    final region =
+        activeSegment(ref.read(currentUserProvider)?.userMetadata);
     for (var hop = 0; hop < 5; hop++) {
       final page = await ref
           .read(apiClientProvider)
-          .feed(cursor: next, limit: limit, since: _since);
+          .feed(cursor: next, limit: limit, since: _since, region: region);
       next = page.nextCursor;
       _cursor = page.nextCursor;
       _hasMore = page.nextCursor != null;

@@ -10,7 +10,10 @@ import 'feed_controller.dart' show apiClientProvider, applyRegionPreference;
 /// Source-interleaved so one publisher's clips don't fill the whole rail.
 /// Fetches deep (the strict gate + playability checks both thin the pool).
 final videoPoolProvider = FutureProvider.autoDispose<List<Article>>((ref) async {
-  final page = await ref.read(apiClientProvider).feed(limit: 24, video: true);
+  final page = await ref.read(apiClientProvider).feed(
+      limit: 24,
+      video: true,
+      region: activeSegment(ref.read(currentUserProvider)?.userMetadata));
   final playable = applyRegionPreference(
       ref, page.items.where((a) => a.hasPlayableVideo && a.hasImage).toList());
   return interleaveBySource(playable, flush: true).emitted;
@@ -98,6 +101,7 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
             sort: _filters.sort == 'latest' ? null : _filters.sort,
             since: _filters.since,
             video: _filters.video,
+            region: activeSegment(meta),
           );
       next = page.nextCursor;
       _cursor = page.nextCursor;
