@@ -126,6 +126,9 @@ const List<(String, String)> _sourceDomains = [
   ('guardian', 'theguardian.com'),
   ('al jazeera', 'aljazeera.com'),
   ('npr', 'npr.org'),
+  // India's TV18 brands must precede the bare 'cnbc'/'cnn' substrings.
+  ('cnbc-tv18', 'cnbctv18.com'),
+  ('cnn-news18', 'news18.com'),
   // 'cnbc africa' must precede the bare 'cnbc' substring.
   ('cnbc africa', 'cnbcafrica.com'),
   ('cnbc', 'cnbc.com'),
@@ -194,10 +197,14 @@ const List<(String, String)> _sourceDomains = [
   ('egypt independent', 'egyptindependent.com'),
   ('independent nigeria', 'independent.ng'),
   ('independent', 'independent.co.uk'),
+  // Kolkata's Telegraph must precede the UK 'telegraph' substring.
+  ('the telegraph india', 'telegraphindia.com'),
   ('telegraph', 'telegraph.co.uk'),
   ('euronews', 'euronews.com'),
   ('straits times', 'straitstimes.com'),
   ('ndtv', 'ndtv.com'),
+  // Hindi sister paper must precede the bare 'hindustan' substring.
+  ('hindustan hindi', 'livehindustan.com'),
   ('hindustan', 'hindustantimes.com'),
   ('economic times', 'economictimes.indiatimes.com'),
   ('times of israel', 'timesofisrael.com'),
@@ -462,6 +469,37 @@ const List<(String, String)> _sourceDomains = [
   ('anadolu', 'aa.com.tr'),
   ('tehran times', 'tehrantimes.com'),
   ('irna', 'en.irna.ir'),
+  // India roster (2026-08-02). CNBC-TV18/CNN-News18/Telegraph India/
+  // Hindustan Hindi live higher up next to the substrings they must beat.
+  ('the indian express', 'indianexpress.com'),
+  ('business standard', 'business-standard.com'),
+  ('deccan herald', 'deccanherald.com'),
+  ('the asian age', 'asianage.com'),
+  ('india today', 'indiatoday.in'),
+  ('republic tv', 'republicworld.com'),
+  ('pti', 'ptinews.com'),
+  ('uni india', 'uniindia.com'),
+  ('the wire', 'thewire.in'),
+  ('the news minute', 'thenewsminute.com'),
+  ('scroll.in', 'scroll.in'),
+  ('newslaundry', 'newslaundry.com'),
+  ('the quint', 'thequint.com'),
+  ('aaj tak', 'aajtak.in'),
+  ('dainik jagran', 'jagran.com'),
+  ('dainik bhaskar', 'bhaskar.com'),
+  ('amar ujala', 'amarujala.com'),
+  ('navbharat times', 'navbharattimes.indiatimes.com'),
+  ('anandabazar', 'anandabazar.com'),
+  ('malayala manorama', 'manoramaonline.com'),
+  ('eenadu', 'eenadu.net'),
+  ('daily thanthi', 'dailythanthi.com'),
+  ('lokmat', 'lokmat.com'),
+  ('gujarat samachar', 'gujaratsamachar.com'),
+  ('punjab kesari', 'punjabkesari.in'),
+  // These two contain 'ani' — their own rules must precede ANI's.
+  ('romania insider', 'romania-insider.com'),
+  ('the citizen tanzania', 'thecitizen.co.tz'),
+  ('ani', 'aninews.in'),
   // 'time' must stay LAST — it's a substring of every "* Times" source above.
   ('time', 'time.com'),
 ];
