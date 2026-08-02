@@ -759,13 +759,102 @@ const Map<String, SourceInfo> _sources = {
   'the northern advocate': SourceInfo('New Zealand', 'Australia & NZ', _n),
   'rotorua daily post': SourceInfo('New Zealand', 'Australia & NZ', _n),
   "hawke's bay today": SourceInfo('New Zealand', 'Australia & NZ', _n),
-  // ── Latin America ──
+  // ── Latin America — full roster 2026-08-02 (nearly all Spanish/
+  // Portuguese → local: matching-country users only) ──
+  // Pan-regional tier
+  'telesur': SourceInfo('Latin America', 'Latin America', _n, local: true),
+  // Mexico
   'telemundo': SourceInfo('Mexico', 'Latin America', _n),
   'mexico news daily': SourceInfo('Mexico', 'Latin America', _n),
-  'buenos aires times': SourceInfo('Argentina', 'Latin America', _n),
-  'mercopress': SourceInfo('Uruguay', 'Latin America', _n),
+  'el universal': SourceInfo('Mexico', 'Latin America', _n, local: true),
+  'reforma': SourceInfo('Mexico', 'Latin America', _n, local: true),
+  'la jornada': SourceInfo('Mexico', 'Latin America', _n, local: true),
+  'milenio': SourceInfo('Mexico', 'Latin America', _n, local: true),
+  'el financiero': SourceInfo('Mexico', 'Latin America', _n, local: true),
+  'el economista': SourceInfo('Mexico', 'Latin America', _n, local: true),
+  'excélsior': SourceInfo('Mexico', 'Latin America', _n, local: true),
+  'tv azteca': SourceInfo('Mexico', 'Latin America', _n, local: true),
+  'animal político': SourceInfo('Mexico', 'Latin America', _n, local: true),
+  'proceso': SourceInfo('Mexico', 'Latin America', _n, local: true),
+  'aristegui noticias': SourceInfo('Mexico', 'Latin America', _n, local: true),
+  // Central America
+  'la prensa gráfica': SourceInfo('El Salvador', 'Latin America', _n, local: true),
+  'el diario de hoy': SourceInfo('El Salvador', 'Latin America', _n, local: true),
+  'confidencial': SourceInfo('Nicaragua', 'Latin America', _n, local: true),
+  'nicaragua investiga': SourceInfo('Nicaragua', 'Latin America', _n, local: true),
+  'despacho 505': SourceInfo('Nicaragua', 'Latin America', _n, local: true),
+  'prensa libre': SourceInfo('Guatemala', 'Latin America', _n, local: true),
+  'la hora': SourceInfo('Guatemala', 'Latin America', _n, local: true),
+  'la prensa honduras': SourceInfo('Honduras', 'Latin America', _n, local: true),
+  'el heraldo': SourceInfo('Honduras', 'Latin America', _n, local: true),
+  'la nación costa rica': SourceInfo('Costa Rica', 'Latin America', _n, local: true),
+  'crhoy': SourceInfo('Costa Rica', 'Latin America', _n, local: true),
+  'tico times': SourceInfo('Costa Rica', 'Latin America', _n),
+  'la prensa panamá': SourceInfo('Panama', 'Latin America', _n, local: true),
+  'la estrella de panamá': SourceInfo('Panama', 'Latin America', _n, local: true),
+  // Brazil
   'rio times': SourceInfo('Brazil', 'Latin America', _n),
+  'o globo': SourceInfo('Brazil', 'Latin America', _n, local: true),
+  'g1': SourceInfo('Brazil', 'Latin America', _n, local: true),
+  'folha de s.paulo': SourceInfo('Brazil', 'Latin America', _n, local: true),
+  'estadão': SourceInfo('Brazil', 'Latin America', _n, local: true),
+  'valor econômico': SourceInfo('Brazil', 'Latin America', _n, local: true),
+  'uol': SourceInfo('Brazil', 'Latin America', _n, local: true),
+  'metrópoles': SourceInfo('Brazil', 'Latin America', _n, local: true),
+  'r7': SourceInfo('Brazil', 'Latin America', _n, local: true),
+  'agência brasil': SourceInfo('Brazil', 'Latin America', _n, local: true),
+  'nexo jornal': SourceInfo('Brazil', 'Latin America', _n, local: true),
+  'agência pública': SourceInfo('Brazil', 'Latin America', _n, local: true),
+  // Argentina
+  'buenos aires times': SourceInfo('Argentina', 'Latin America', _n),
+  'clarín': SourceInfo('Argentina', 'Latin America', _n, local: true),
+  'la nación argentina': SourceInfo('Argentina', 'Latin America', _n, local: true),
+  'infobae': SourceInfo('Argentina', 'Latin America', _n, local: true),
+  'página 12': SourceInfo('Argentina', 'Latin America', _n, local: true),
+  'ámbito': SourceInfo('Argentina', 'Latin America', _n, local: true),
+  'el cronista': SourceInfo('Argentina', 'Latin America', _n, local: true),
+  'perfil': SourceInfo('Argentina', 'Latin America', _n, local: true),
+  'todo noticias': SourceInfo('Argentina', 'Latin America', _n, local: true),
+  // Chile
+  'el mercurio': SourceInfo('Chile', 'Latin America', _n, local: true),
+  'la tercera': SourceInfo('Chile', 'Latin America', _n, local: true),
+  'el mostrador': SourceInfo('Chile', 'Latin America', _n, local: true),
+  'ciper chile': SourceInfo('Chile', 'Latin America', _n, local: true),
+  // Uruguay & Paraguay
+  'mercopress': SourceInfo('Uruguay', 'Latin America', _n),
+  'el país uruguay': SourceInfo('Uruguay', 'Latin America', _n, local: true),
+  'el observador': SourceInfo('Uruguay', 'Latin America', _n, local: true),
+  'abc color': SourceInfo('Paraguay', 'Latin America', _n, local: true),
+  'última hora': SourceInfo('Paraguay', 'Latin America', _n, local: true),
+  // Colombia
   'the city paper': SourceInfo('Colombia', 'Latin America', _n),
+  'el tiempo': SourceInfo('Colombia', 'Latin America', _n, local: true),
+  'el espectador': SourceInfo('Colombia', 'Latin America', _n, local: true),
+  'semana': SourceInfo('Colombia', 'Latin America', _n, local: true),
+  'la silla vacía': SourceInfo('Colombia', 'Latin America', _n, local: true),
+  'el colombiano': SourceInfo('Colombia', 'Latin America', _n, local: true),
+  'caracol tv': SourceInfo('Colombia', 'Latin America', _n, local: true),
+  'rcn radio': SourceInfo('Colombia', 'Latin America', _n, local: true),
+  // Venezuela
+  'el nacional': SourceInfo('Venezuela', 'Latin America', _n, local: true),
+  'el universal venezuela': SourceInfo('Venezuela', 'Latin America', _n, local: true),
+  'efecto cocuyo': SourceInfo('Venezuela', 'Latin America', _n, local: true),
+  // Peru
+  'el comercio peru': SourceInfo('Peru', 'Latin America', _n, local: true),
+  'la república': SourceInfo('Peru', 'Latin America', _n, local: true),
+  'idl-reporteros': SourceInfo('Peru', 'Latin America', _n, local: true),
+  // Ecuador
+  'el universo': SourceInfo('Ecuador', 'Latin America', _n, local: true),
+  'el comercio ecuador': SourceInfo('Ecuador', 'Latin America', _n, local: true),
+  // Bolivia
+  'el deber': SourceInfo('Bolivia', 'Latin America', _n, local: true),
+  'los tiempos': SourceInfo('Bolivia', 'Latin America', _n, local: true),
+  // Cuba & Dominican Republic
+  'granma': SourceInfo('Cuba', 'Latin America', _n, local: true),
+  'juventud rebelde': SourceInfo('Cuba', 'Latin America', _n, local: true),
+  '14ymedio': SourceInfo('Cuba', 'Latin America', _n, local: true),
+  'listín diario': SourceInfo('Dominican Republic', 'Latin America', _n, local: true),
+  'diario libre': SourceInfo('Dominican Republic', 'Latin America', _n, local: true),
 };
 
 SourceInfo? sourceInfo(String source) => _sources[source.toLowerCase()];
@@ -799,7 +888,12 @@ const Map<String, List<String>> segmentCountries = {
     'Pakistan', 'Bangladesh', 'Sri Lanka',
   ],
   'Australia & NZ': ['Australia', 'New Zealand', 'Fiji', 'Papua New Guinea'],
-  'Latin America': ['Mexico', 'Argentina', 'Brazil', 'Colombia', 'Uruguay'],
+  'Latin America': [
+    'Mexico', 'Guatemala', 'El Salvador', 'Honduras', 'Nicaragua',
+    'Costa Rica', 'Panama', 'Cuba', 'Dominican Republic', 'Colombia',
+    'Venezuela', 'Ecuador', 'Peru', 'Bolivia', 'Brazil', 'Paraguay',
+    'Uruguay', 'Argentina', 'Chile',
+  ],
 };
 
 /// Country → segment, for device-location detection. Broader than the source
@@ -859,7 +953,11 @@ const Map<String, String> countryToSegment = {
   'Uruguay': 'Latin America', 'Chile': 'Latin America',
   'Peru': 'Latin America', 'Ecuador': 'Latin America',
   'Venezuela': 'Latin America', 'Bolivia': 'Latin America',
-  'Paraguay': 'Latin America',
+  'Paraguay': 'Latin America', 'Guatemala': 'Latin America',
+  'El Salvador': 'Latin America', 'Honduras': 'Latin America',
+  'Nicaragua': 'Latin America', 'Costa Rica': 'Latin America',
+  'Panama': 'Latin America', 'Cuba': 'Latin America',
+  'Dominican Republic': 'Latin America',
 };
 
 /// ISO 3166 alpha-2 → country name, for location providers that only return
@@ -897,6 +995,9 @@ const Map<String, String> isoToCountry = {
   'MX': 'Mexico', 'AR': 'Argentina', 'BR': 'Brazil', 'CO': 'Colombia',
   'UY': 'Uruguay', 'CL': 'Chile', 'PE': 'Peru', 'EC': 'Ecuador',
   'VE': 'Venezuela', 'BO': 'Bolivia', 'PY': 'Paraguay',
+  'GT': 'Guatemala', 'SV': 'El Salvador', 'HN': 'Honduras',
+  'NI': 'Nicaragua', 'CR': 'Costa Rica', 'PA': 'Panama', 'CU': 'Cuba',
+  'DO': 'Dominican Republic',
 };
 
 /// The user's active segment: null when signed out, worldwide, or unset.
