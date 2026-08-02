@@ -121,8 +121,9 @@ String? domainForSource(String source) {
 
 const List<(String, String)> _sourceDomains = [
   ('bbc', 'bbc.co.uk'),
-  // 'guardian nigeria' must precede the bare 'guardian' substring.
+  // 'guardian nigeria'/'guardian australia' must precede bare 'guardian'.
   ('guardian nigeria', 'guardian.ng'),
+  ('guardian australia', 'theguardian.com'),
   ('guardian', 'theguardian.com'),
   ('al jazeera', 'aljazeera.com'),
   ('npr', 'npr.org'),
@@ -188,17 +189,20 @@ const List<(String, String)> _sourceDomains = [
   ('new york times', 'nytimes.com'),
   ('nyt', 'nytimes.com'),
   ('sky sports', 'skysports.com'),
-  // Arabia variant must precede the bare 'sky news' substring.
+  // Arabia/Australia variants must precede the bare 'sky news' substring.
   ('sky news arabia', 'skynewsarabia.com'),
+  ('sky news australia', 'skynews.com.au'),
   ('sky news', 'news.sky.com'),
   // Irish/Kyiv variants must precede the bare 'independent' substring.
   ('irish independent', 'independent.ie'),
   ('kyiv independent', 'kyivindependent.com'),
   ('egypt independent', 'egyptindependent.com'),
   ('independent nigeria', 'independent.ng'),
+  ('independent australia', 'independentaustralia.net'),
   ('independent', 'independent.co.uk'),
-  // Kolkata's Telegraph must precede the UK 'telegraph' substring.
+  // Kolkata's and Sydney's Telegraphs must precede the UK 'telegraph'.
   ('the telegraph india', 'telegraphindia.com'),
+  ('daily telegraph', 'dailytelegraph.com.au'),
   ('telegraph', 'telegraph.co.uk'),
   ('euronews', 'euronews.com'),
   // Malaysia's NST must precede the bare 'straits times' substring.
@@ -282,6 +286,8 @@ const List<(String, String)> _sourceDomains = [
   ('novaya gazeta', 'novayagazeta.eu'),
   ('rio times', 'riotimesonline.com'),
   ('city paper', 'thecitypaperbogota.com'),
+  // NZ's Rotorua paper must precede Nigeria's bare 'daily post'.
+  ('rotorua daily post', 'nzherald.co.nz'),
   ('daily post', 'dailypost.ng'),
   ('daily trust', 'dailytrust.com'),
   ('channels tv', 'channelstv.com'),
@@ -556,6 +562,42 @@ const List<(String, String)> _sourceDomains = [
   ('fijivillage', 'fijivillage.com'),
   ('png post-courier', 'postcourier.com.pg'),
   ('inside png', 'insidepng.com'),
+  // AU/NZ depth pass (2026-08-02). Guardian/Independent/Sky News/Telegraph
+  // variants and Rotorua Daily Post live higher up next to the substrings
+  // they must beat; Times-ish keys sit before the final 'time' fallback.
+  ('the west australian', 'thewest.com.au'),
+  ('the canberra times', 'canberratimes.com.au'),
+  ('herald sun', 'heraldsun.com.au'),
+  ('the courier-mail', 'couriermail.com.au'),
+  ('geelong advertiser', 'geelongadvertiser.com.au'),
+  ('the advertiser', 'adelaidenow.com.au'),
+  ('illawarra mercury', 'illawarramercury.com.au'),
+  ('the mercury', 'themercury.com.au'),
+  ('nt news', 'ntnews.com.au'),
+  ('gold coast bulletin', 'goldcoastbulletin.com.au'),
+  ('the land', 'theland.com.au'),
+  ('sbs news', 'sbs.com.au'),
+  ('nitv', 'sbs.com.au'),
+  ('9news', '9news.com.au'),
+  ('7news', '7news.com.au'),
+  ('news.com.au', 'news.com.au'),
+  ('the new daily', 'thenewdaily.com.au'),
+  ('crikey', 'crikey.com.au'),
+  ('the conversation', 'theconversation.com'),
+  ('the saturday paper', 'thesaturdaypaper.com.au'),
+  ('the monthly', 'themonthly.com.au'),
+  ('aap', 'aap.com.au'),
+  ('otago daily times', 'odt.co.nz'),
+  ('1news', '1news.co.nz'),
+  ('newstalk zb', 'newstalkzb.co.nz'),
+  // Ghana's Citi Newsroom must keep its own icon ahead of NZ 'newsroom'.
+  ('citi newsroom', 'citinewsroom.com'),
+  ('newsroom', 'newsroom.co.nz'),
+  ('the spinoff', 'thespinoff.co.nz'),
+  ('businessdesk', 'businessdesk.co.nz'),
+  ('interest.co.nz', 'interest.co.nz'),
+  ('the northern advocate', 'nzherald.co.nz'),
+  ("hawke's bay today", 'nzherald.co.nz'),
   // 'time' must stay LAST — it's a substring of every "* Times" source above.
   ('time', 'time.com'),
 ];
