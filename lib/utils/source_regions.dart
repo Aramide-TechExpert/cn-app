@@ -641,23 +641,87 @@ const Map<String, SourceInfo> _sources = {
   'lokmat': SourceInfo('India', 'India', _n, local: true),
   'gujarat samachar': SourceInfo('India', 'India', _n, local: true),
   'punjab kesari': SourceInfo('India', 'India', _n, local: true),
-  // ── Asia-Pacific (nationals) ──
-  'south china morning post': SourceInfo('Hong Kong', 'Asia-Pacific', _n),
+  // ── Asia-Pacific (nationals) — full roster 2026-08-02 ──
+  // Pan-regional tier (country == segment: serves every AP country)
+  'nikkei asia': SourceInfo('Asia-Pacific', 'Asia-Pacific', _n),
+  'the diplomat': SourceInfo('Asia-Pacific', 'Asia-Pacific', _n),
+  'asia times': SourceInfo('Asia-Pacific', 'Asia-Pacific', _n),
+  // Japan
   'the japan times': SourceInfo('Japan', 'Asia-Pacific', _n),
+  'the asahi shimbun': SourceInfo('Japan', 'Asia-Pacific', _n),
+  'the japan news': SourceInfo('Japan', 'Asia-Pacific', _n),
+  'the mainichi': SourceInfo('Japan', 'Asia-Pacific', _n),
+  'kyodo news': SourceInfo('Japan', 'Asia-Pacific', _n),
+  'nhk world': SourceInfo('Japan', 'Asia-Pacific', _n),
+  // South Korea
+  'the korea herald': SourceInfo('South Korea', 'Asia-Pacific', _n),
+  'yonhap': SourceInfo('South Korea', 'Asia-Pacific', _n),
+  'the korea times': SourceInfo('South Korea', 'Asia-Pacific', _n),
+  'hankyoreh': SourceInfo('South Korea', 'Asia-Pacific', _n, local: true),
+  // China
+  'xinhua': SourceInfo('China', 'Asia-Pacific', _n),
+  "people's daily": SourceInfo('China', 'Asia-Pacific', _n),
+  'global times': SourceInfo('China', 'Asia-Pacific', _n),
+  'china daily': SourceInfo('China', 'Asia-Pacific', _n),
+  // Hong Kong
+  'south china morning post': SourceInfo('Hong Kong', 'Asia-Pacific', _n),
+  'hong kong free press': SourceInfo('Hong Kong', 'Asia-Pacific', _n),
+  // Taiwan
+  'focus taiwan': SourceInfo('Taiwan', 'Asia-Pacific', _n),
+  'taipei times': SourceInfo('Taiwan', 'Asia-Pacific', _n),
+  'taiwan news': SourceInfo('Taiwan', 'Asia-Pacific', _n),
+  'united daily news': SourceInfo('Taiwan', 'Asia-Pacific', _n, local: true),
+  // Singapore
   'the straits times': SourceInfo('Singapore', 'Asia-Pacific', _n),
   'cna': SourceInfo('Singapore', 'Asia-Pacific', _n),
-  'the korea herald': SourceInfo('South Korea', 'Asia-Pacific', _n),
-  'bangkok post': SourceInfo('Thailand', 'Asia-Pacific', _n),
-  'philippine daily inquirer': SourceInfo('Philippines', 'Asia-Pacific', _n),
-  'vnexpress': SourceInfo('Vietnam', 'Asia-Pacific', _n),
-  'dawn': SourceInfo('Pakistan', 'Asia-Pacific', _n),
-  'the daily star': SourceInfo('Bangladesh', 'Asia-Pacific', _n),
+  'the business times': SourceInfo('Singapore', 'Asia-Pacific', _n),
+  'mothership': SourceInfo('Singapore', 'Asia-Pacific', _n),
+  // Malaysia
   'malay mail': SourceInfo('Malaysia', 'Asia-Pacific', _n),
+  'the star malaysia': SourceInfo('Malaysia', 'Asia-Pacific', _n),
+  'malaysiakini': SourceInfo('Malaysia', 'Asia-Pacific', _n),
+  'new straits times': SourceInfo('Malaysia', 'Asia-Pacific', _n),
+  'bernama': SourceInfo('Malaysia', 'Asia-Pacific', _n),
+  // Indonesia
   'antara news': SourceInfo('Indonesia', 'Asia-Pacific', _n),
-  // ── Australia & NZ ──
+  'the jakarta post': SourceInfo('Indonesia', 'Asia-Pacific', _n),
+  'tempo': SourceInfo('Indonesia', 'Asia-Pacific', _n),
+  'kompas': SourceInfo('Indonesia', 'Asia-Pacific', _n, local: true),
+  // Philippines
+  'philippine daily inquirer': SourceInfo('Philippines', 'Asia-Pacific', _n),
+  'rappler': SourceInfo('Philippines', 'Asia-Pacific', _n),
+  'the philippine star': SourceInfo('Philippines', 'Asia-Pacific', _n),
+  'gma news': SourceInfo('Philippines', 'Asia-Pacific', _n),
+  // Thailand
+  'bangkok post': SourceInfo('Thailand', 'Asia-Pacific', _n),
+  'khaosod english': SourceInfo('Thailand', 'Asia-Pacific', _n),
+  'the thaiger': SourceInfo('Thailand', 'Asia-Pacific', _n),
+  // Vietnam
+  'vnexpress': SourceInfo('Vietnam', 'Asia-Pacific', _n),
+  'vietnamnet': SourceInfo('Vietnam', 'Asia-Pacific', _n),
+  'vietnam plus': SourceInfo('Vietnam', 'Asia-Pacific', _n),
+  // Pakistan
+  'dawn': SourceInfo('Pakistan', 'Asia-Pacific', _n),
+  'the express tribune': SourceInfo('Pakistan', 'Asia-Pacific', _n),
+  // Bangladesh
+  'the daily star': SourceInfo('Bangladesh', 'Asia-Pacific', _n),
+  'prothom alo': SourceInfo('Bangladesh', 'Asia-Pacific', _n, local: true),
+  // Sri Lanka
+  'daily mirror': SourceInfo('Sri Lanka', 'Asia-Pacific', _n),
+  'ada derana': SourceInfo('Sri Lanka', 'Asia-Pacific', _n),
+  // ── Australia & NZ + Pacific — full roster 2026-08-02 ──
   'sydney morning herald': SourceInfo('Australia', 'Australia & NZ', _n),
   'abc australia': SourceInfo('Australia', 'Australia & NZ', _n),
+  'the australian': SourceInfo('Australia', 'Australia & NZ', _n),
+  'the age': SourceInfo('Australia', 'Australia & NZ', _n),
+  'australian financial review': SourceInfo('Australia', 'Australia & NZ', _n),
   'rnz': SourceInfo('New Zealand', 'Australia & NZ', _n),
+  'new zealand herald': SourceInfo('New Zealand', 'Australia & NZ', _n),
+  'stuff': SourceInfo('New Zealand', 'Australia & NZ', _n),
+  'fiji sun': SourceInfo('Fiji', 'Australia & NZ', _n),
+  'fijivillage': SourceInfo('Fiji', 'Australia & NZ', _n),
+  'png post-courier': SourceInfo('Papua New Guinea', 'Australia & NZ', _n),
+  'inside png': SourceInfo('Papua New Guinea', 'Australia & NZ', _n),
   // ── Latin America ──
   'telemundo': SourceInfo('Mexico', 'Latin America', _n),
   'mexico news daily': SourceInfo('Mexico', 'Latin America', _n),
@@ -693,11 +757,11 @@ const Map<String, List<String>> segmentCountries = {
     'Palestine', 'Turkey', 'Iran',
   ],
   'Asia-Pacific': [
-    'Japan', 'South Korea', 'Singapore', 'Hong Kong', 'Thailand',
-    'Philippines', 'Indonesia', 'Malaysia', 'Vietnam', 'Pakistan',
-    'Bangladesh',
+    'Japan', 'South Korea', 'China', 'Hong Kong', 'Taiwan', 'Singapore',
+    'Malaysia', 'Indonesia', 'Philippines', 'Thailand', 'Vietnam',
+    'Pakistan', 'Bangladesh', 'Sri Lanka',
   ],
-  'Australia & NZ': ['Australia', 'New Zealand'],
+  'Australia & NZ': ['Australia', 'New Zealand', 'Fiji', 'Papua New Guinea'],
   'Latin America': ['Mexico', 'Argentina', 'Brazil', 'Colombia', 'Uruguay'],
 };
 
@@ -751,6 +815,7 @@ const Map<String, String> countryToSegment = {
   'Nepal': 'Asia-Pacific',
   // Australia & NZ
   'Australia': 'Australia & NZ', 'New Zealand': 'Australia & NZ',
+  'Fiji': 'Australia & NZ', 'Papua New Guinea': 'Australia & NZ',
   // Latin America
   'Mexico': 'Latin America', 'Argentina': 'Latin America',
   'Brazil': 'Latin America', 'Colombia': 'Latin America',
@@ -790,7 +855,8 @@ const Map<String, String> isoToCountry = {
   'CN': 'China', 'TW': 'Taiwan', 'TH': 'Thailand', 'PH': 'Philippines',
   'ID': 'Indonesia', 'MY': 'Malaysia', 'VN': 'Vietnam', 'PK': 'Pakistan',
   'BD': 'Bangladesh', 'LK': 'Sri Lanka', 'NP': 'Nepal',
-  'AU': 'Australia', 'NZ': 'New Zealand',
+  'AU': 'Australia', 'NZ': 'New Zealand', 'FJ': 'Fiji',
+  'PG': 'Papua New Guinea',
   'MX': 'Mexico', 'AR': 'Argentina', 'BR': 'Brazil', 'CO': 'Colombia',
   'UY': 'Uruguay', 'CL': 'Chile', 'PE': 'Peru', 'EC': 'Ecuador',
   'VE': 'Venezuela', 'BO': 'Bolivia', 'PY': 'Paraguay',
