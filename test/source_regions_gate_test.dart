@@ -137,6 +137,31 @@ void main() {
     }
   });
 
+  test('worldwide shows exactly the curated flagship tier', () {
+    final flagships = worldwideFlagshipsForTest;
+    // Every flagship key is a real classified national, English (not
+    // local), and never from Africa (standing decision).
+    for (final key in flagships) {
+      final info = sources[key];
+      expect(info, isNotNull, reason: 'flagship "$key" not in classifier');
+      expect(info!.kind, SourceKind.national,
+          reason: 'flagship "$key" is not a national');
+      expect(info.local, isFalse, reason: 'flagship "$key" is local-language');
+      expect(info.segment, isNot('Africa'),
+          reason: 'flagship "$key" is from Africa');
+    }
+    // The gate admits a national on Worldwide IFF it is a flagship — for
+    // signed-out users and explicit Worldwide users alike.
+    for (final meta in [null, metaFor('Worldwide')]) {
+      nationals.forEach((name, info) {
+        expect(sourceVisible(name, meta), flagships.contains(name),
+            reason: flagships.contains(name)
+                ? 'flagship "$name" hidden on Worldwide'
+                : 'LEAK: non-flagship "$name" visible on Worldwide');
+      });
+    }
+  });
+
   test('golden scenarios', () {
     // Accra user: Ghana + pan-Africa, nothing Nigerian or Filipino.
     final ghana = metaFor('Africa', 'Ghana');
@@ -162,11 +187,17 @@ void main() {
     expect(sourceVisible('Telesur', ar), isTrue); // pan tier
     expect(sourceVisible('O Globo', ar), isFalse);
 
-    // Worldwide user: English nationals yes, locals and Africa gated.
+    // Worldwide user: curated flagships only — high-profile nationals yes,
+    // city/regional papers, locals, and Africa gated (decision 2026-08-04).
     final world = metaFor('Worldwide');
     expect(sourceVisible('BBC News', world), isTrue);
+    expect(sourceVisible('Financial Times', world), isTrue);
+    expect(sourceVisible('South China Morning Post', world), isTrue);
     expect(sourceVisible('Okaz', world), isFalse);
     expect(sourceVisible('Punch', world), isFalse);
+    expect(sourceVisible('Oxford Mail', world), isFalse);
+    expect(sourceVisible('Windsor Star', world), isFalse);
+    expect(sourceVisible('Geelong Advertiser', world), isFalse);
 
     // Globals pass for everyone, everywhere.
     for (final meta in [null, world, ghana, uae, ar]) {

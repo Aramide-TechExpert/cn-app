@@ -13,7 +13,8 @@ final videoPoolProvider = FutureProvider.autoDispose<List<Article>>((ref) async 
   final page = await ref.read(apiClientProvider).feed(
       limit: 24,
       video: true,
-      region: activeSegment(ref.read(currentUserProvider)?.userMetadata));
+      region: activeSegment(ref.read(currentUserProvider)?.userMetadata) ??
+          'Worldwide');
   final playable = applyRegionPreference(
       ref, page.items.where((a) => a.hasPlayableVideo && a.hasImage).toList());
   return interleaveBySource(playable, flush: true).emitted;
@@ -101,7 +102,11 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
             sort: _filters.sort == 'latest' ? null : _filters.sort,
             since: _filters.since,
             video: _filters.video,
-            region: activeSegment(meta),
+            // Explicit source pick is already exact — no region narrowing
+            // (the picker only offers gate-visible sources anyway).
+            region: _filters.source != null
+                ? null
+                : (activeSegment(meta) ?? 'Worldwide'),
           );
       next = page.nextCursor;
       _cursor = page.nextCursor;

@@ -46,9 +46,11 @@ class FeedController extends AsyncNotifier<List<Article>> {
     final collected = <Article>[];
     var next = cursor;
     // Server-side region pre-filter (defense in depth + denser pages);
-    // the strict per-country gate still applies client-side.
+    // the strict per-country gate still applies client-side. No segment
+    // means the curated Worldwide tier (globals + flagships), not everything.
     final region =
-        activeSegment(ref.read(currentUserProvider)?.userMetadata);
+        activeSegment(ref.read(currentUserProvider)?.userMetadata) ??
+            'Worldwide';
     for (var hop = 0; hop < 5; hop++) {
       final page = await ref
           .read(apiClientProvider)

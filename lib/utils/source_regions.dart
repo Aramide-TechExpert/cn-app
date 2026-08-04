@@ -865,6 +865,10 @@ SourceInfo? sourceInfo(String source) => _sources[source.toLowerCase()];
 @visibleForTesting
 Map<String, SourceInfo> get classifiedSourcesForTest => _sources;
 
+/// Worldwide flagship keys, exposed for the gate regression test only.
+@visibleForTesting
+Set<String> get worldwideFlagshipsForTest => _worldwideFlagships;
+
 /// Countries offered for country-level localization inside a segment (only
 /// countries we actually have national outlets for). Single-country segments
 /// (US, UK, Canada, India) need no picker.
@@ -1023,8 +1027,8 @@ String? activeCountry(Map<String, dynamic>? meta) {
 /// STRICT source visibility:
 /// - global + topical + unknown sources: visible to everyone
 /// - national outlets: visible ONLY to users on their segment; with no
-///   segment (worldwide / signed out) every national except Africa's is
-///   visible (Africa stays fully gated per the standing decision)
+///   segment (worldwide / signed out) only the curated flagship tier shows
+///   (user decision 2026-08-04: Worldwide = globals + flagships, no Africa)
 /// - a picked country narrows further: ONLY that country's nationals show
 ///   (single-country roster, user decision 2026-07-18); "All <segment>"
 ///   (no country) keeps every national in the segment
@@ -1035,11 +1039,54 @@ const Map<String, String> _secondSegment = {'Egypt': 'Middle East'};
 bool _inSegment(SourceInfo i, String segment) =>
     i.segment == segment || _secondSegment[i.country] == segment;
 
+/// Curated flagship nationals shown on the Worldwide/default feed — the
+/// reputable, high-profile tier. Mirror of WORLDWIDE_FLAGSHIPS in the
+/// backend's national-sources.ts (which lists only region-tagged names;
+/// this set also carries the US majors that ingest untagged but are
+/// classified as nationals here). Keys are classifier keys (lowercase).
+/// No Africa outlets, no local-language outlets — the gate test enforces.
+const Set<String> _worldwideFlagships = {
+  // United States
+  'cnn', 'fox news', 'abc news', 'cbs news', 'nbc news', 'new york times',
+  'washington post', 'la times', 'npr news', 'npr business',
+  'npr technology', 'nyt technology', 'time', 'wall street journal',
+  'usa today', 'politico', 'the atlantic', 'axios', 'pbs newshour',
+  'propublica',
+  // United Kingdom
+  'bbc news', 'bbc business', 'bbc technology', 'financial times',
+  'the economist', 'the times', 'the telegraph', 'sky news',
+  'the independent', 'the guardian business', 'the guardian tech',
+  // Canada
+  'cbc news', 'the globe and mail', 'national post', 'toronto star',
+  'ctv news', 'global news',
+  // Europe
+  'politico europe', 'euractiv', 'le monde', 'el país',
+  'spiegel international', 'the irish times', 'kyiv independent',
+  'the moscow times',
+  // Middle East
+  'al arabiya', 'asharq al-awsat', 'al-monitor', 'middle east eye',
+  'arab news', 'the national', 'gulf news', 'haaretz', 'times of israel',
+  'the jerusalem post', 'trt world',
+  // India
+  'times of india', 'the hindu', 'hindustan times', 'the indian express',
+  'ndtv', 'india today', 'the economic times',
+  // Asia-Pacific
+  'nikkei asia', 'the diplomat', 'asia times', 'south china morning post',
+  'the japan times', 'the straits times', 'cna', 'the korea herald',
+  'bangkok post', 'dawn', 'the jakarta post', 'kyodo news',
+  // Australia & NZ
+  'abc australia', 'sydney morning herald', 'the age', 'the australian',
+  'guardian australia', 'australian financial review', 'news.com.au',
+  'new zealand herald', 'stuff', 'rnz',
+  // Latin America
+  'buenos aires times', 'mexico news daily', 'rio times', 'mercopress',
+};
+
 bool sourceVisible(String source, Map<String, dynamic>? meta) {
   final i = sourceInfo(source);
   if (i == null || i.kind != SourceKind.national) return true;
   final segment = activeSegment(meta);
-  if (segment == null) return i.segment != 'Africa' && !i.local;
+  if (segment == null) return _worldwideFlagships.contains(source.toLowerCase());
   if (!_inSegment(i, segment)) return false;
   final country = activeCountry(meta);
   // No country picked: English nationals only — except single-country
