@@ -159,10 +159,19 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
     final auth = ref.read(authServiceProvider);
     final followed =
         ref.read(interestsControllerProvider).valueOrNull ?? const <String>{};
+    // Enforce the Location preference on favorites: picks made under an
+    // earlier location must not survive a change (the picker never shows
+    // them, but the saved list has to match what the gate allows too).
+    final gateMeta = <String, dynamic>{
+      'news_scope': 'region',
+      'preferred_region': _segment,
+      if (_country != null) 'preferred_country': _country,
+    };
     try {
       await auth.updateProfile({
         'display_name': _name.text.trim(),
-        'preferred_sources': _pickedSources.toList(),
+        'preferred_sources':
+            _pickedSources.where((s) => sourceVisible(s, gateMeta)).toList(),
         'alerts_breaking': _breakingWatchlist,
         'alerts_high_impact_only': _highImpactOnly,
         'news_scope': _segment == 'Worldwide' ? 'worldwide' : 'region',
@@ -424,6 +433,26 @@ class _ProfileStep extends ConsumerWidget {
 }
 
 // ── Step 2: interests ───────────────────────────────────────────────────────
+/// Topic icon per category slug — gives the tile grid the same leading-glyph
+/// rhythm as the Location step's emoji tiles.
+IconData _topicIcon(String slug) => switch (slug) {
+      'ai' => Icons.auto_awesome,
+      'world-news' => Icons.public,
+      'politics' => Icons.account_balance,
+      'business' => Icons.business_center,
+      'finance' => Icons.trending_up,
+      'technology' => Icons.memory,
+      'science' => Icons.science,
+      'health' => Icons.monitor_heart,
+      'climate' => Icons.eco,
+      'sports' => Icons.sports_soccer,
+      'entertainment' => Icons.theaters,
+      'startups' => Icons.rocket_launch,
+      'cybersecurity' => Icons.security,
+      'general-news' => Icons.newspaper,
+      _ => Icons.tag,
+    };
+
 class _InterestsStep extends ConsumerWidget {
   const _InterestsStep();
 
@@ -449,42 +478,21 @@ class _InterestsStep extends ConsumerWidget {
         data: (list) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Wrap(
-              spacing: AppSpace.sm,
-              runSpacing: AppSpace.sm,
-              children: list.map((cat) {
-                final on = followed.contains(cat.slug);
-                return InkWell(
-                  borderRadius: BorderRadius.circular(999),
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    ref
-                        .read(interestsControllerProvider.notifier)
-                        .toggle(cat.slug);
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpace.lg, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: on ? c.brand : c.bgInset,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      if (on) ...[
-                        const Icon(Icons.check,
-                            size: 15, color: Colors.white),
-                        const SizedBox(width: 5),
-                      ],
-                      Text(cat.name,
-                          style: AppText.callout.copyWith(
-                              color: on ? c.onBrand : c.text,
-                              fontWeight: FontWeight.w600)),
-                    ]),
-                  ),
-                );
-              }).toList(),
-            ),
+            _TileGrid(children: [
+              for (final cat in list)
+                _PickTile(
+                  label: cat.name,
+                  leading: Icon(_topicIcon(cat.slug),
+                      size: 20,
+                      color: followed.contains(cat.slug)
+                          ? c.brand
+                          : c.textSecondary),
+                  selected: followed.contains(cat.slug),
+                  onTap: () => ref
+                      .read(interestsControllerProvider.notifier)
+                      .toggle(cat.slug),
+                ),
+            ]),
             const SizedBox(height: AppSpace.lg),
             Text(
               followed.length >= 3
@@ -549,26 +557,15 @@ class _RegionStep extends StatelessWidget {
             label: Text(detecting ? 'Detecting…' : 'Use my location'),
           ),
           const SizedBox(height: AppSpace.lg),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: AppSpace.sm,
-            crossAxisSpacing: AppSpace.sm,
-            childAspectRatio: 2.6,
-            children: [
-              for (final (label, emoji) in newsSegments)
-                _SegmentTile(
-                  label: label,
-                  emoji: emoji,
-                  selected: segment == label,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    onSelect(label);
-                  },
-                ),
-            ],
-          ),
+          _TileGrid(children: [
+            for (final (label, emoji) in newsSegments)
+              _PickTile(
+                label: label,
+                leading: Text(emoji, style: const TextStyle(fontSize: 22)),
+                selected: segment == label,
+                onTap: () => onSelect(label),
+              ),
+          ]),
           if (countries != null) ...[
             const SizedBox(height: AppSpace.xl),
             Text('Your country',
@@ -637,15 +634,18 @@ class _CountryChip extends StatelessWidget {
   }
 }
 
-class _SegmentTile extends StatelessWidget {
-  const _SegmentTile({
+/// The Location step's tile look, shared by every picker in the wizard
+/// (regions, topics, publishers): tonal 2-column tile with a leading
+/// emoji/icon/favicon, the label, and a check circle when selected.
+class _PickTile extends StatelessWidget {
+  const _PickTile({
     required this.label,
-    required this.emoji,
+    required this.leading,
     required this.selected,
     required this.onTap,
   });
   final String label;
-  final String emoji;
+  final Widget leading;
   final bool selected;
   final VoidCallback onTap;
 
@@ -654,7 +654,10 @@ class _SegmentTile extends StatelessWidget {
     final c = context.colors;
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: AppSpace.md),
@@ -663,7 +666,7 @@ class _SegmentTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(children: [
-          Text(emoji, style: const TextStyle(fontSize: 22)),
+          leading,
           const SizedBox(width: AppSpace.sm),
           Expanded(
             child: Text(label,
@@ -676,6 +679,26 @@ class _SegmentTile extends StatelessWidget {
           if (selected) Icon(Icons.check_circle, size: 18, color: c.brand),
         ]),
       ),
+    );
+  }
+}
+
+/// 2-column tile grid — the Location step's arrangement, reused by the
+/// Topics and Publishers steps for a consistent wizard.
+class _TileGrid extends StatelessWidget {
+  const _TileGrid({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: AppSpace.sm,
+      crossAxisSpacing: AppSpace.sm,
+      childAspectRatio: 2.6,
+      children: children,
     );
   }
 }
@@ -706,35 +729,6 @@ class _SourcesStepState extends ConsumerState<_SourcesStep> {
     super.dispose();
   }
 
-  Widget _chip(BuildContext context, String s) {
-    final c = context.colors;
-    final on = widget.picked.contains(s);
-    return InkWell(
-      borderRadius: BorderRadius.circular(999),
-      onTap: () {
-        HapticFeedback.selectionClick();
-        widget.onToggle(s);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding:
-            const EdgeInsets.symmetric(horizontal: AppSpace.md, vertical: 8),
-        decoration: BoxDecoration(
-          color: on ? c.brand : c.bgInset,
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          SourceFavicon(url: null, source: s, size: 16),
-          const SizedBox(width: 6),
-          Text(s,
-              style: AppText.callout.copyWith(
-                  color: on ? c.onBrand : c.text,
-                  fontWeight: FontWeight.w600)),
-        ]),
-      ),
-    );
-  }
-
   Widget _group(BuildContext context, String label, List<String> names) {
     final c = context.colors;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -742,11 +736,15 @@ class _SourcesStepState extends ConsumerState<_SourcesStep> {
           style: AppText.micro
               .copyWith(color: c.textSecondary, letterSpacing: 1.2)),
       const SizedBox(height: AppSpace.sm),
-      Wrap(
-        spacing: AppSpace.sm,
-        runSpacing: AppSpace.sm,
-        children: names.map((s) => _chip(context, s)).toList(),
-      ),
+      _TileGrid(children: [
+        for (final s in names)
+          _PickTile(
+            label: s,
+            leading: SourceFavicon(url: null, source: s, size: 20),
+            selected: widget.picked.contains(s),
+            onTap: () => widget.onToggle(s),
+          ),
+      ]),
     ]);
   }
 
