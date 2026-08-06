@@ -109,6 +109,13 @@ class ApiClient {
     return list.map((e) => e.toString()).where((s) => s.isNotEmpty).toList();
   }
 
+  /// Classifier deltas from the Control panel (custom sources, region
+  /// re-tags, flagship forces) — merged over the built-in gate at startup.
+  Future<Map<String, dynamic>> sourceMap() async {
+    final res = await _dio.get<Map<String, dynamic>>('/source-map');
+    return res.data ?? const {};
+  }
+
   /// Latest daily briefing for a region edition (server falls back to
   /// Worldwide when that region has none yet).
   Future<DailyBriefing?> briefing({String? region}) async {

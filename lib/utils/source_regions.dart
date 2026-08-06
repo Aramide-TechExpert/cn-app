@@ -859,7 +859,53 @@ const Map<String, SourceInfo> _sources = {
   'diario libre': SourceInfo('Dominican Republic', 'Latin America', _n, local: true),
 };
 
-SourceInfo? sourceInfo(String source) => _sources[source.toLowerCase()];
+// ── Served classifier overlay ───────────────────────────────────────────────
+// The Clustez Control panel can add sources / re-tag regions / force
+// flagships after this app shipped. `/api/v1/source-map` serves those
+// DELTAS; applyServedSourceMap merges them over the compiled-in classifier
+// at startup. Offline or on failure the built-in map alone applies.
+Map<String, SourceInfo> _overlay = {};
+Set<String> _flagshipAdd = {};
+Set<String> _flagshipRemove = {};
+
+void applyServedSourceMap(Map<String, dynamic> payload) {
+  final overlay = <String, SourceInfo>{};
+  final rawMap = payload['map'];
+  if (rawMap is Map) {
+    rawMap.forEach((key, value) {
+      if (key is! String || value is! Map) return;
+      final segment = value['segment'];
+      final country = value['country'];
+      if (segment is! String || country is! String) return;
+      final kind = switch (value['kind']) {
+        'global' => SourceKind.global,
+        'topical' => SourceKind.topical,
+        _ => SourceKind.national,
+      };
+      overlay[key.toLowerCase()] =
+          SourceInfo(country, segment, kind, local: value['local'] == true);
+    });
+  }
+  _overlay = overlay;
+  _flagshipAdd = {
+    for (final e in (payload['flagshipsAdd'] as List? ?? const []))
+      if (e is String) e.toLowerCase(),
+  };
+  _flagshipRemove = {
+    for (final e in (payload['flagshipsRemove'] as List? ?? const []))
+      if (e is String) e.toLowerCase(),
+  };
+}
+
+bool _isWorldwideFlagship(String key) {
+  if (_flagshipRemove.contains(key)) return false;
+  return _worldwideFlagships.contains(key) || _flagshipAdd.contains(key);
+}
+
+SourceInfo? sourceInfo(String source) {
+  final key = source.toLowerCase();
+  return _overlay[key] ?? _sources[key];
+}
 
 /// Full classifier map, exposed for the leakage regression test only.
 @visibleForTesting
@@ -1086,7 +1132,7 @@ bool sourceVisible(String source, Map<String, dynamic>? meta) {
   final i = sourceInfo(source);
   if (i == null || i.kind != SourceKind.national) return true;
   final segment = activeSegment(meta);
-  if (segment == null) return _worldwideFlagships.contains(source.toLowerCase());
+  if (segment == null) return _isWorldwideFlagship(source.toLowerCase());
   if (!_inSegment(i, segment)) return false;
   final country = activeCountry(meta);
   // No country picked: English nationals only — except single-country

@@ -4,7 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
 import 'config.dart';
+import 'data/api_client.dart';
 import 'data/reading_history.dart';
+import 'utils/source_regions.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +21,13 @@ Future<void> main() async {
       anonKey: Config.supabaseAnonKey,
     );
   }
+
+  // Merge Control-panel classifier deltas over the built-in gate — fire
+  // and forget; offline keeps the compiled-in classifier.
+  ApiClient()
+      .sourceMap()
+      .then(applyServedSourceMap)
+      .catchError((_) {});
 
   runApp(const ProviderScope(child: ClustezApp()));
 }
