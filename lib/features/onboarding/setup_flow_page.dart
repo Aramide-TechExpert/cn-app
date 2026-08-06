@@ -219,7 +219,8 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
       backgroundColor: c.bg,
       body: SafeArea(
         child: Column(children: [
-          // ── Header: back · progress · skip.
+          // ── Header: back · skip (the step kicker inside each page carries
+          // the "Step N" context; no progress bar).
           Padding(
             padding: const EdgeInsets.fromLTRB(
                 AppSpace.sm, AppSpace.sm, AppSpace.sm, 0),
@@ -231,17 +232,7 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
                     size: 20,
                     color: c.textSecondary),
               ),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: (_step + 1) / _steps,
-                    minHeight: 5,
-                    backgroundColor: c.bgInset,
-                    valueColor: AlwaysStoppedAnimation(c.brand),
-                  ),
-                ),
-              ),
+              const Spacer(),
               TextButton(
                 onPressed:
                     _finishing ? null : (last ? _finish : () => _goTo(_step + 1)),
