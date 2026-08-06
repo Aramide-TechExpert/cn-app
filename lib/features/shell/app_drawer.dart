@@ -32,9 +32,8 @@ class AppDrawer extends ConsumerWidget {
 
     return Drawer(
       backgroundColor: c.bg,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.horizontal(right: Radius.circular(24)),
-      ),
+      // Square right edge — no top/bottom corner curve.
+      shape: const RoundedRectangleBorder(),
       child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(
