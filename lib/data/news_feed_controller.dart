@@ -28,6 +28,12 @@ final sourcesProvider = FutureProvider.autoDispose<List<String>>((ref) async {
   return names.where((s) => sourceVisible(s, meta)).toList();
 });
 
+/// The FULL ingest roster (ungated — callers gate with sourceVisible against
+/// their own location pick). Backs "Favorite your publishers", where the
+/// in-flow region choice must filter live before it's ever saved.
+final publishersProvider = FutureProvider.autoDispose<List<String>>(
+    (ref) => ref.read(apiClientProvider).publishers());
+
 /// Active filters for the News Feed (Discover). Mirrors the web feed filter bar:
 /// category, sort, and impact level. Null = "All".
 class NewsFilters {

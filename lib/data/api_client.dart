@@ -100,6 +100,15 @@ class ApiClient {
         .toList();
   }
 
+  /// The FULL ingest roster (every publisher Clustez carries), not just the
+  /// sources currently in the corpus — for pickers like "Favorite your
+  /// publishers" that must offer a location's complete roster.
+  Future<List<String>> publishers() async {
+    final res = await _dio.get<Map<String, dynamic>>('/publishers');
+    final list = (res.data?['publishers'] as List?) ?? const [];
+    return list.map((e) => e.toString()).where((s) => s.isNotEmpty).toList();
+  }
+
   /// Latest daily briefing for a region edition (server falls back to
   /// Worldwide when that region has none yet).
   Future<DailyBriefing?> briefing({String? region}) async {

@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/auth_controller.dart';
-import '../../data/news_feed_controller.dart' show sourcesProvider;
+import '../../data/news_feed_controller.dart' show publishersProvider;
 import '../../data/personalization_controller.dart';
 import '../../data/settings_controller.dart';
 import '../../theme/app_theme.dart';
@@ -265,6 +265,8 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
                       _pickedSources.contains(s)
                           ? _pickedSources.remove(s)
                           : _pickedSources.add(s)),
+                  segment: _segment,
+                  country: _country,
                 ),
                 _AlertsStep(
                   breaking: _breakingWatchlist,
@@ -679,59 +681,158 @@ class _SegmentTile extends StatelessWidget {
 }
 
 // ── Step 4: sources ─────────────────────────────────────────────────────────
-class _SourcesStep extends ConsumerWidget {
-  const _SourcesStep({required this.picked, required this.onToggle});
+class _SourcesStep extends ConsumerStatefulWidget {
+  const _SourcesStep({
+    required this.picked,
+    required this.onToggle,
+    required this.segment,
+    required this.country,
+  });
   final Set<String> picked;
   final ValueChanged<String> onToggle;
+  final String segment; // the Location step's LIVE pick, not saved metadata
+  final String? country;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SourcesStep> createState() => _SourcesStepState();
+}
+
+class _SourcesStepState extends ConsumerState<_SourcesStep> {
+  final _search = TextEditingController();
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  Widget _chip(BuildContext context, String s) {
     final c = context.colors;
-    final sources = ref.watch(sourcesProvider);
+    final on = widget.picked.contains(s);
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        widget.onToggle(s);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding:
+            const EdgeInsets.symmetric(horizontal: AppSpace.md, vertical: 8),
+        decoration: BoxDecoration(
+          color: on ? c.brand : c.bgInset,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          SourceFavicon(url: null, source: s, size: 16),
+          const SizedBox(width: 6),
+          Text(s,
+              style: AppText.callout.copyWith(
+                  color: on ? c.onBrand : c.text,
+                  fontWeight: FontWeight.w600)),
+        ]),
+      ),
+    );
+  }
+
+  Widget _group(BuildContext context, String label, List<String> names) {
+    final c = context.colors;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label.toUpperCase(),
+          style: AppText.micro
+              .copyWith(color: c.textSecondary, letterSpacing: 1.2)),
+      const SizedBox(height: AppSpace.sm),
+      Wrap(
+        spacing: AppSpace.sm,
+        runSpacing: AppSpace.sm,
+        children: names.map((s) => _chip(context, s)).toList(),
+      ),
+    ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final publishers = ref.watch(publishersProvider);
+    // The gate sees the wizard's live Location pick, so the roster reacts
+    // the moment the previous step changes — before anything is saved.
+    final meta = <String, dynamic>{
+      'news_scope': 'region',
+      'preferred_region': widget.segment,
+      if (widget.country != null) 'preferred_country': widget.country,
+    };
     return _Step(
       icon: Icons.newspaper_outlined,
       kicker: 'Step 4 · Sources',
       title: 'Favorite your publishers',
-      subtitle:
-          'Choose the outlets you trust most. Your feed gets tuned to them.',
-      child: sources.when(
+      subtitle: widget.segment == 'Worldwide'
+          ? 'Choose the outlets you trust most. Your feed gets tuned to them.'
+          : 'Publishers for ${widget.country ?? widget.segment} plus the '
+              'global desks. Your feed gets tuned to them.',
+      child: publishers.when(
         loading: () => const Padding(
           padding: EdgeInsets.all(AppSpace.xl),
           child: Center(child: CircularProgressIndicator.adaptive()),
         ),
-        error: (_, __) => Text("Couldn't load sources.",
+        error: (_, __) => Text("Couldn't load publishers.",
             style: AppText.body.copyWith(color: c.textSecondary)),
-        data: (list) => Wrap(
-          spacing: AppSpace.sm,
-          runSpacing: AppSpace.sm,
-          children: list.take(20).map((s) {
-            final on = picked.contains(s);
-            return InkWell(
-              borderRadius: BorderRadius.circular(999),
-              onTap: () {
-                HapticFeedback.selectionClick();
-                onToggle(s);
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpace.md, vertical: 8),
-                decoration: BoxDecoration(
-                  color: on ? c.brand : c.bgInset,
-                  borderRadius: BorderRadius.circular(999),
+        data: (all) {
+          final q = _search.text.trim().toLowerCase();
+          final visible = all
+              .where((s) => sourceVisible(s, meta))
+              .where((s) => q.isEmpty || s.toLowerCase().contains(q))
+              .toList()
+            ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+          // Their location's own outlets lead; global desks + topical
+          // verticals follow.
+          final local = visible
+              .where((s) => sourceInfo(s)?.kind == SourceKind.national)
+              .toList();
+          final global =
+              visible.where((s) => !local.contains(s)).toList();
+          final localLabel = widget.country ??
+              (widget.segment == 'Worldwide'
+                  ? 'Flagship publishers'
+                  : widget.segment);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _search,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: 'Search publishers',
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  suffixIcon: q.isEmpty
+                      ? null
+                      : IconButton(
+                          icon: const Icon(Icons.close, size: 18),
+                          onPressed: () =>
+                              setState(() => _search.clear()),
+                        ),
+                  isDense: true,
+                  filled: true,
+                  fillColor: c.bgInset,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  SourceFavicon(url: null, source: s, size: 16),
-                  const SizedBox(width: 6),
-                  Text(s,
-                      style: AppText.callout.copyWith(
-                          color: on ? c.onBrand : c.text,
-                          fontWeight: FontWeight.w600)),
-                ]),
               ),
-            );
-          }).toList(),
-        ),
+              const SizedBox(height: AppSpace.lg),
+              if (visible.isEmpty)
+                Text('No publishers match "${_search.text.trim()}".',
+                    style: AppText.body.copyWith(color: c.textSecondary))
+              else ...[
+                if (local.isNotEmpty) _group(context, localLabel, local),
+                if (local.isNotEmpty && global.isNotEmpty)
+                  const SizedBox(height: AppSpace.lg),
+                if (global.isNotEmpty)
+                  _group(context, 'Global & topics', global),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
