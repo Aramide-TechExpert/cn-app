@@ -4,6 +4,11 @@
 /// server's own defaults exactly. Read via [remote].
 library;
 
+import 'package:flutter/foundation.dart' show ValueNotifier;
+
+/// This build's version — keep in sync with pubspec.yaml `version:`.
+const String appVersion = '1.0.0';
+
 class RemoteSettings {
   const RemoteSettings({
     this.videos = true,
@@ -96,7 +101,38 @@ RemoteSettings get remote => _remote;
 /// The active announcement banner, if any.
 Announcement? get remoteAnnouncement => _announcement;
 
+/// Maintenance message when the panel has maintenance mode ON, else null.
+/// A ValueNotifier so the app shell can react after the launch fetch lands.
+final ValueNotifier<String?> maintenanceNotice = ValueNotifier(null);
+
+/// True when this build is older than the served minimum version.
+final ValueNotifier<bool> updateRequired = ValueNotifier(false);
+
+int _cmpSemver(String a, String b) {
+  final pa = a.split('.').map(int.tryParse).toList();
+  final pb = b.split('.').map(int.tryParse).toList();
+  for (var i = 0; i < 3; i++) {
+    final x = (i < pa.length ? pa[i] : 0) ?? 0;
+    final y = (i < pb.length ? pb[i] : 0) ?? 0;
+    if (x != y) return x.compareTo(y);
+  }
+  return 0;
+}
+
 void applyRemoteSettings(Map<String, dynamic> payload) {
   _remote = RemoteSettings.fromJson(payload);
   _announcement = Announcement.fromJson(payload['announcement']);
+  final lifecycle = switch (payload['settings']) {
+    {'lifecycle': final Map l} => l,
+    _ => const <String, dynamic>{},
+  };
+  maintenanceNotice.value = lifecycle['maintenance'] == true
+      ? (lifecycle['maintenanceMessage'] is String &&
+              (lifecycle['maintenanceMessage'] as String).isNotEmpty
+          ? lifecycle['maintenanceMessage'] as String
+          : "We're doing some quick maintenance. Back shortly.")
+      : null;
+  final minV = lifecycle['minAppVersion'];
+  updateRequired.value =
+      minV is String && minV.isNotEmpty && _cmpSemver(appVersion, minV) < 0;
 }

@@ -5,6 +5,55 @@ import 'data/refresh.dart';
 import 'data/settings_controller.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
+import 'utils/remote_settings.dart';
+
+/// Full-screen gate for maintenance mode / forced update (Clustez Control).
+class _LifecycleGate extends StatelessWidget {
+  const _LifecycleGate({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<String?>(
+      valueListenable: maintenanceNotice,
+      builder: (context, maintenance, _) =>
+          ValueListenableBuilder<bool>(
+        valueListenable: updateRequired,
+        builder: (context, mustUpdate, __) {
+          if (maintenance == null && !mustUpdate) return child;
+          final (emoji, title, body) = maintenance != null
+              ? ('🛠️', 'Under maintenance', maintenance)
+              : (
+                  '⬆️',
+                  'Update required',
+                  'This version of Clustez is out of date. Please install the latest build to continue.'
+                );
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(emoji, style: const TextStyle(fontSize: 44)),
+                    const SizedBox(height: 16),
+                    Text(title,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                        textAlign: TextAlign.center),
+                    const SizedBox(height: 8),
+                    Text(body,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                        textAlign: TextAlign.center),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
 
 class ClustezApp extends ConsumerWidget {
   const ClustezApp({super.key});
@@ -27,7 +76,7 @@ class ClustezApp extends ConsumerWidget {
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context)
             .copyWith(textScaler: TextScaler.linear(settings.textScale)),
-        child: child!,
+        child: _LifecycleGate(child: child!),
       ),
       routerConfig: router,
     );
