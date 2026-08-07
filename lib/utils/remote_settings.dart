@@ -52,11 +52,43 @@ class RemoteSettings {
   }
 }
 
+/// Admin-authored banner from Clustez Control (null = none active).
+class Announcement {
+  const Announcement({
+    required this.id,
+    required this.text,
+    required this.level,
+    this.url,
+  });
+  final String id;
+  final String text;
+  final String level; // info | warning | critical
+  final String? url;
+
+  static Announcement? fromJson(dynamic json) {
+    if (json is! Map) return null;
+    final id = json['id'];
+    final text = json['text'];
+    if (id is! String || text is! String || text.isEmpty) return null;
+    return Announcement(
+      id: id,
+      text: text,
+      level: json['level'] is String ? json['level'] as String : 'info',
+      url: json['url'] is String ? json['url'] as String : null,
+    );
+  }
+}
+
 RemoteSettings _remote = const RemoteSettings();
+Announcement? _announcement;
 
 /// The active remote settings (defaults until the launch fetch lands).
 RemoteSettings get remote => _remote;
 
+/// The active announcement banner, if any.
+Announcement? get remoteAnnouncement => _announcement;
+
 void applyRemoteSettings(Map<String, dynamic> payload) {
   _remote = RemoteSettings.fromJson(payload);
+  _announcement = Announcement.fromJson(payload['announcement']);
 }

@@ -23,6 +23,7 @@ import 'widgets/article_card.dart';
 import 'widgets/card_extras.dart';
 import 'widgets/card_variants.dart';
 import 'widgets/magazine_card.dart';
+import '../shell/announcement_banner.dart';
 import 'widgets/overlay_card.dart';
 import 'widgets/rail_card.dart';
 import 'widgets/spotlight_carousel.dart';
@@ -217,6 +218,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                     const SizedBox(width: AppSpace.xs),
                   ],
                 ),
+                // Admin announcement (Clustez Control), when active.
+                const SliverToBoxAdapter(child: AnnouncementBanner()),
                 // News content analysis — swipeable stat text (ports the web
                 // dashboard StatsRow) pinned at the top of Home, with an FX +
                 // stocks strip directly below it.
