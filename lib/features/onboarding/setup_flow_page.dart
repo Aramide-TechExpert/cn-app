@@ -72,7 +72,7 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
         newsSegments.any((s) => s.$1 == saved)) {
       _segment = saved!;
       final savedCountry = meta['preferred_country'] as String?;
-      if (segmentCountries[_segment]?.contains(savedCountry) ?? false) {
+      if (countriesFor(_segment)?.contains(savedCountry) ?? false) {
         _country = savedCountry;
       }
     }
@@ -119,7 +119,7 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
       _detecting = false;
       if (segment != null) {
         _segment = segment;
-        _country = (segmentCountries[segment]?.contains(detected) ?? false)
+        _country = (countriesFor(segment)?.contains(detected) ?? false)
             ? detected
             : null;
       }
@@ -520,7 +520,7 @@ class _RegionStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final countries = segmentCountries[segment];
+    final countries = countriesFor(segment);
     return _Step(
       icon: Icons.public,
       kicker: 'Step 3 · Region',

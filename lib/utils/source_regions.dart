@@ -865,6 +865,12 @@ const Map<String, SourceInfo> _sources = {
 // DELTAS; applyServedSourceMap merges them over the compiled-in classifier
 // at startup. Offline or on failure the built-in map alone applies.
 Map<String, SourceInfo> _overlay = {};
+Map<String, List<String>> _countryOverlay = {};
+
+/// Countries offered in a segment's picker — admin list when served,
+/// compiled default otherwise.
+List<String>? countriesFor(String segment) =>
+    _countryOverlay[segment] ?? segmentCountries[segment];
 Set<String> _flagshipAdd = {};
 Set<String> _flagshipRemove = {};
 
@@ -894,6 +900,16 @@ void applyServedSourceMap(Map<String, dynamic> payload) {
   _flagshipRemove = {
     for (final e in (payload['flagshipsRemove'] as List? ?? const []))
       if (e is String) e.toLowerCase(),
+  };
+  final rawCountries = payload['countries'];
+  _countryOverlay = {
+    if (rawCountries is Map)
+      for (final e in rawCountries.entries)
+        if (e.key is String && e.value is List && (e.value as List).isNotEmpty)
+          e.key as String: [
+            for (final c in e.value as List)
+              if (c is String) c,
+          ],
   };
 }
 
