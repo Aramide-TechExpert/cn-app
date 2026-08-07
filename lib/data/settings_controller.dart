@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../utils/remote_settings.dart';
+
 /// Local, device-only app preferences (theme + text size) — the app-side of the
 /// web Settings "Appearance" section. Persisted with shared_preferences so the
 /// choice survives restarts. (Account/email-digest prefs live in Supabase and
@@ -47,7 +49,8 @@ class SettingsController extends Notifier<AppSettings> {
   Future<void> _load() async {
     _prefs = await SharedPreferences.getInstance();
     state = AppSettings(
-      themeMode: switch (_prefs!.getString(_kThemeMode)) {
+      // No local pick yet → the Control panel's served default applies.
+      themeMode: switch (_prefs!.getString(_kThemeMode) ?? remote.defaultTheme) {
         'light' => ThemeMode.light,
         'dark' => ThemeMode.dark,
         _ => ThemeMode.system,

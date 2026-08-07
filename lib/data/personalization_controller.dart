@@ -74,12 +74,17 @@ const _fallbackCategories = <CategoryOption>[
 
 final categoriesProvider = FutureProvider<List<CategoryOption>>((ref) async {
   try {
+    // Presentation is admin-controlled (Clustez Control → Categories):
+    // sort_order drives display order, hidden drops a topic from pickers
+    // (existing follows/assignments keep working).
     final rows = await ref
         .read(supabaseProvider)
         .from('categories')
-        .select('slug, name')
+        .select('slug, name, hidden')
+        .order('sort_order')
         .order('name');
     final list = (rows as List)
+        .where((r) => r['hidden'] != true)
         .map((r) => CategoryOption(r['slug'] as String, r['name'] as String))
         .toList();
     return list.isEmpty ? _fallbackCategories : list;

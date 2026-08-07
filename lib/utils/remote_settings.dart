@@ -15,6 +15,7 @@ class RemoteSettings {
     this.bento = true,
     this.interleave = true,
     this.homePageSize = 24,
+    this.defaultTheme = 'system',
   });
 
   final bool videos;
@@ -26,6 +27,7 @@ class RemoteSettings {
   final bool bento;
   final bool interleave;
   final int homePageSize;
+  final String defaultTheme; // system | dark | light
 
   static RemoteSettings fromJson(Map<String, dynamic> json) {
     final s = json['settings'];
@@ -48,6 +50,12 @@ class RemoteSettings {
       homePageSize: feed is Map && feed['homePageSize'] is num
           ? (feed['homePageSize'] as num).toInt().clamp(6, 50)
           : 24,
+      defaultTheme: switch (s['appearance']) {
+        {'defaultTheme': final String t}
+            when ['system', 'dark', 'light'].contains(t) =>
+          t,
+        _ => 'system',
+      },
     );
   }
 }
