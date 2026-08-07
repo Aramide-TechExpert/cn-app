@@ -116,6 +116,13 @@ class ApiClient {
     return res.data ?? const {};
   }
 
+  /// Remote product settings (feature switches, feed composition) from the
+  /// Control panel — merged over compiled defaults at startup.
+  Future<Map<String, dynamic>> appSettings() async {
+    final res = await _dio.get<Map<String, dynamic>>('/app-settings');
+    return res.data ?? const {};
+  }
+
   /// Latest daily briefing for a region edition (server falls back to
   /// Worldwide when that region has none yet).
   Future<DailyBriefing?> briefing({String? region}) async {

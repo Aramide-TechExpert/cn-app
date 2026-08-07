@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/article.dart';
 import '../utils/interleave.dart';
+import '../utils/remote_settings.dart';
 import '../utils/source_regions.dart';
 import 'api_client.dart';
 import 'auth_controller.dart';
@@ -68,7 +69,9 @@ class FeedController extends AsyncNotifier<List<Article>> {
   Future<List<Article>> _firstPage() async {
     _deferred = const [];
     // Larger first page so Home can fill hero + rail + bento + latest.
-    final items = await _collect(limit: 24, minVisible: 12);
+    // Size is a remote knob (Clustez Control → Features).
+    final items =
+        await _collect(limit: remote.homePageSize, minVisible: 12);
     final r = interleaveBySource(applyRegionPreference(ref, items),
         flush: !_hasMore);
     _deferred = r.deferred;

@@ -1,4 +1,5 @@
 import '../models/article.dart';
+import 'remote_settings.dart';
 
 /// Round-robin articles by source — "one source at a time".
 ///
@@ -18,6 +19,10 @@ import '../models/article.dart';
   List<Article> incoming, {
   bool flush = false,
 }) {
+  // Remote switch (Clustez Control → Features): pass-through when off.
+  if (!remote.interleave) {
+    return (emitted: incoming, deferred: const <Article>[]);
+  }
   final queues = <String, List<Article>>{};
   final order = <String>[];
   for (final a in incoming) {

@@ -6,6 +6,7 @@ import 'app.dart';
 import 'config.dart';
 import 'data/api_client.dart';
 import 'data/reading_history.dart';
+import 'utils/remote_settings.dart';
 import 'utils/source_regions.dart';
 
 Future<void> main() async {
@@ -22,12 +23,11 @@ Future<void> main() async {
     );
   }
 
-  // Merge Control-panel classifier deltas over the built-in gate — fire
-  // and forget; offline keeps the compiled-in classifier.
-  ApiClient()
-      .sourceMap()
-      .then(applyServedSourceMap)
-      .catchError((_) {});
+  // Merge Control-panel classifier deltas + remote product settings over
+  // the compiled-in defaults — fire and forget; offline keeps defaults.
+  final api = ApiClient();
+  api.sourceMap().then(applyServedSourceMap).catchError((_) {});
+  api.appSettings().then(applyRemoteSettings).catchError((_) {});
 
   runApp(const ProviderScope(child: ClustezApp()));
 }

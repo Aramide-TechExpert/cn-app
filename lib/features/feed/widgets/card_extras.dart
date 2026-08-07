@@ -9,6 +9,7 @@ import '../../../models/article.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/tokens.dart';
 import '../../../utils/format.dart';
+import '../../../utils/remote_settings.dart';
 
 /// Fade + slide-up entry animation (web AnimatedCard parity). Fire-and-forget
 /// via TweenAnimationBuilder so it animates once when the element is built with
@@ -279,6 +280,8 @@ class EngagementBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Remote switch (Clustez Control → Features).
+    if (!remote.engagement) return const SizedBox.shrink();
     final c = context.colors;
     final dbId = article.dbId;
     final canEngage = dbId != null;

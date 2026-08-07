@@ -12,6 +12,7 @@ import '../../../theme/app_theme.dart';
 import '../../../theme/tokens.dart';
 import '../../../utils/format.dart';
 import '../../../utils/link_out.dart';
+import '../../../utils/remote_settings.dart';
 import '../../comments/comments_page.dart';
 
 /// Native long-press action sheet for an article (drag-handle modal sheet +
@@ -66,7 +67,7 @@ Future<void> showArticleActions(
                 openArticle(article.sourceUrl, track: article);
               },
             ),
-            if (dbId != null)
+            if (dbId != null && remote.comments)
               _ActionTile(
                 icon: Icons.mode_comment_outlined,
                 label: article.commentCount > 0

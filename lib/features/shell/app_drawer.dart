@@ -7,6 +7,7 @@ import '../../data/source_signals.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../utils/format.dart';
+import '../../utils/remote_settings.dart';
 
 /// The app-wide side menu — modernized (Bing-style): brand/profile header,
 /// a rounded grid of quick-access tiles, then grouped rounded cards for
@@ -154,14 +155,16 @@ class AppDrawer extends ConsumerWidget {
                     icon: Icons.dynamic_feed_outlined,
                     label: 'Feed',
                     onTap: () => go('/discover')),
-                _Tile(
-                    icon: Icons.play_circle_outline,
-                    label: 'Reel',
-                    onTap: () => go('/stack')),
-                _Tile(
-                    icon: Icons.account_tree_outlined,
-                    label: 'Clusters',
-                    onTap: () => go('/clusters')),
+                if (remote.videos)
+                  _Tile(
+                      icon: Icons.play_circle_outline,
+                      label: 'Reel',
+                      onTap: () => go('/stack')),
+                if (remote.clusters)
+                  _Tile(
+                      icon: Icons.account_tree_outlined,
+                      label: 'Clusters',
+                      onTap: () => go('/clusters')),
                 _Tile(
                     icon: Icons.newspaper_outlined,
                     label: 'Briefing',

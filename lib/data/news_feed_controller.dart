@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/article.dart';
 import '../utils/interleave.dart';
+import '../utils/remote_settings.dart';
 import '../utils/source_regions.dart';
 import 'auth_controller.dart';
 import 'feed_controller.dart' show apiClientProvider, applyRegionPreference;
@@ -10,6 +11,8 @@ import 'feed_controller.dart' show apiClientProvider, applyRegionPreference;
 /// Source-interleaved so one publisher's clips don't fill the whole rail.
 /// Fetches deep (the strict gate + playability checks both thin the pool).
 final videoPoolProvider = FutureProvider.autoDispose<List<Article>>((ref) async {
+  // Remote kill switch: empty pool hides the Shorts rail + Reel entry.
+  if (!remote.videos) return const <Article>[];
   final page = await ref.read(apiClientProvider).feed(
       limit: 24,
       video: true,
