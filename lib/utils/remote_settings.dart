@@ -21,6 +21,9 @@ class RemoteSettings {
     this.interleave = true,
     this.homePageSize = 24,
     this.defaultTheme = 'system',
+    this.defaultsHome = const [],
+    this.defaultsFeed = const [],
+    this.defaultsVideos = const [],
     this.pinnedSources = const [],
     this.spotlightSources = const [],
     this.statsStrip = true,
@@ -37,6 +40,9 @@ class RemoteSettings {
   final bool interleave;
   final int homePageSize;
   final String defaultTheme; // system | dark | light
+  final List<String> defaultsHome;
+  final List<String> defaultsFeed;
+  final List<String> defaultsVideos;
   final List<String> pinnedSources;
   final List<String> spotlightSources;
   final bool statsStrip;
@@ -63,6 +69,18 @@ class RemoteSettings {
       homePageSize: feed is Map && feed['homePageSize'] is num
           ? (feed['homePageSize'] as num).toInt().clamp(6, 50)
           : 24,
+      defaultsHome: switch (s['layout']) {
+        {'defaultsHome': final List p} => [for (final x in p) if (x is String) x],
+        _ => const [],
+      },
+      defaultsFeed: switch (s['layout']) {
+        {'defaultsFeed': final List p} => [for (final x in p) if (x is String) x],
+        _ => const [],
+      },
+      defaultsVideos: switch (s['layout']) {
+        {'defaultsVideos': final List p} => [for (final x in p) if (x is String) x],
+        _ => const [],
+      },
       pinnedSources: switch (s['layout']) {
         {'pinnedSources': final List p} => [for (final x in p) if (x is String) x],
         _ => const [],
