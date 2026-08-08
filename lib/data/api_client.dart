@@ -123,6 +123,20 @@ class ApiClient {
     return res.data ?? const {};
   }
 
+  /// Fire-and-forget launch ping so the Control panel can see which app
+  /// versions are actually in the field before tightening the min-version
+  /// gate. Never surfaces an error.
+  Future<void> reportVersion(String version, String platform) async {
+    try {
+      await _dio.post<Map<String, dynamic>>(
+        '/telemetry/version',
+        data: {'v': version, 'platform': platform},
+      );
+    } catch (_) {
+      // Telemetry is best-effort.
+    }
+  }
+
   /// Latest daily briefing for a region edition (server falls back to
   /// Worldwide when that region has none yet).
   Future<DailyBriefing?> briefing({String? region}) async {

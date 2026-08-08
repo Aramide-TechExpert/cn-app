@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -28,6 +30,11 @@ Future<void> main() async {
   final api = ApiClient();
   api.sourceMap().then(applyServedSourceMap).catchError((_) {});
   api.appSettings().then(applyRemoteSettings).catchError((_) {});
+  // Version telemetry for the Control panel's min-version gate.
+  api.reportVersion(
+    appVersion,
+    defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
+  );
 
   runApp(const ProviderScope(child: ClustezApp()));
 }
