@@ -30,8 +30,8 @@ class DiscoverPage extends ConsumerStatefulWidget {
 
 class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   final _scroll = ScrollController();
-  // Feed layout — served CMS default (Features → Card style), user-overridable.
-  FeedView _view = switch (remote.defaultView) {
+  // Feed layout — its OWN served default (independent of Home's), user-overridable.
+  FeedView _view = switch (remote.feedView) {
     'magazine' => FeedView.magazine,
     'grid' => FeedView.grid,
     'list' => FeedView.list,

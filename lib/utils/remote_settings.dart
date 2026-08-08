@@ -32,6 +32,7 @@ class RemoteSettings {
     this.shortsCount = 10,
     this.sectionOrder = const ['spotlight', 'forYou', 'trending', 'shorts'],
     this.defaultView = 'mixed',
+    this.feedView = 'mixed',
   });
 
   final bool videos;
@@ -55,6 +56,7 @@ class RemoteSettings {
   final int shortsCount;
   final List<String> sectionOrder;
   final String defaultView; // mixed | magazine | grid | list
+  final String feedView; // News Feed page (independent of Home)
 
   static RemoteSettings fromJson(Map<String, dynamic> json) {
     final s = json['settings'];
@@ -119,6 +121,12 @@ class RemoteSettings {
             if (x is String) x,
         ],
         _ => const ['spotlight', 'forYou', 'trending', 'shorts'],
+      },
+      feedView: switch (s['layout']) {
+        {'feedView': final String v}
+            when ['mixed', 'magazine', 'grid', 'list'].contains(v) =>
+          v,
+        _ => 'mixed',
       },
       defaultView: switch (s['layout']) {
         {'defaultView': final String v}
