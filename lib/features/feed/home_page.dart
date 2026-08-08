@@ -153,13 +153,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ...withImage.where((a) => spotPins.contains(a.source)),
                   ...withImage.where((a) => !spotPins.contains(a.source)),
                 ].take(5).toList();
-          final rail = withImage.skip(5).take(6).toList();
+          final rail = withImage.skip(remote.spotlightCount).take(remote.railCount).toList();
           // Shorts rail = the license-safe playable-video pool (DVIDS/NASA),
           // not a filter of the recent feed (which rarely has playable video,
           // so the rail kept vanishing). These all have a real video_url.
           final shorts = (ref.watch(videoPoolProvider).valueOrNull ??
                   const <Article>[])
-              .take(10)
+              .take(remote.shortsCount)
               .toList();
           final used = {
             ...spotlight.map((a) => a.id),

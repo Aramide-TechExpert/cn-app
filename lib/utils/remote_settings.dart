@@ -27,6 +27,9 @@ class RemoteSettings {
     this.pinnedSources = const [],
     this.spotlightSources = const [],
     this.statsStrip = true,
+    this.spotlightCount = 5,
+    this.railCount = 6,
+    this.shortsCount = 10,
     this.defaultView = 'mixed',
   });
 
@@ -46,6 +49,9 @@ class RemoteSettings {
   final List<String> pinnedSources;
   final List<String> spotlightSources;
   final bool statsStrip;
+  final int spotlightCount;
+  final int railCount;
+  final int shortsCount;
   final String defaultView; // mixed | magazine | grid | list
 
   static RemoteSettings fromJson(Map<String, dynamic> json) {
@@ -92,6 +98,18 @@ class RemoteSettings {
       statsStrip: switch (s['layout']) {
         {'statsStrip': final bool b} => b,
         _ => true,
+      },
+      spotlightCount: switch (s['layout']) {
+        {'spotlightCount': final num n} => n.toInt().clamp(1, 10),
+        _ => 5,
+      },
+      railCount: switch (s['layout']) {
+        {'railCount': final num n} => n.toInt().clamp(0, 12),
+        _ => 6,
+      },
+      shortsCount: switch (s['layout']) {
+        {'shortsCount': final num n} => n.toInt().clamp(0, 20),
+        _ => 10,
       },
       defaultView: switch (s['layout']) {
         {'defaultView': final String v}
