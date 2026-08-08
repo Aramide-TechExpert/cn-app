@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../utils/remote_settings.dart';
 import '../../data/dismissed_controller.dart';
 import '../../data/news_feed_controller.dart';
 import '../../data/source_signals.dart';
@@ -29,7 +30,13 @@ class DiscoverPage extends ConsumerStatefulWidget {
 
 class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   final _scroll = ScrollController();
-  FeedView _view = FeedView.mixed; // feed layout
+  // Feed layout — served CMS default (Features → Card style), user-overridable.
+  FeedView _view = switch (remote.defaultView) {
+    'magazine' => FeedView.magazine,
+    'grid' => FeedView.grid,
+    'list' => FeedView.list,
+    _ => FeedView.mixed,
+  };
   Set<String> _videoOk = const {}; // ids allowed to render as video cards
 
   @override
