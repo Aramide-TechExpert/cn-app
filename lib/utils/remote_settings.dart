@@ -21,6 +21,10 @@ class RemoteSettings {
     this.interleave = true,
     this.homePageSize = 24,
     this.defaultTheme = 'system',
+    this.pinnedSources = const [],
+    this.spotlightSources = const [],
+    this.statsStrip = true,
+    this.defaultView = 'mixed',
   });
 
   final bool videos;
@@ -33,6 +37,10 @@ class RemoteSettings {
   final bool interleave;
   final int homePageSize;
   final String defaultTheme; // system | dark | light
+  final List<String> pinnedSources;
+  final List<String> spotlightSources;
+  final bool statsStrip;
+  final String defaultView; // mixed | magazine | grid | list
 
   static RemoteSettings fromJson(Map<String, dynamic> json) {
     final s = json['settings'];
@@ -55,6 +63,24 @@ class RemoteSettings {
       homePageSize: feed is Map && feed['homePageSize'] is num
           ? (feed['homePageSize'] as num).toInt().clamp(6, 50)
           : 24,
+      pinnedSources: switch (s['layout']) {
+        {'pinnedSources': final List p} => [for (final x in p) if (x is String) x],
+        _ => const [],
+      },
+      spotlightSources: switch (s['layout']) {
+        {'spotlightSources': final List p} => [for (final x in p) if (x is String) x],
+        _ => const [],
+      },
+      statsStrip: switch (s['layout']) {
+        {'statsStrip': final bool b} => b,
+        _ => true,
+      },
+      defaultView: switch (s['layout']) {
+        {'defaultView': final String v}
+            when ['mixed', 'magazine', 'grid', 'list'].contains(v) =>
+          v,
+        _ => 'mixed',
+      },
       defaultTheme: switch (s['appearance']) {
         {'defaultTheme': final String t}
             when ['system', 'dark', 'light'].contains(t) =>

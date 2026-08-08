@@ -23,6 +23,7 @@ import 'widgets/article_card.dart';
 import 'widgets/card_extras.dart';
 import 'widgets/card_variants.dart';
 import 'widgets/magazine_card.dart';
+import '../../utils/remote_settings.dart';
 import '../shell/announcement_banner.dart';
 import 'widgets/overlay_card.dart';
 import 'widgets/rail_card.dart';
@@ -38,7 +39,13 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   final _scroll = ScrollController();
-  FeedView _view = FeedView.mixed; // layout of the "Latest" section
+  // Layout of the "Latest" section — served CMS default, user-overridable.
+  FeedView _view = switch (remote.defaultView) {
+    'magazine' => FeedView.magazine,
+    'grid' => FeedView.grid,
+    'list' => FeedView.list,
+    _ => FeedView.mixed,
+  };
   Timer? _statsTimer;
 
   @override
@@ -137,7 +144,15 @@ class _HomePageState extends ConsumerState<HomePage> {
               .where((a) => !a.source.toLowerCase().contains('nasa'))
               .toList();
           final withImage = items.where((a) => a.hasImage).toList();
-          final spotlight = withImage.take(5).toList();
+          // CMS spotlight curation: admin-preferred sources fill the hero
+          // first; automatic newest fills any remainder.
+          final spotPins = remote.spotlightSources.toSet();
+          final spotlight = spotPins.isEmpty
+              ? withImage.take(5).toList()
+              : [
+                  ...withImage.where((a) => spotPins.contains(a.source)),
+                  ...withImage.where((a) => !spotPins.contains(a.source)),
+                ].take(5).toList();
           final rail = withImage.skip(5).take(6).toList();
           // Shorts rail = the license-safe playable-video pool (DVIDS/NASA),
           // not a filter of the recent feed (which rarely has playable video,
@@ -223,8 +238,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                 // News content analysis — swipeable stat text (ports the web
                 // dashboard StatsRow) pinned at the top of Home, with an FX +
                 // stocks strip directly below it.
-                const SliverToBoxAdapter(child: HomeStatsStrip()),
-                const SliverToBoxAdapter(child: HomeMarketsStrip()),
+                if (remote.statsStrip) ...[
+                  const SliverToBoxAdapter(child: HomeStatsStrip()),
+                  const SliverToBoxAdapter(child: HomeMarketsStrip()),
+                ],
                 // First-run welcome banner (dismissible — never gates the app).
                 if (firstRun)
                   SliverToBoxAdapter(

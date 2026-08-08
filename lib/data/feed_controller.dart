@@ -13,9 +13,17 @@ final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
 /// national outlet), then the kept articles are tiered — user's country
 /// first, their region, global desks, topical verticals — ahead of the
 /// source interleave.
-List<Article> applyRegionPreference(Ref ref, List<Article> items) =>
-    shapeArticlesForUser(items,
-        meta: ref.read(currentUserProvider)?.userMetadata);
+List<Article> applyRegionPreference(Ref ref, List<Article> items) {
+  final shaped = shapeArticlesForUser(items,
+      meta: ref.read(currentUserProvider)?.userMetadata);
+  // CMS placement: admin-pinned sources lead every page (stable order).
+  if (remote.pinnedSources.isEmpty) return shaped;
+  final pins = remote.pinnedSources.toSet();
+  return [
+    ...shaped.where((a) => pins.contains(a.source)),
+    ...shaped.where((a) => !pins.contains(a.source)),
+  ];
+}
 
 /// Home feed: keyset-cursor infinite list over `/api/v1/feed`. The cursor +
 /// has-more flags live on the notifier; the public state is the article list.
