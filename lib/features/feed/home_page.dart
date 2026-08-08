@@ -175,6 +175,111 @@ class _HomePageState extends ConsumerState<HomePage> {
           // playable-video articles render as normal image cards.
           final videoOk = throttleVideoCards(rest);
 
+          // CMS section order: each Home section is a keyed sliver group,
+          // spread in the served order (unknown/missing keys append last so
+          // a section can never vanish due to a stale order list).
+          final homeSections = <String, List<Widget>>{
+            'spotlight': [
+                if (spotlight.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpace.md),
+                      child: SpotlightCarousel(articles: spotlight),
+                    ),
+                  ),
+
+            ],
+            'forYou': [
+                // For You — personalized rail from followed interests.
+                if (forYou.isNotEmpty) ...[
+                  _railHeader(context, 'For You'),
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 268,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+                        itemCount: forYou.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(width: AppSpace.lg),
+                        itemBuilder: (_, i) => RailCard(article: forYou[i]),
+                      ),
+                    ),
+                  ),
+                  // Thin line between the stacked rails.
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: AppSpace.md),
+                      child: Divider(height: 1, thickness: 1, color: c.border),
+                    ),
+                  ),
+                ],
+
+            ],
+            'trending': [
+                // Horizontal "Trending now" rail — compact cards with signals.
+                if (rail.isNotEmpty) ...[
+                  _railHeader(context, 'Trending now'),
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 244,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+                        itemCount: rail.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(width: AppSpace.lg),
+                        itemBuilder: (_, i) =>
+                            CompactCard(article: rail[i], width: 220),
+                      ),
+                    ),
+                  ),
+                  // Thin line under Trending, then a little gap before Shorts.
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: AppSpace.xs),
+                      child: Divider(height: 1, thickness: 1, color: c.border),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: AppSpace.md)),
+                ],
+
+            ],
+            'shorts': [
+                // Horizontal "Shorts" rail — 9:16 reels cards.
+                if (shorts.isNotEmpty) ...[
+                  _railHeader(context, 'Shorts'),
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 278,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+                        itemCount: shorts.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(width: AppSpace.md),
+                        // Reel cards click through to the SOURCE story page
+                        // (not the full-screen reel) — the preview loop is
+                        // the in-app experience, the publisher has the full
+                        // video.
+                        itemBuilder: (_, i) => VerticalCard(
+                          article: shorts[i],
+                          width: 152,
+                          onTap: () => openArticle(shorts[i].sourceUrl,
+                              track: shorts[i]),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Band: section break after the rails, into the main feed.
+                  const SliverToBoxAdapter(child: BlockDivider()),
+                ],
+            ],
+          };
+
           return RefreshIndicator.adaptive(
             onRefresh: () async {
               _refreshStats();
@@ -281,97 +386,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ),
 
-                if (spotlight.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpace.md),
-                      child: SpotlightCarousel(articles: spotlight),
-                    ),
-                  ),
-
-                // For You — personalized rail from followed interests.
-                if (forYou.isNotEmpty) ...[
-                  _railHeader(context, 'For You'),
-                  SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 268,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: AppSpace.lg),
-                        itemCount: forYou.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(width: AppSpace.lg),
-                        itemBuilder: (_, i) => RailCard(article: forYou[i]),
-                      ),
-                    ),
-                  ),
-                  // Thin line between the stacked rails.
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: AppSpace.md),
-                      child: Divider(height: 1, thickness: 1, color: c.border),
-                    ),
-                  ),
-                ],
-
-                // Horizontal "Trending now" rail — compact cards with signals.
-                if (rail.isNotEmpty) ...[
-                  _railHeader(context, 'Trending now'),
-                  SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 244,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: AppSpace.lg),
-                        itemCount: rail.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(width: AppSpace.lg),
-                        itemBuilder: (_, i) =>
-                            CompactCard(article: rail[i], width: 220),
-                      ),
-                    ),
-                  ),
-                  // Thin line under Trending, then a little gap before Shorts.
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: AppSpace.xs),
-                      child: Divider(height: 1, thickness: 1, color: c.border),
-                    ),
-                  ),
-                  const SliverToBoxAdapter(child: SizedBox(height: AppSpace.md)),
-                ],
-
-                // Horizontal "Shorts" rail — 9:16 reels cards.
-                if (shorts.isNotEmpty) ...[
-                  _railHeader(context, 'Shorts'),
-                  SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 278,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: AppSpace.lg),
-                        itemCount: shorts.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(width: AppSpace.md),
-                        // Reel cards click through to the SOURCE story page
-                        // (not the full-screen reel) — the preview loop is
-                        // the in-app experience, the publisher has the full
-                        // video.
-                        itemBuilder: (_, i) => VerticalCard(
-                          article: shorts[i],
-                          width: 152,
-                          onTap: () => openArticle(shorts[i].sourceUrl,
-                              track: shorts[i]),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Band: section break after the rails, into the main feed.
-                  const SliverToBoxAdapter(child: BlockDivider()),
-                ],
+                for (final k in [
+                  ...remote.sectionOrder.where(homeSections.containsKey),
+                  ...homeSections.keys
+                      .where((k) => !remote.sectionOrder.contains(k)),
+                ])
+                  ...homeSections[k]!,
 
                 if (rest.isNotEmpty)
                   SliverToBoxAdapter(

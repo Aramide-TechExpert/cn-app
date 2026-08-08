@@ -30,6 +30,7 @@ class RemoteSettings {
     this.spotlightCount = 5,
     this.railCount = 6,
     this.shortsCount = 10,
+    this.sectionOrder = const ['spotlight', 'forYou', 'trending', 'shorts'],
     this.defaultView = 'mixed',
   });
 
@@ -52,6 +53,7 @@ class RemoteSettings {
   final int spotlightCount;
   final int railCount;
   final int shortsCount;
+  final List<String> sectionOrder;
   final String defaultView; // mixed | magazine | grid | list
 
   static RemoteSettings fromJson(Map<String, dynamic> json) {
@@ -110,6 +112,13 @@ class RemoteSettings {
       shortsCount: switch (s['layout']) {
         {'shortsCount': final num n} => n.toInt().clamp(0, 20),
         _ => 10,
+      },
+      sectionOrder: switch (s['layout']) {
+        {'sectionOrder': final List p} when p.isNotEmpty => [
+          for (final x in p)
+            if (x is String) x,
+        ],
+        _ => const ['spotlight', 'forYou', 'trending', 'shorts'],
       },
       defaultView: switch (s['layout']) {
         {'defaultView': final String v}
