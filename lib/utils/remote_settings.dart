@@ -24,6 +24,9 @@ class RemoteSettings {
     this.defaultsHome = const [],
     this.defaultsFeed = const [],
     this.defaultsVideos = const [],
+    this.excludeHome = const [],
+    this.excludeFeed = const [],
+    this.excludeVideos = const [],
     this.pinnedSources = const [],
     this.spotlightSources = const [],
     this.statsStrip = true,
@@ -48,6 +51,13 @@ class RemoteSettings {
   final List<String> defaultsHome;
   final List<String> defaultsFeed;
   final List<String> defaultsVideos;
+
+  /// Admin switch-offs per surface — STRICT for users with no preference
+  /// set (an excluded source never appears there); any user preference
+  /// takes full precedence and these never run against it.
+  final List<String> excludeHome;
+  final List<String> excludeFeed;
+  final List<String> excludeVideos;
   final List<String> pinnedSources;
   final List<String> spotlightSources;
   final bool statsStrip;
@@ -89,6 +99,18 @@ class RemoteSettings {
       },
       defaultsVideos: switch (s['layout']) {
         {'defaultsVideos': final List p} => [for (final x in p) if (x is String) x],
+        _ => const [],
+      },
+      excludeHome: switch (s['layout']) {
+        {'excludeHome': final List p} => [for (final x in p) if (x is String) x],
+        _ => const [],
+      },
+      excludeFeed: switch (s['layout']) {
+        {'excludeFeed': final List p} => [for (final x in p) if (x is String) x],
+        _ => const [],
+      },
+      excludeVideos: switch (s['layout']) {
+        {'excludeVideos': final List p} => [for (final x in p) if (x is String) x],
         _ => const [],
       },
       pinnedSources: switch (s['layout']) {

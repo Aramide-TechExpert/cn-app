@@ -6,7 +6,7 @@ import '../utils/remote_settings.dart';
 import '../utils/source_regions.dart';
 import 'auth_controller.dart';
 import 'feed_controller.dart'
-    show apiClientProvider, applyRegionPreference, applySurfaceDefaults;
+    show apiClientProvider, applyRegionPreference, applySurfaceGate;
 
 /// A small pool of playable news videos used for the Shorts rail + Reel.
 /// Source-interleaved so one publisher's clips don't fill the whole rail.
@@ -19,11 +19,12 @@ final videoPoolProvider = FutureProvider.autoDispose<List<Article>>((ref) async 
       video: true,
       region: activeSegment(ref.read(currentUserProvider)?.userMetadata) ??
           'Worldwide');
-  final playable = applySurfaceDefaults(
+  final playable = applySurfaceGate(
       ref,
       applyRegionPreference(ref,
           page.items.where((a) => a.hasPlayableVideo && a.hasImage).toList()),
-      remote.defaultsVideos);
+      remote.defaultsVideos,
+      remote.excludeVideos);
   return interleaveBySource(playable, flush: true).emitted;
 });
 
@@ -135,9 +136,11 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
       return gateSourcesForUser(collected, meta: meta);
     }
     final r = interleaveBySource(
-        applySurfaceDefaults(ref,
+        applySurfaceGate(
+            ref,
             applyRegionPreference(ref, [..._deferred, ...collected]),
-            remote.defaultsFeed),
+            remote.defaultsFeed,
+            remote.excludeFeed),
         flush: !_hasMore);
     _deferred = r.deferred;
     return r.emitted;

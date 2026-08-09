@@ -17,20 +17,32 @@ List<Article> applyRegionPreference(Ref ref, List<Article> items) =>
     shapeArticlesForUser(items,
         meta: ref.read(currentUserProvider)?.userMetadata);
 
-/// CMS per-surface DEFAULTS: for users with NO preference set (no region
-/// scope and no favorite publishers), a surface shows only the admin's
-/// default sources. Any user preference overrides — this never fights the
-/// gate or the user. Falls back to the full list rather than a blank page.
-List<Article> applySurfaceDefaults(
-    Ref ref, List<Article> items, List<String> defaults) {
-  if (defaults.isEmpty) return items;
+/// CMS per-surface gate, applied ONLY to users with NO preference set (no
+/// region scope and no favorite publishers) — any user preference takes
+/// full precedence and this never runs against it.
+/// - [defaults]: the admin's default sources for the surface (allow-list);
+///   falls back to the full list rather than a blank page.
+/// - [excludes]: admin switch-offs — STRICT: an excluded source never
+///   appears on the surface, with no fallback, and it stays off even if
+///   it's also in the defaults.
+List<Article> applySurfaceGate(Ref ref, List<Article> items,
+    List<String> defaults, List<String> excludes) {
+  if (defaults.isEmpty && excludes.isEmpty) return items;
   final meta = ref.read(currentUserProvider)?.userMetadata;
   final hasPref = activeSegment(meta) != null ||
       ((meta?['preferred_sources'] as List?)?.isNotEmpty ?? false);
   if (hasPref) return items;
-  final allow = defaults.toSet();
-  final filtered = items.where((a) => allow.contains(a.source)).toList();
-  return filtered.isEmpty ? items : filtered;
+  var out = items;
+  if (defaults.isNotEmpty) {
+    final allow = defaults.toSet();
+    final filtered = out.where((a) => allow.contains(a.source)).toList();
+    out = filtered.isEmpty ? out : filtered;
+  }
+  if (excludes.isNotEmpty) {
+    final block = excludes.toSet();
+    out = out.where((a) => !block.contains(a.source)).toList();
+  }
+  return out;
 }
 
 /// Home feed: keyset-cursor infinite list over `/api/v1/feed`. The cursor +
@@ -89,8 +101,8 @@ class FeedController extends AsyncNotifier<List<Article>> {
     final items =
         await _collect(limit: remote.homePageSize, minVisible: 12);
     final r = interleaveBySource(
-        applySurfaceDefaults(
-            ref, applyRegionPreference(ref, items), remote.defaultsHome),
+        applySurfaceGate(ref, applyRegionPreference(ref, items),
+            remote.defaultsHome, remote.excludeHome),
         flush: !_hasMore);
     _deferred = r.deferred;
     return r.emitted;
@@ -106,9 +118,11 @@ class FeedController extends AsyncNotifier<List<Article>> {
       final items =
           await _collect(cursor: _cursor, limit: 12, minVisible: 6);
       final r = interleaveBySource(
-          applySurfaceDefaults(ref,
+          applySurfaceGate(
+              ref,
               applyRegionPreference(ref, [..._deferred, ...items]),
-              remote.defaultsHome),
+              remote.defaultsHome,
+              remote.excludeHome),
           flush: !_hasMore);
       _deferred = r.deferred;
       state = AsyncData([...(state.value ?? const []), ...r.emitted]);
