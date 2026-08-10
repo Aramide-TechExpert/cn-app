@@ -107,7 +107,12 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
     // first, and ingestion bursts make whole pages one or two publishers),
     // so keep pulling until enough VISIBLE stories accumulate or the
     // corpus ends. Bounded hops keep a worst-case refresh cheap.
-    for (var hop = 0; hop < 5; hop++) {
+    // Dig deeper when the admin surface gate is active (see feed_controller).
+    final maxHops =
+        remote.defaultsFeed.isNotEmpty || remote.excludeFeed.isNotEmpty
+            ? 10
+            : 5;
+    for (var hop = 0; hop < maxHops; hop++) {
       final page = await ref.read(apiClientProvider).feed(
             cursor: next,
             limit: 20,
@@ -127,7 +132,15 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
       _hasMore = page.nextCursor != null;
       collected.addAll(page.items.where(_passesImpact));
       if (_filters.source != null || !_hasMore) break;
-      if (gateSourcesForUser(collected, meta: meta).length >= 8) break;
+      if (applySurfaceGate(
+                  ref,
+                  gateSourcesForUser(collected, meta: meta),
+                  remote.defaultsFeed,
+                  remote.excludeFeed)
+              .length >=
+          8) {
+        break;
+      }
     }
     // One source at a time — except in the single-source filter view, where
     // interleaving is meaningless and deferral would starve the list. The

@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/article.dart';
 import '../utils/source_regions.dart';
 import 'auth_controller.dart';
-import 'feed_controller.dart' show apiClientProvider;
+import 'feed_controller.dart' show apiClientProvider, applySurfaceGate;
+import '../utils/remote_settings.dart';
 import 'reading_history.dart';
 
 /// "For You" — articles merged from the user's followed categories
@@ -33,7 +34,13 @@ final forYouFeedProvider = FutureProvider.autoDispose<List<Article>>((ref) async
     }
   }
   merged.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
-  return gateSourcesForUser(merged, meta: user.userMetadata)
+  // The rail lives on Home — the admin surface gate applies here too
+  // (skipped automatically when the user has a region/publisher preference).
+  return applySurfaceGate(
+          ref,
+          gateSourcesForUser(merged, meta: user.userMetadata),
+          remote.defaultsHome,
+          remote.excludeHome)
       .take(12)
       .toList();
 });

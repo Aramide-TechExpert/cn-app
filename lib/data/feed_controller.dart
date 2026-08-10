@@ -20,11 +20,15 @@ List<Article> applyRegionPreference(Ref ref, List<Article> items) =>
 /// CMS per-surface gate, applied ONLY to users with NO preference set (no
 /// region scope and no favorite publishers) — any user preference takes
 /// full precedence and this never runs against it.
-/// - [defaults]: the admin's default sources for the surface (allow-list);
-///   falls back to the full list rather than a blank page.
-/// - [excludes]: admin switch-offs — STRICT: an excluded source never
-///   appears on the surface, with no fallback, and it stays off even if
+/// BOTH layers are STRICT (2026-08-10, after mixed sources leaked through
+/// the old blank-page fallback whenever a fetched batch held none of the
+/// picks):
+/// - [defaults]: allow-list — when set, ONLY these sources pass; a batch
+///   with none of them yields empty, never the unfiltered mix.
+/// - [excludes]: switch-offs — an excluded source never appears, even if
 ///   it's also in the defaults.
+/// The fetch loops compensate by digging deeper when a gate is active, so
+/// pages fill with picks instead of leaking others.
 List<Article> applySurfaceGate(Ref ref, List<Article> items,
     List<String> defaults, List<String> excludes) {
   if (defaults.isEmpty && excludes.isEmpty) return items;
@@ -35,8 +39,7 @@ List<Article> applySurfaceGate(Ref ref, List<Article> items,
   var out = items;
   if (defaults.isNotEmpty) {
     final allow = defaults.toSet();
-    final filtered = out.where((a) => allow.contains(a.source)).toList();
-    out = filtered.isEmpty ? out : filtered;
+    out = out.where((a) => allow.contains(a.source)).toList();
   }
   if (excludes.isNotEmpty) {
     final block = excludes.toSet();
@@ -80,7 +83,13 @@ class FeedController extends AsyncNotifier<List<Article>> {
     final region =
         activeSegment(ref.read(currentUserProvider)?.userMetadata) ??
             'Worldwide';
-    for (var hop = 0; hop < 5; hop++) {
+    // With an admin surface gate active the newest slice is often mostly
+    // non-picks — dig deeper so pages fill with picks instead of running
+    // two cards long. minVisible is measured AFTER the full gate.
+    final gated =
+        remote.defaultsHome.isNotEmpty || remote.excludeHome.isNotEmpty;
+    final maxHops = gated ? 10 : 5;
+    for (var hop = 0; hop < maxHops; hop++) {
       final page = await ref
           .read(apiClientProvider)
           .feed(cursor: next, limit: limit, since: _since, region: region);
@@ -89,7 +98,12 @@ class FeedController extends AsyncNotifier<List<Article>> {
       _hasMore = page.nextCursor != null;
       collected.addAll(page.items);
       if (!_hasMore) break;
-      if (applyRegionPreference(ref, collected).length >= minVisible) break;
+      if (applySurfaceGate(ref, applyRegionPreference(ref, collected),
+              remote.defaultsHome, remote.excludeHome)
+          .length >=
+          minVisible) {
+        break;
+      }
     }
     return collected;
   }
