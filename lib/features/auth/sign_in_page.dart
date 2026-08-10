@@ -46,6 +46,10 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         'over_email_send_rate_limit' =>
           'Too many attempts. Wait a minute and try again.',
         'weak_password' => 'That password is too weak. Use 8 or more characters.',
+        // The banned-emails trigger refuses the auth insert — GoTrue wraps
+        // it as an unexpected/database error; say something human instead.
+        'unexpected_failure' when e.message.contains('Database error') =>
+          'This account is not available. Contact support if you believe this is a mistake.',
         _ => e.message,
       };
     }

@@ -137,7 +137,7 @@ void main() {
     });
 
     test('favorites lead even ahead of region tiers', () {
-      final meta = const {
+      const meta = {
         'news_scope': 'region',
         'preferred_region': 'United States',
         'preferred_sources': ['reuters'],
