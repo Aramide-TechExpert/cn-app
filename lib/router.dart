@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import 'utils/remote_settings.dart';
 import 'features/alerts/alerts_page.dart';
 import 'features/auth/sign_in_page.dart';
 import 'features/briefing/briefing_page.dart';
@@ -46,7 +47,12 @@ final router = GoRouter(
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/clusters', builder: (_, __) => const ClustersPage()),
+            GoRoute(
+                path: '/clusters',
+                // Remote kill switch is strict: the route itself is gated,
+                // not just the drawer link (deep links included).
+                redirect: (_, __) => remote.clusters ? null : '/',
+                builder: (_, __) => const ClustersPage()),
           ],
         ),
         StatefulShellBranch(
@@ -77,6 +83,7 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/cluster/:id',
+      redirect: (_, __) => remote.clusters ? null : '/',
       builder: (_, s) => ClusterDetailPage(id: s.pathParameters['id']!),
     ),
     GoRoute(

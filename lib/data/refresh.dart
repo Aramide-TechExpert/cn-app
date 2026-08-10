@@ -1,6 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthChangeEvent;
 
+import '../utils/remote_settings.dart';
+import '../utils/source_regions.dart';
+import 'api_client.dart';
 import 'auth_controller.dart';
 import 'discover_controller.dart';
 import 'feed_controller.dart';
@@ -25,6 +30,39 @@ void _invalidateContent(void Function(ProviderOrFamily) invalidate) {
   invalidate(trendingProvider);
   invalidate(topicFeedProvider); // every open topic page
   invalidate(searchResultsProvider);
+}
+
+DateTime _lastRemoteFetch = DateTime.fromMillisecondsSinceEpoch(0);
+String _lastRemoteJson = '';
+
+/// Fetch + apply the Control-panel config (settings + classifier deltas).
+/// Called at cold start AND every time the app returns to the foreground
+/// (throttled), so admin changes land on running apps without a force-quit
+/// — the panel's changes were previously only picked up at cold launch,
+/// which real users almost never do. When the payload actually changed
+/// since the last fetch, every content surface is invalidated so the new
+/// gates/settings take effect immediately.
+Future<void> fetchAndApplyRemoteConfig(
+  ApiClient api, {
+  void Function(ProviderOrFamily)? invalidateOnChange,
+  Duration minInterval = Duration.zero,
+}) async {
+  if (DateTime.now().difference(_lastRemoteFetch) < minInterval) return;
+  _lastRemoteFetch = DateTime.now();
+  try {
+    final settings = await api.appSettings();
+    final sourceMap = await api.sourceMap();
+    final payload = '${jsonEncode(settings)}|${jsonEncode(sourceMap)}';
+    final changed = _lastRemoteJson.isNotEmpty && payload != _lastRemoteJson;
+    _lastRemoteJson = payload;
+    applyRemoteSettings(settings);
+    applyServedSourceMap(sourceMap);
+    if (changed && invalidateOnChange != null) {
+      _invalidateContent(invalidateOnChange);
+    }
+  } catch (_) {
+    // Offline / transient — current (or compiled) config stays in force.
+  }
 }
 
 /// Watched once from the app root. Fires the full content refresh on every

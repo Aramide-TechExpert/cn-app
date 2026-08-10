@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'data/feed_controller.dart' show apiClientProvider;
 import 'data/refresh.dart';
 import 'data/settings_controller.dart';
 import 'router.dart';
@@ -55,11 +56,43 @@ class _LifecycleGate extends StatelessWidget {
   }
 }
 
-class ClustezApp extends ConsumerWidget {
+class ClustezApp extends ConsumerStatefulWidget {
   const ClustezApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ClustezApp> createState() => _ClustezAppState();
+}
+
+class _ClustezAppState extends ConsumerState<ClustezApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Admin Control-panel changes must reach RUNNING apps, not only cold
+    // launches: re-fetch the served config on every return to foreground
+    // (throttled) and refresh all content if it changed.
+    if (state == AppLifecycleState.resumed) {
+      fetchAndApplyRemoteConfig(
+        ref.read(apiClientProvider),
+        invalidateOnChange: ref.invalidate,
+        minInterval: const Duration(minutes: 5),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Keeps the auth listener alive: preference saves / sign in / sign out
     // auto-refresh every content surface (no manual pull-to-refresh).
     ref.watch(preferenceRefreshListener);

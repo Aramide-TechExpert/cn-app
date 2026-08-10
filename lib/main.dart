@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
@@ -8,8 +10,8 @@ import 'app.dart';
 import 'config.dart';
 import 'data/api_client.dart';
 import 'data/reading_history.dart';
+import 'data/refresh.dart';
 import 'utils/remote_settings.dart';
-import 'utils/source_regions.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,9 +29,9 @@ Future<void> main() async {
 
   // Merge Control-panel classifier deltas + remote product settings over
   // the compiled-in defaults — fire and forget; offline keeps defaults.
+  // (Also re-fetched on every foreground resume — see app.dart.)
   final api = ApiClient();
-  api.sourceMap().then(applyServedSourceMap).catchError((_) {});
-  api.appSettings().then(applyRemoteSettings).catchError((_) {});
+  unawaited(fetchAndApplyRemoteConfig(api));
   // Version telemetry for the Control panel's min-version gate.
   api.reportVersion(
     appVersion,

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/discover_controller.dart';
+import '../../utils/remote_settings.dart';
 import '../../data/feed_controller.dart';
 import '../../data/news_feed_controller.dart' show sourcesProvider;
 import '../../models/article.dart';
@@ -255,8 +256,9 @@ class BriefingPage extends ConsumerWidget {
         const BlockDivider(),
       ],
 
-      // ── Clustering: the top multi-source stories.
-      if (topClusters.isNotEmpty) ...[
+      // ── Clustering: the top multi-source stories. Gated by the remote
+      // clusters switch (strict — the section AND its /clusters button).
+      if (remote.clusters && topClusters.isNotEmpty) ...[
         const _SectionHeader('Clustering'),
         for (var i = 0; i < topClusters.length; i++) ...[
           _ClusterDigestRow(cluster: topClusters[i]),
