@@ -39,7 +39,11 @@ final briefingProvider = FutureProvider.autoDispose<DailyBriefing?>(
 );
 
 final trendingProvider = FutureProvider.autoDispose<List<TrendingTopic>>(
-  (ref) => ref.read(apiClientProvider).trending(),
+  // Region preference applies to discovery too: a region-scoped user's
+  // trending topics are computed from their region's (+global) articles.
+  (ref) => ref.read(apiClientProvider).trending(
+      region:
+          activeSegment(ref.read(currentUserProvider)?.userMetadata)),
 );
 
 final clusterDetailProvider =

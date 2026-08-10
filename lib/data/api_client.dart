@@ -150,8 +150,13 @@ class ApiClient {
     return b == null ? null : DailyBriefing.fromJson(b as Map<String, dynamic>);
   }
 
-  Future<List<TrendingTopic>> trending() async {
-    final res = await _dio.get<Map<String, dynamic>>('/right-rail');
+  Future<List<TrendingTopic>> trending({String? region}) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/right-rail',
+      queryParameters: {
+        if (region != null && region.isNotEmpty) 'region': region,
+      },
+    );
     final list = (res.data?['trending'] as List?) ?? const [];
     return list
         .map((e) => TrendingTopic.fromJson(e as Map<String, dynamic>))

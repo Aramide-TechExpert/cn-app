@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:clustez/data/auth_controller.dart';
 import 'package:clustez/data/feed_controller.dart';
 import 'package:clustez/models/article.dart';
+import 'package:clustez/utils/source_regions.dart';
 
 /// Tests the SHIPPED applySurfaceGate — the admin per-surface switch-off:
 ///  - STRICT: an excluded source never appears, no fallback, even when
@@ -116,6 +117,37 @@ void main() {
         'preferred_sources': ['India Today'],
       });
       expect(gate(favUser, feed, const ['CBS News'], feed), feed);
+    });
+  });
+
+  group('favorite publishers shape the feed (previously dead preference)', () {
+    List<String> shape(Map<String, dynamic> meta, List<String> sources) => [
+          for (final a in shapeArticlesForUser(
+              [for (final s in sources) art(s)],
+              meta: meta))
+            a.source
+        ];
+
+    test('favorites lead the list', () {
+      expect(
+          shape(const {
+            'preferred_sources': ['CBS News']
+          }, feed),
+          ['CBS News', 'The Jerusalem Post', 'India Today']);
+    });
+
+    test('favorites lead even ahead of region tiers', () {
+      final meta = const {
+        'news_scope': 'region',
+        'preferred_region': 'United States',
+        'preferred_sources': ['reuters'],
+      };
+      final shaped = shape(meta, const ['cbs news', 'reuters']);
+      expect(shaped.first, 'reuters');
+    });
+
+    test('no favorites = unchanged order', () {
+      expect(shape(const {}, feed), feed);
     });
   });
 }

@@ -80,6 +80,17 @@ class AlertsController extends AsyncNotifier<List<AlertItem>> {
         article: _articleFromRow(art as Map<String, dynamic>),
       ));
     }
+    // Onboarding preference enforced (was saved but never consumed):
+    // "high-impact only" keeps Critical/High/breaking alerts and drops
+    // the rest. (alerts_breaking is reserved for push notifications.)
+    if (user.userMetadata?['alerts_high_impact_only'] == true) {
+      return out
+          .where((a) =>
+              a.article.isBreaking ||
+              a.article.impact == 'Critical' ||
+              a.article.impact == 'High')
+          .toList();
+    }
     return out;
   }
 

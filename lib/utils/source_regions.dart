@@ -1188,14 +1188,32 @@ List<Article> shapeArticlesForUser(
   required Map<String, dynamic>? meta,
 }) {
   final kept = gateSourcesForUser(items, meta: meta);
+  // Favorite publishers LEAD every list (2026-08-10 — the preference was
+  // previously saved but never consumed; favoriting changed nothing).
+  // Boost-first, never a filter: favorites jump ahead, everything else
+  // gate-visible still follows. The gate itself is untouched — the
+  // favorites picker only offers location-visible sources anyway.
+  final favs = ((meta?['preferred_sources'] as List?) ?? const [])
+      .cast<String>()
+      .toSet();
+  List<Article> favsFirst(List<Article> xs) {
+    if (favs.isEmpty) return xs;
+    final lead = <Article>[];
+    final rest = <Article>[];
+    for (final a in xs) {
+      (favs.contains(a.source) ? lead : rest).add(a);
+    }
+    return [...lead, ...rest];
+  }
+
   final segment = activeSegment(meta);
-  if (segment == null) return kept;
+  if (segment == null) return favsFirst(kept);
   final country = activeCountry(meta);
   final tiers = [<Article>[], <Article>[], <Article>[], <Article>[]];
   for (final a in kept) {
     tiers[_tier(a.source, segment, country)].add(a);
   }
-  return [for (final t in tiers) ...t];
+  return favsFirst([for (final t in tiers) ...t]);
 }
 
 /// Cluster-level preference shaping for the Clusters page: hide clusters
