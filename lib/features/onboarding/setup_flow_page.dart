@@ -614,10 +614,17 @@ Future<void> _showCountryDrawer(
   required ValueChanged<String?> onCountry,
 }) {
   final countries = [...?countriesFor(segment)]..sort();
+  // Same construction as the app's other sheets (article actions, source
+  // picker): the modal's OWN material paints bgElevated — it always reaches
+  // the screen's bottom edge — and SafeArea pads only the content.
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
+    backgroundColor: context.colors.bgElevated,
+    showDragHandle: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
     builder: (ctx) {
       final c = ctx.colors;
       void pick(String? v) {
@@ -647,36 +654,18 @@ Future<void> _showCountryDrawer(
             ),
           );
 
-      // Surface runs to the very bottom edge (no barrier strip showing
-      // through) — the safe-area inset is applied INSIDE the sheet.
-      return Container(
-        constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(ctx).size.height * 0.72),
-        decoration: BoxDecoration(
-          color: c.bgElevated,
-          borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SafeArea(
-          top: false,
+      return SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(ctx).size.height * 0.66),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  margin: const EdgeInsets.only(top: 10, bottom: 4),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: c.border,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpace.x2, AppSpace.md, AppSpace.x2, 4),
+                    AppSpace.x2, 0, AppSpace.x2, 4),
                 child: Text('Your country',
                     style: AppText.headline.copyWith(color: c.text)),
               ),
