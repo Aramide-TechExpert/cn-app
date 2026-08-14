@@ -78,11 +78,13 @@ class FeedController extends AsyncNotifier<List<Article>> {
     final collected = <Article>[];
     var next = cursor;
     // Server-side region pre-filter (defense in depth + denser pages);
-    // the strict per-country gate still applies client-side. No segment
-    // means the curated Worldwide tier (globals + flagships), not everything.
-    final region =
-        activeSegment(ref.read(currentUserProvider)?.userMetadata) ??
-            'Worldwide';
+    // the strict per-country gate still applies client-side. MULTI-scope
+    // users send every selected segment (server returns the union); no
+    // scopes means the curated Worldwide tier, not everything.
+    final meta = ref.read(currentUserProvider)?.userMetadata;
+    final scopeSegments =
+        activeScopes(meta).map((s) => s.segment).toSet().toList();
+    final region = scopeSegments.isEmpty ? 'Worldwide' : null;
     // With an admin surface gate active the newest slice is often mostly
     // non-picks — dig deeper so pages fill with picks instead of running
     // two cards long. minVisible is measured AFTER the full gate.
@@ -90,9 +92,12 @@ class FeedController extends AsyncNotifier<List<Article>> {
         remote.defaultsHome.isNotEmpty || remote.excludeHome.isNotEmpty;
     final maxHops = gated ? 10 : 5;
     for (var hop = 0; hop < maxHops; hop++) {
-      final page = await ref
-          .read(apiClientProvider)
-          .feed(cursor: next, limit: limit, since: _since, region: region);
+      final page = await ref.read(apiClientProvider).feed(
+          cursor: next,
+          limit: limit,
+          since: _since,
+          region: region,
+          regions: scopeSegments);
       next = page.nextCursor;
       _cursor = page.nextCursor;
       _hasMore = page.nextCursor != null;

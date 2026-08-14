@@ -33,6 +33,9 @@ class ApiClient {
     // sources + globals in SQL, so pages arrive dense instead of mostly
     // dropped by the client gate (which still applies for exact country).
     String? region,
+    // MULTI/cross-region preference: every selected segment — the server
+    // returns the UNION (+ globals). Wins over [region] when non-empty.
+    List<String>? regions,
   }) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/feed',
@@ -44,7 +47,10 @@ class ApiClient {
         if (sort != null) 'sort': sort,
         if (since != null) 'since': since,
         if (video) 'video': '1',
-        if (region != null) 'region': region,
+        if (regions != null && regions.isNotEmpty)
+          'regions': regions.join(',')
+        else if (region != null)
+          'region': region,
       },
     );
     return FeedPage.fromJson(res.data ?? const {});

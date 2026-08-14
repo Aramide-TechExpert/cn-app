@@ -205,4 +205,69 @@ void main() {
       expect(sourceVisible('Reuters', meta), isTrue);
     }
   });
+
+  group('multi/cross-scope union', multiScopeTests);
+}
+
+/// Multi/cross-scope union (2026-08-14): several regions/countries at once —
+/// the feed admits ANY selected scope's sources and nothing outside them.
+void multiScopeTests() {
+  final sources = classifiedSourcesForTest;
+  String pick(bool Function(SourceInfo) f) =>
+      sources.entries.firstWhere((e) => f(e.value)).key;
+
+  final nigerian = pick((i) =>
+      i.kind == SourceKind.national &&
+      i.segment == 'Africa' &&
+      i.country == 'Nigeria' &&
+      !i.local);
+  final ukNational = pick((i) =>
+      i.kind == SourceKind.national &&
+      i.segment == 'United Kingdom' &&
+      !i.local);
+  final indian = pick((i) =>
+      i.kind == SourceKind.national && i.segment == 'India' && !i.local);
+  final otherAfricaLocal = pick((i) =>
+      i.kind == SourceKind.national &&
+      i.segment == 'Africa' &&
+      i.local &&
+      i.country != 'Nigeria' &&
+      i.country != 'Africa');
+
+  const meta = {
+    'preferred_scopes': ['Africa|Nigeria', 'United Kingdom'],
+  };
+
+  test('union admits sources from EVERY selected scope', () {
+    expect(sourceVisible(nigerian, meta), isTrue);
+    expect(sourceVisible(ukNational, meta), isTrue);
+  });
+
+  test('nationals outside the union never leak in', () {
+    expect(sourceVisible(indian, meta), isFalse);
+  });
+
+  test('locals still only reach their own country scope', () {
+    expect(sourceVisible(otherAfricaLocal, meta), isFalse);
+  });
+
+  test('legacy single-scope keys gate identically (back-compat)', () {
+    const legacy = {
+      'news_scope': 'region',
+      'preferred_region': 'Africa',
+      'preferred_country': 'Nigeria',
+    };
+    expect(sourceVisible(nigerian, legacy), isTrue);
+    expect(sourceVisible(ukNational, legacy), isFalse);
+  });
+
+  test('scopes list takes precedence over legacy keys when both present', () {
+    const both = {
+      'preferred_scopes': ['United Kingdom'],
+      'news_scope': 'region',
+      'preferred_region': 'India',
+    };
+    expect(sourceVisible(ukNational, both), isTrue);
+    expect(sourceVisible(indian, both), isFalse);
+  });
 }

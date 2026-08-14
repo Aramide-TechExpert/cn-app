@@ -14,11 +14,13 @@ import 'feed_controller.dart'
 final videoPoolProvider = FutureProvider.autoDispose<List<Article>>((ref) async {
   // Remote kill switch: empty pool hides the Shorts rail + Reel entry.
   if (!remote.videos) return const <Article>[];
+  final vMeta = ref.read(currentUserProvider)?.userMetadata;
+  final vSegments = activeScopes(vMeta).map((s) => s.segment).toSet().toList();
   final page = await ref.read(apiClientProvider).feed(
       limit: 24,
       video: true,
-      region: activeSegment(ref.read(currentUserProvider)?.userMetadata) ??
-          'Worldwide');
+      region: vSegments.isEmpty ? 'Worldwide' : null,
+      regions: vSegments);
   final playable = applySurfaceGate(
       ref,
       applyRegionPreference(ref,
@@ -125,7 +127,10 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
             // (the picker only offers gate-visible sources anyway).
             region: _filters.source != null
                 ? null
-                : (activeSegment(meta) ?? 'Worldwide'),
+                : (activeScopes(meta).isEmpty ? 'Worldwide' : null),
+            regions: _filters.source != null
+                ? null
+                : activeScopes(meta).map((s) => s.segment).toSet().toList(),
           );
       next = page.nextCursor;
       _cursor = page.nextCursor;

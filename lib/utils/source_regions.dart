@@ -1073,17 +1073,53 @@ const Map<String, String> isoToCountry = {
 };
 
 /// The user's active segment: null when signed out, worldwide, or unset.
-String? activeSegment(Map<String, dynamic>? meta) {
-  if (meta?['news_scope'] != 'region') return null;
-  final s = meta?['preferred_region'] as String?;
-  return (s == null || s.isEmpty || s == 'Worldwide') ? null : s;
+/// One location scope: a segment, optionally narrowed to one country.
+typedef NewsScope = ({String segment, String? country});
+
+/// Every location scope the user selected — MULTI and CROSS-region
+/// (2026-08-14): `preferred_scopes` metadata holds entries like
+/// "Africa|Nigeria" or "United Kingdom" (whole segment). The feed is the
+/// UNION of the scopes; each scope stays exactly as strict as the old
+/// single pick. Falls back to the legacy single-scope keys so accounts
+/// saved by older builds gate identically.
+List<NewsScope> activeScopes(Map<String, dynamic>? meta) {
+  final raw = meta?['preferred_scopes'];
+  if (raw is List && raw.isNotEmpty) {
+    final out = <NewsScope>[];
+    for (final e in raw) {
+      if (e is! String || e.isEmpty) continue;
+      final parts = e.split('|');
+      final seg = parts.first;
+      if (seg == 'Worldwide' || !newsSegments.any((t) => t.$1 == seg)) {
+        continue;
+      }
+      final country =
+          parts.length > 1 && parts[1].isNotEmpty ? parts[1] : null;
+      if (!out.any((x) => x.segment == seg && x.country == country)) {
+        out.add((segment: seg, country: country));
+      }
+    }
+    if (out.isNotEmpty) return out;
+  }
+  // Legacy single-scope keys.
+  if (meta?['news_scope'] != 'region') return const [];
+  final seg = meta?['preferred_region'] as String?;
+  if (seg == null || seg.isEmpty || seg == 'Worldwide') return const [];
+  final c = meta?['preferred_country'] as String?;
+  return [(segment: seg, country: (c == null || c.isEmpty) ? null : c)];
 }
 
-/// The user's country inside their segment (only meaningful when scoped).
+/// PRIMARY segment (first scope) — drives the single-region surfaces
+/// (briefing edition, trending, server pre-filter fallback).
+String? activeSegment(Map<String, dynamic>? meta) {
+  final scopes = activeScopes(meta);
+  return scopes.isEmpty ? null : scopes.first.segment;
+}
+
+/// PRIMARY country (first scope), when it has one.
 String? activeCountry(Map<String, dynamic>? meta) {
-  if (activeSegment(meta) == null) return null;
-  final c = meta?['preferred_country'] as String?;
-  return (c == null || c.isEmpty) ? null : c;
+  final scopes = activeScopes(meta);
+  return scopes.isEmpty ? null : scopes.first.country;
 }
 
 /// STRICT source visibility:
@@ -1144,21 +1180,27 @@ const Set<String> _worldwideFlagships = {
   'buenos aires times', 'mexico news daily', 'rio times', 'mercopress',
 };
 
-bool sourceVisible(String source, Map<String, dynamic>? meta) {
-  final i = sourceInfo(source);
-  if (i == null || i.kind != SourceKind.national) return true;
-  final segment = activeSegment(meta);
-  if (segment == null) return _isWorldwideFlagship(source.toLowerCase());
-  if (!_inSegment(i, segment)) return false;
-  final country = activeCountry(meta);
+/// Per-scope visibility — the exact single-scope rules, unchanged.
+bool _visibleInScope(SourceInfo i, NewsScope scope) {
+  if (!_inSegment(i, scope.segment)) return false;
+  final country = scope.country;
   // No country picked: English nationals only — except single-country
   // segments (US/UK/Canada/India), where the segment IS the country, so
   // its local-language outlets (e.g. French Canada) are in scope.
-  if (country == null) return !i.local || i.country == segment;
+  if (country == null) return !i.local || i.country == scope.segment;
   // Country picked: only that country's outlets — plus pan-segment
   // outlets (country == segment, e.g. Africanews, Politico Europe),
   // which serve every country in their region.
-  return i.country == country || i.country == segment;
+  return i.country == country || i.country == scope.segment;
+}
+
+bool sourceVisible(String source, Map<String, dynamic>? meta) {
+  final i = sourceInfo(source);
+  if (i == null || i.kind != SourceKind.national) return true;
+  final scopes = activeScopes(meta);
+  if (scopes.isEmpty) return _isWorldwideFlagship(source.toLowerCase());
+  // UNION: visible if ANY selected scope admits it — never outside them.
+  return scopes.any((scope) => _visibleInScope(i, scope));
 }
 
 /// Drop articles from sources the user must not see (strict gate).
@@ -1178,6 +1220,18 @@ int _tier(String source, String? segment, String? country) {
     return 1;
   }
   return i.kind == SourceKind.global ? 2 : 3;
+}
+
+/// Best (lowest) tier across every selected scope — a Nigerian outlet is
+/// tier 0 for an Africa|Nigeria + UK user even though the UK scope would
+/// rank it lower.
+int _tierForScopes(String source, List<NewsScope> scopes) {
+  var best = 3;
+  for (final scope in scopes) {
+    final t = _tier(source, scope.segment, scope.country);
+    if (t < best) best = t;
+  }
+  return best;
 }
 
 /// Full preference shaping: strict gate, then a stable 4-tier partition so
@@ -1206,12 +1260,11 @@ List<Article> shapeArticlesForUser(
     return [...lead, ...rest];
   }
 
-  final segment = activeSegment(meta);
-  if (segment == null) return favsFirst(kept);
-  final country = activeCountry(meta);
+  final scopes = activeScopes(meta);
+  if (scopes.isEmpty) return favsFirst(kept);
   final tiers = [<Article>[], <Article>[], <Article>[], <Article>[]];
   for (final a in kept) {
-    tiers[_tier(a.source, segment, country)].add(a);
+    tiers[_tierForScopes(a.source, scopes)].add(a);
   }
   return favsFirst([for (final t in tiers) ...t]);
 }
@@ -1228,13 +1281,12 @@ List<StoryCluster> shapeClustersForUser(
       if (c.sources.isEmpty || c.sources.any((s) => sourceVisible(s, meta)))
         c,
   ];
-  final segment = activeSegment(meta);
-  if (segment == null) return visible;
-  final country = activeCountry(meta);
+  final scopes = activeScopes(meta);
+  if (scopes.isEmpty) return visible;
   int clusterTier(StoryCluster c) {
     var best = 3;
     for (final s in c.sources) {
-      final t = _tier(s, segment, country);
+      final t = _tierForScopes(s, scopes);
       if (t < best) best = t;
     }
     return best;

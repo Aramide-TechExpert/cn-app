@@ -42,8 +42,17 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
   final Set<String> _pickedSources = {};
   bool _breakingWatchlist = true;
   bool _highImpactOnly = false;
-  String _segment = 'Worldwide'; // a newsSegments label
-  String? _country; // country inside the segment, when localized
+  /// Selected location scopes — "Segment" or "Segment|Country" entries,
+  /// MULTI and CROSS-region (2026-08-14). Empty = Worldwide. The feed is
+  /// the union; the first entry is the PRIMARY (briefing/trending edition).
+  final List<String> _scopes = [];
+  String get _segment =>
+      _scopes.isEmpty ? 'Worldwide' : _scopes.first.split('|').first;
+  String? get _country {
+    if (_scopes.isEmpty) return null;
+    final parts = _scopes.first.split('|');
+    return parts.length > 1 && parts[1].isNotEmpty ? parts[1] : null;
+  }
   bool _detecting = false;
   bool _finishing = false;
 
@@ -67,13 +76,24 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
         .addAll(((meta['preferred_sources'] as List?) ?? const []).cast<String>());
     _breakingWatchlist = meta['alerts_breaking'] as bool? ?? true;
     _highImpactOnly = meta['alerts_high_impact_only'] as bool? ?? false;
-    final saved = meta['preferred_region'] as String?;
-    if (meta['news_scope'] == 'region' &&
-        newsSegments.any((s) => s.$1 == saved)) {
-      _segment = saved!;
-      final savedCountry = meta['preferred_country'] as String?;
-      if (countriesFor(_segment)?.contains(savedCountry) ?? false) {
-        _country = savedCountry;
+    final savedScopes = meta['preferred_scopes'];
+    if (savedScopes is List && savedScopes.isNotEmpty) {
+      for (final e in savedScopes) {
+        if (e is! String || e.isEmpty) continue;
+        final seg = e.split('|').first;
+        if (newsSegments.any((s) => s.$1 == seg) && !_scopes.contains(e)) {
+          _scopes.add(e);
+        }
+      }
+    } else {
+      // Legacy single-scope prefill.
+      final saved = meta['preferred_region'] as String?;
+      if (meta['news_scope'] == 'region' &&
+          newsSegments.any((s) => s.$1 == saved)) {
+        final savedCountry = meta['preferred_country'] as String?;
+        _scopes.add((countriesFor(saved!)?.contains(savedCountry) ?? false)
+            ? '$saved|$savedCountry'
+            : saved);
       }
     }
   }
@@ -118,10 +138,14 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
     setState(() {
       _detecting = false;
       if (segment != null) {
-        _segment = segment;
-        _country = (countriesFor(segment)?.contains(detected) ?? false)
-            ? detected
-            : null;
+        final scope = (countriesFor(segment)?.contains(detected) ?? false)
+            ? '$segment|$detected'
+            : segment;
+        // Detected location becomes the PRIMARY scope (kept alongside any
+        // other regions already selected).
+        _scopes
+          ..removeWhere((e) => e.split('|').first == segment)
+          ..insert(0, scope);
       }
     });
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -163,7 +187,8 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
     // earlier location must not survive a change (the picker never shows
     // them, but the saved list has to match what the gate allows too).
     final gateMeta = <String, dynamic>{
-      'news_scope': 'region',
+      'news_scope': _scopes.isEmpty ? 'worldwide' : 'region',
+      'preferred_scopes': List<String>.of(_scopes),
       'preferred_region': _segment,
       if (_country != null) 'preferred_country': _country,
     };
@@ -174,6 +199,10 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
             _pickedSources.where((s) => sourceVisible(s, gateMeta)).toList(),
         'alerts_breaking': _breakingWatchlist,
         'alerts_high_impact_only': _highImpactOnly,
+        // Multi/cross-region scopes + the legacy single-scope keys
+        // (primary = first scope) so older builds and single-region
+        // surfaces (briefing, trending) keep working.
+        'preferred_scopes': List<String>.of(_scopes),
         'news_scope': _segment == 'Worldwide' ? 'worldwide' : 'region',
         'preferred_region': _segment,
         'preferred_country': _country,
@@ -249,15 +278,14 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
                 _ProfileStep(name: _name),
                 const _InterestsStep(),
                 _RegionStep(
-                  segment: _segment,
-                  country: _country,
+                  scopes: List<String>.of(_scopes),
                   detecting: _detecting,
                   onDetect: _detectLocation,
-                  onSelect: (v) => setState(() {
-                    _segment = v;
-                    _country = null;
+                  onScopes: (v) => setState(() {
+                    _scopes
+                      ..clear()
+                      ..addAll(v);
                   }),
-                  onCountry: (v) => setState(() => _country = v),
                 ),
                 _SourcesStep(
                   picked: _pickedSources,
@@ -265,8 +293,7 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
                       _pickedSources.contains(s)
                           ? _pickedSources.remove(s)
                           : _pickedSources.add(s)),
-                  segment: _segment,
-                  country: _country,
+                  scopes: List<String>.of(_scopes),
                 ),
                 _AlertsStep(
                   breaking: _breakingWatchlist,
@@ -503,30 +530,35 @@ class _InterestsStep extends ConsumerWidget {
 // ── Step 3: region ──────────────────────────────────────────────────────────
 class _RegionStep extends StatelessWidget {
   const _RegionStep({
-    required this.segment,
-    required this.country,
+    required this.scopes,
     required this.detecting,
     required this.onDetect,
-    required this.onSelect,
-    required this.onCountry,
+    required this.onScopes,
   });
-  final String segment;
-  final String? country;
+  /// "Segment" / "Segment|Country" entries — multi + cross-region.
+  final List<String> scopes;
   final bool detecting;
   final VoidCallback onDetect;
-  final ValueChanged<String> onSelect;
-  final ValueChanged<String?> onCountry;
+  final ValueChanged<List<String>> onScopes;
+
+  bool _segmentOn(String seg) => scopes.any((e) => e.split('|').first == seg);
+
+  String _chipLabel(String e) {
+    final parts = e.split('|');
+    return parts.length > 1 && parts[1].isNotEmpty
+        ? parts[1]
+        : 'All ${parts.first}';
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final countries = countriesFor(segment);
     return _Step(
       icon: Icons.public,
       kicker: 'Step 3 · Region',
       title: 'Make it local',
       subtitle:
-          'Stories from your country and region lead your feed. Worldwide keeps it fully global.',
+          'Pick one or SEVERAL regions and countries — your feed becomes the mix of all of them. Worldwide keeps it fully global.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -553,50 +585,52 @@ class _RegionStep extends StatelessWidget {
               _PickTile(
                 label: label,
                 leading: Text(emoji, style: const TextStyle(fontSize: 22)),
-                selected: segment == label,
+                selected: label == 'Worldwide'
+                    ? scopes.isEmpty
+                    : _segmentOn(label),
                 onTap: () {
-                  onSelect(label);
-                  // Regions with a country roster pop the picker drawer
-                  // right away (selection just reset to "All <region>").
-                  if (countriesFor(label) != null) {
-                    _showCountryDrawer(context,
-                        segment: label, current: null, onCountry: onCountry);
+                  if (label == 'Worldwide') {
+                    onScopes(const []);
+                    return;
                   }
+                  if (countriesFor(label) == null) {
+                    // Single-country segment (US/UK/Canada/India): the tap
+                    // simply toggles it in or out of the mix.
+                    final next = List<String>.of(scopes);
+                    _segmentOn(label)
+                        ? next.removeWhere(
+                            (e) => e.split('|').first == label)
+                        : next.add(label);
+                    onScopes(next);
+                    return;
+                  }
+                  // Regions with a country roster pop the multi-select
+                  // drawer (pick several countries, or the whole region).
+                  _showCountryDrawer(context,
+                      segment: label, scopes: scopes, onScopes: onScopes);
                 },
               ),
           ]),
-          if (countries != null) ...[
+          if (scopes.isNotEmpty) ...[
             const SizedBox(height: AppSpace.xl),
-            Text('Your country',
+            Text('Your locations',
                 style: AppText.bodyStrong.copyWith(color: c.text)),
             const SizedBox(height: 3),
-            Text('Local stories from your country come first.',
+            Text(
+                'Stories from all of these lead your feed. The first is your briefing edition.',
                 style: AppText.caption.copyWith(color: c.textFaint)),
             const SizedBox(height: AppSpace.md),
-            // Compact selector — the full list lives in the bottom drawer.
-            InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () => _showCountryDrawer(context,
-                  segment: segment, current: country, onCountry: onCountry),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpace.lg, vertical: AppSpace.md),
-                decoration: BoxDecoration(
-                  color: c.bgInset,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: c.border),
-                ),
-                child: Row(children: [
-                  Icon(Icons.flag_outlined, size: 20, color: c.brand),
-                  const SizedBox(width: AppSpace.md),
-                  Expanded(
-                    child: Text(country ?? 'All $segment',
-                        style: AppText.bodyStrong.copyWith(color: c.text)),
+            Wrap(
+              spacing: AppSpace.sm,
+              runSpacing: AppSpace.sm,
+              children: [
+                for (final e in scopes)
+                  _ScopeChip(
+                    label: _chipLabel(e),
+                    onRemove: () =>
+                        onScopes(List<String>.of(scopes)..remove(e)),
                   ),
-                  Icon(Icons.keyboard_arrow_down_rounded,
-                      color: c.textSecondary),
-                ]),
-              ),
+              ],
             ),
           ],
         ],
@@ -605,18 +639,28 @@ class _RegionStep extends StatelessWidget {
   }
 }
 
-/// Country picker as a bottom drawer: "All <region>" pinned on top, then
-/// every country ALPHABETICALLY — tidy rows, single tap selects and closes.
+/// Country picker drawer — MULTI-select: check several countries, or the
+/// whole region; Done applies. Same sheet construction as the app's other
+/// sheets (material paints to the screen bottom, SafeArea pads content).
 Future<void> _showCountryDrawer(
   BuildContext context, {
   required String segment,
-  required String? current,
-  required ValueChanged<String?> onCountry,
+  required List<String> scopes,
+  required ValueChanged<List<String>> onScopes,
 }) {
   final countries = [...?countriesFor(segment)]..sort();
-  // Same construction as the app's other sheets (article actions, source
-  // picker): the modal's OWN material paints bgElevated — it always reaches
-  // the screen's bottom edge — and SafeArea pads only the content.
+  final other =
+      scopes.where((e) => e.split('|').first != segment).toList();
+  final picked = <String>{
+    for (final e in scopes)
+      if (e.split('|').first == segment &&
+          e.contains('|') &&
+          e.split('|')[1].isNotEmpty)
+        e.split('|')[1],
+  };
+  // Opening an unselected region defaults to "All" so a quick Done adds
+  // the whole region; specific picks switch All off.
+  var all = picked.isEmpty;
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -625,84 +669,160 @@ Future<void> _showCountryDrawer(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
-    builder: (ctx) {
-      final c = ctx.colors;
-      void pick(String? v) {
-        HapticFeedback.selectionClick();
-        onCountry(v);
-        Navigator.of(ctx).pop();
-      }
-
-      Widget row(String label, bool selected, VoidCallback onTap,
-              {bool emphasize = false}) =>
-          InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpace.x2, vertical: 14),
-              child: Row(children: [
-                Expanded(
-                  child: Text(label,
-                      style: (emphasize || selected
-                              ? AppText.bodyStrong
-                              : AppText.body)
-                          .copyWith(color: selected ? c.brand : c.text)),
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setSheet) {
+        final c = ctx.colors;
+        Widget row(String label, bool on, VoidCallback onTap,
+                {bool emphasize = false}) =>
+            InkWell(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                onTap();
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpace.x2, vertical: 13),
+                child: Row(children: [
+                  Expanded(
+                    child: Text(label,
+                        style: (emphasize || on
+                                ? AppText.bodyStrong
+                                : AppText.body)
+                            .copyWith(color: on ? c.brand : c.text)),
+                  ),
+                  Icon(
+                      on
+                          ? Icons.check_box_rounded
+                          : Icons.check_box_outline_blank_rounded,
+                      size: 22,
+                      color: on ? c.brand : c.textFaint),
+                ]),
+              ),
+            );
+        return SafeArea(
+          top: false,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(ctx).size.height * 0.72),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSpace.x2, 0, AppSpace.x2, 4),
+                  child: Text(segment,
+                      style: AppText.headline.copyWith(color: c.text)),
                 ),
-                if (selected)
-                  Icon(Icons.check_circle_rounded, size: 20, color: c.brand),
-              ]),
-            ),
-          );
-
-      return SafeArea(
-        top: false,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(ctx).size.height * 0.66),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                    AppSpace.x2, 0, AppSpace.x2, 4),
-                child: Text('Your country',
-                    style: AppText.headline.copyWith(color: c.text)),
-              ),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: AppSpace.x2),
-                child: Text('Local stories from your country come first.',
-                    style: AppText.caption.copyWith(color: c.textFaint)),
-              ),
-              const SizedBox(height: AppSpace.sm),
-              Flexible(
-                child: ListView(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.only(bottom: AppSpace.lg),
-                  children: [
-                    row('All $segment', current == null, () => pick(null),
-                        emphasize: true),
-                    Divider(height: 1, thickness: 1, color: c.border),
-                    for (final name in countries) ...[
-                      row(name, current == name, () => pick(name)),
-                      if (name != countries.last)
-                        Divider(height: 1, thickness: 1, color: c.border),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppSpace.x2),
+                  child: Text(
+                      'Pick one or several countries, or the whole region.',
+                      style: AppText.caption.copyWith(color: c.textFaint)),
+                ),
+                const SizedBox(height: AppSpace.sm),
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: [
+                      row('All $segment', all, () {
+                        setSheet(() {
+                          all = !all;
+                          if (all) picked.clear();
+                        });
+                      }, emphasize: true),
+                      Divider(height: 1, thickness: 1, color: c.border),
+                      for (final name in countries) ...[
+                        row(name, picked.contains(name), () {
+                          setSheet(() {
+                            picked.contains(name)
+                                ? picked.remove(name)
+                                : picked.add(name);
+                            if (picked.isNotEmpty) all = false;
+                          });
+                        }),
+                        if (name != countries.last)
+                          Divider(
+                              height: 1, thickness: 1, color: c.border),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSpace.x2, AppSpace.sm, AppSpace.x2, AppSpace.md),
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48)),
+                    onPressed: () {
+                      // Nothing checked at all = region removed from the mix.
+                      onScopes([
+                        ...other,
+                        if (all)
+                          segment
+                        else
+                          ...picked.map((n) => '$segment|$n'),
+                      ]);
+                      Navigator.of(ctx).pop();
+                    },
+                    child: const Text('Done'),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      );
-    },
+        );
+      },
+    ),
   );
 }
 
-/// The Location step's tile look, shared by every picker in the wizard
-/// (regions, topics, publishers): tonal 2-column tile with a leading
-/// emoji/icon/favicon, the label, and a check circle when selected.
+/// Short readable summary of the scope list ("Nigeria, UK +2 more").
+String _scopesSummary(List<String> scopes) {
+  final names = [
+    for (final e in scopes)
+      e.contains('|') && e.split('|')[1].isNotEmpty
+          ? e.split('|')[1]
+          : e.split('|').first,
+  ];
+  if (names.length <= 2) return names.join(', ');
+  return '${names.take(2).join(', ')} +${names.length - 2} more';
+}
+
+/// Removable location chip on the Region step.
+class _ScopeChip extends StatelessWidget {
+  const _ScopeChip({required this.label, required this.onRemove});
+  final String label;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(AppSpace.md, 6, AppSpace.sm, 6),
+      decoration: BoxDecoration(
+        color: c.brand.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Text(label,
+            style: AppText.callout
+                .copyWith(color: c.brand, fontWeight: FontWeight.w600)),
+        const SizedBox(width: 4),
+        InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onRemove();
+          },
+          child: Icon(Icons.close_rounded, size: 16, color: c.brand),
+        ),
+      ]),
+    );
+  }
+}
+
 class _PickTile extends StatelessWidget {
   const _PickTile({
     required this.label,
@@ -774,13 +894,12 @@ class _SourcesStep extends ConsumerStatefulWidget {
   const _SourcesStep({
     required this.picked,
     required this.onToggle,
-    required this.segment,
-    required this.country,
+    required this.scopes,
   });
   final Set<String> picked;
   final ValueChanged<String> onToggle;
-  final String segment; // the Location step's LIVE pick, not saved metadata
-  final String? country;
+  /// The Location step's LIVE multi-scope pick, not saved metadata.
+  final List<String> scopes;
 
   @override
   ConsumerState<_SourcesStep> createState() => _SourcesStepState();
@@ -821,17 +940,16 @@ class _SourcesStepState extends ConsumerState<_SourcesStep> {
     // The gate sees the wizard's live Location pick, so the roster reacts
     // the moment the previous step changes — before anything is saved.
     final meta = <String, dynamic>{
-      'news_scope': 'region',
-      'preferred_region': widget.segment,
-      if (widget.country != null) 'preferred_country': widget.country,
+      'news_scope': widget.scopes.isEmpty ? 'worldwide' : 'region',
+      'preferred_scopes': widget.scopes,
     };
     return _Step(
       icon: Icons.newspaper_outlined,
       kicker: 'Step 4 · Sources',
       title: 'Favorite your publishers',
-      subtitle: widget.segment == 'Worldwide'
+      subtitle: widget.scopes.isEmpty
           ? 'Choose the outlets you trust most. Your feed gets tuned to them.'
-          : 'Publishers for ${widget.country ?? widget.segment} plus the '
+          : 'Publishers for ${_scopesSummary(widget.scopes)} plus the '
               'global desks. Your feed gets tuned to them.',
       child: publishers.when(
         loading: () => const Padding(
@@ -854,10 +972,9 @@ class _SourcesStepState extends ConsumerState<_SourcesStep> {
               .toList();
           final global =
               visible.where((s) => !local.contains(s)).toList();
-          final localLabel = widget.country ??
-              (widget.segment == 'Worldwide'
-                  ? 'Flagship publishers'
-                  : widget.segment);
+          final localLabel = widget.scopes.isEmpty
+              ? 'Flagship publishers'
+              : _scopesSummary(widget.scopes);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
