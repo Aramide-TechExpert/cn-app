@@ -405,11 +405,16 @@ class _HomePageState extends ConsumerState<HomePage> {
 
                 // Main "Latest" feed — layout follows the view switcher.
                 switch (_view) {
+                  // List view = the News Feed's horizontal row card (signals,
+                  // title, blurb, source — thumbnail on the RIGHT); text-only
+                  // ListCard remains for imageless articles.
                   FeedView.list => SliverList.builder(
                       itemCount: rest.length + 1,
                       itemBuilder: (context, i) => i == rest.length
                           ? _feedLoader(controller.hasMore)
-                          : ListCard(article: rest[i]),
+                          : rest[i].hasImage
+                              ? SplitCard(article: rest[i], imageRight: true)
+                              : ListCard(article: rest[i]),
                     ),
                   FeedView.magazine => SliverList.builder(
                       itemCount: rest.length + 1,
@@ -434,24 +439,35 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                       ),
                     ),
-                  FeedView.mixed => SliverList.builder(
-                      itemCount: rest.length + 1,
-                      itemBuilder: (context, i) {
-                        if (i == rest.length) {
-                          return _feedLoader(controller.hasMore);
-                        }
-                        // Grey band ONLY between two stacked big image cards.
-                        final next = i + 1 < rest.length ? rest[i + 1] : null;
-                        final flushBelow = next != null &&
-                            _isBigImageCardAt(i, rest[i],
-                                videoOk: videoOk.contains(rest[i].id)) &&
-                            _isBigImageCardAt(i + 1, next,
-                                videoOk: videoOk.contains(next.id));
-                        return _feedCard(i, rest[i],
-                            flushBelow: flushBelow,
-                            videoOk: videoOk.contains(rest[i].id));
-                      },
-                    ),
+                  FeedView.mixed => () {
+                      // Same row planning as the News Feed: mostly single
+                      // full-width cards with a periodic 2-up compact pair.
+                      final rows = _planHomeRows(rest);
+                      return SliverList.builder(
+                        itemCount: rows.length + 1,
+                        itemBuilder: (context, i) {
+                          if (i == rows.length) {
+                            return _feedLoader(controller.hasMore);
+                          }
+                          final row = rows[i];
+                          if (row.length == 2) return _pairRow(context, row);
+                          final a = row.first;
+                          // Grey band ONLY between two stacked big image cards.
+                          final nextRow =
+                              i + 1 < rows.length ? rows[i + 1] : null;
+                          final flushBelow = nextRow != null &&
+                              nextRow.length == 1 &&
+                              _isBigImageCardAt(i, a,
+                                  videoOk: videoOk.contains(a.id)) &&
+                              _isBigImageCardAt(i + 1, nextRow.first,
+                                  videoOk:
+                                      videoOk.contains(nextRow.first.id));
+                          return _feedCard(i, a,
+                              flushBelow: flushBelow,
+                              videoOk: videoOk.contains(a.id));
+                        },
+                      );
+                    }(),
                 },
               ],
             ),
@@ -504,7 +520,11 @@ Widget _feedCard(int i, Article a,
           ? DefaultCard(article: a, flushBelow: flushBelow)
           : ListCard(article: a);
     case 2:
-      return ListCard(article: a);
+      // The News Feed's horizontal row card (thumbnail right) — replaces
+      // the plain text ListCard for image-bearing articles.
+      return a.hasImage
+          ? SplitCard(article: a, imageRight: true)
+          : ListCard(article: a);
     case 3:
       return a.hasImage ? overlay() : ArticleCard(article: a);
     case 4:
@@ -517,6 +537,51 @@ Widget _feedCard(int i, Article a,
       return ArticleCard(article: a);
   }
 }
+
+/// Plan Latest into rows — the News Feed's structural rhythm: mostly single
+/// full-width cards, with a periodic 2-up compact pair (two small cards
+/// side-by-side). Pairs only group plain image cards (not video/text).
+List<List<Article>> _planHomeRows(List<Article> items) {
+  final rows = <List<Article>>[];
+  var i = 0, r = 0;
+  while (i < items.length) {
+    final a = items[i];
+    final next = i + 1 < items.length ? items[i + 1] : null;
+    final pairable = r > 0 &&
+        r % 4 == 1 &&
+        a.hasImage &&
+        !a.hasPlayableVideo &&
+        next != null &&
+        next.hasImage &&
+        !next.hasPlayableVideo;
+    if (pairable) {
+      rows.add([a, next]);
+      i += 2;
+    } else {
+      rows.add([a]);
+      i += 1;
+    }
+    r++;
+  }
+  return rows;
+}
+
+/// The News Feed's 2-up compact pair, rendered identically on Home.
+Widget _pairRow(BuildContext context, List<Article> row) => Column(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(
+            AppSpace.lg, AppSpace.md, AppSpace.lg, AppSpace.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: CompactCard(article: row[0])),
+            const SizedBox(width: AppSpace.md),
+            Expanded(child: CompactCard(article: row[1])),
+          ],
+        ),
+      ),
+      Divider(height: 1, thickness: 1, color: context.colors.border),
+    ]);
 
 /// Whether the card at position [i] renders as a big full-bleed image card
 /// (used to decide if a band-carrying card above it should drop to a thin line).
