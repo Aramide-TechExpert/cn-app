@@ -8,15 +8,17 @@ import '../utils/remote_settings.dart';
 import 'reading_history.dart';
 
 /// "For You" — articles merged from the user's followed categories
-/// (personalized Home rail). Empty when signed out / no interests. Bounded to
-/// the first 4 followed categories to keep it to a few requests.
+/// (personalized Home rail). Empty when signed out / no interests.
+/// EVERY followed topic feeds the rail ([QA-S1.1] decision 2026-08-14 —
+/// previously capped at the first 4); fetches run in parallel and the
+/// merged rail still trims to its display size below.
 final forYouFeedProvider = FutureProvider.autoDispose<List<Article>>((ref) async {
   final user = ref.watch(currentUserProvider);
   if (user == null) return const [];
   final followed = await ref.watch(interestsControllerProvider.future);
   if (followed.isEmpty) return const [];
   final api = ref.read(apiClientProvider);
-  final slugs = followed.take(4).toList();
+  final slugs = followed.toList();
   final lists = await Future.wait(
     slugs.map((s) async {
       try {
