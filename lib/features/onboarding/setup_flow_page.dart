@@ -554,7 +554,15 @@ class _RegionStep extends StatelessWidget {
                 label: label,
                 leading: Text(emoji, style: const TextStyle(fontSize: 22)),
                 selected: segment == label,
-                onTap: () => onSelect(label),
+                onTap: () {
+                  onSelect(label);
+                  // Regions with a country roster pop the picker drawer
+                  // right away (selection just reset to "All <region>").
+                  if (countriesFor(label) != null) {
+                    _showCountryDrawer(context,
+                        segment: label, current: null, onCountry: onCountry);
+                  }
+                },
               ),
           ]),
           if (countries != null) ...[
@@ -565,22 +573,30 @@ class _RegionStep extends StatelessWidget {
             Text('Local stories from your country come first.',
                 style: AppText.caption.copyWith(color: c.textFaint)),
             const SizedBox(height: AppSpace.md),
-            Wrap(
-              spacing: AppSpace.sm,
-              runSpacing: AppSpace.sm,
-              children: [
-                _CountryChip(
-                  label: 'All $segment',
-                  selected: country == null,
-                  onTap: () => onCountry(null),
+            // Compact selector — the full list lives in the bottom drawer.
+            InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => _showCountryDrawer(context,
+                  segment: segment, current: country, onCountry: onCountry),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpace.lg, vertical: AppSpace.md),
+                decoration: BoxDecoration(
+                  color: c.bgInset,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: c.border),
                 ),
-                for (final name in countries)
-                  _CountryChip(
-                    label: name,
-                    selected: country == name,
-                    onTap: () => onCountry(name),
+                child: Row(children: [
+                  Icon(Icons.flag_outlined, size: 20, color: c.brand),
+                  const SizedBox(width: AppSpace.md),
+                  Expanded(
+                    child: Text(country ?? 'All $segment',
+                        style: AppText.bodyStrong.copyWith(color: c.text)),
                   ),
-              ],
+                  Icon(Icons.keyboard_arrow_down_rounded,
+                      color: c.textSecondary),
+                ]),
+              ),
             ),
           ],
         ],
@@ -589,40 +605,107 @@ class _RegionStep extends StatelessWidget {
   }
 }
 
-class _CountryChip extends StatelessWidget {
-  const _CountryChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return InkWell(
-      borderRadius: BorderRadius.circular(999),
-      onTap: () {
+/// Country picker as a bottom drawer: "All <region>" pinned on top, then
+/// every country ALPHABETICALLY — tidy rows, single tap selects and closes.
+Future<void> _showCountryDrawer(
+  BuildContext context, {
+  required String segment,
+  required String? current,
+  required ValueChanged<String?> onCountry,
+}) {
+  final countries = [...?countriesFor(segment)]..sort();
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) {
+      final c = ctx.colors;
+      void pick(String? v) {
         HapticFeedback.selectionClick();
-        onTap();
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(
-            horizontal: AppSpace.lg, vertical: 9),
-        decoration: BoxDecoration(
-          color: selected ? c.brand : c.bgInset,
-          borderRadius: BorderRadius.circular(999),
+        onCountry(v);
+        Navigator.of(ctx).pop();
+      }
+
+      Widget row(String label, bool selected, VoidCallback onTap,
+              {bool emphasize = false}) =>
+          InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpace.x2, vertical: 14),
+              child: Row(children: [
+                Expanded(
+                  child: Text(label,
+                      style: (emphasize || selected
+                              ? AppText.bodyStrong
+                              : AppText.body)
+                          .copyWith(color: selected ? c.brand : c.text)),
+                ),
+                if (selected)
+                  Icon(Icons.check_circle_rounded, size: 20, color: c.brand),
+              ]),
+            ),
+          );
+
+      return SafeArea(
+        child: Container(
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(ctx).size.height * 0.72),
+          decoration: BoxDecoration(
+            color: c.bgElevated,
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 10, bottom: 4),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: c.border,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpace.x2, AppSpace.md, AppSpace.x2, 4),
+                child: Text('Your country',
+                    style: AppText.headline.copyWith(color: c.text)),
+              ),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: AppSpace.x2),
+                child: Text('Local stories from your country come first.',
+                    style: AppText.caption.copyWith(color: c.textFaint)),
+              ),
+              const SizedBox(height: AppSpace.sm),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.only(bottom: AppSpace.lg),
+                  children: [
+                    row('All $segment', current == null, () => pick(null),
+                        emphasize: true),
+                    Divider(height: 1, thickness: 1, color: c.border),
+                    for (final name in countries) ...[
+                      row(name, current == name, () => pick(name)),
+                      if (name != countries.last)
+                        Divider(height: 1, thickness: 1, color: c.border),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Text(label,
-            style: AppText.callout.copyWith(
-                color: selected ? c.onBrand : c.text,
-                fontWeight: FontWeight.w600)),
-      ),
-    );
-  }
+      );
+    },
+  );
 }
 
 /// The Location step's tile look, shared by every picker in the wizard
