@@ -647,15 +647,18 @@ Future<void> _showCountryDrawer(
             ),
           );
 
-      return SafeArea(
-        child: Container(
-          constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(ctx).size.height * 0.72),
-          decoration: BoxDecoration(
-            color: c.bgElevated,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
+      // Surface runs to the very bottom edge (no barrier strip showing
+      // through) — the safe-area inset is applied INSIDE the sheet.
+      return Container(
+        constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.72),
+        decoration: BoxDecoration(
+          color: c.bgElevated,
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          top: false,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
