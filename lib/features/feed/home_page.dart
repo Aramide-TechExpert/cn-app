@@ -526,7 +526,7 @@ Widget _feedCard(int i, Article a,
           ? SplitCard(article: a, imageRight: true)
           : ListCard(article: a);
     case 3:
-      return a.hasImage ? overlay() : ArticleCard(article: a);
+      return a.hasImage ? overlay() : ListCard(article: a);
     case 4:
       return a.hasImage
           ? MagazineCard(article: a, flushBelow: flushBelow)
@@ -534,7 +534,11 @@ Widget _feedCard(int i, Article a,
     case 5:
       return FeaturedCard(article: a);
     default:
-      return ArticleCard(article: a);
+      // Classic ArticleCard (image left, source header, action footer) is
+      // retired from Home — the horizontal row card replaces it entirely.
+      return a.hasImage
+          ? SplitCard(article: a, imageRight: true)
+          : ListCard(article: a);
   }
 }
 
