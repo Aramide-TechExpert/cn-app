@@ -19,7 +19,6 @@ import '../../theme/tokens.dart';
 import '../../utils/link_out.dart';
 import '../discover/discover_page.dart' show FeedView;
 import '../shell/app_drawer.dart';
-import 'widgets/article_card.dart';
 import 'widgets/card_extras.dart';
 import 'widgets/card_variants.dart';
 import 'widgets/magazine_card.dart';
