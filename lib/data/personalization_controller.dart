@@ -22,10 +22,20 @@ final forYouFeedProvider = FutureProvider<List<Article>>((ref) async {
   if (followed.isEmpty) return const [];
   final api = ref.read(apiClientProvider);
   final slugs = followed.toList();
+  // Strict favorites + scopes go to the SERVER ([QA-S1.3]): every fetched
+  // article is already the user's — a full rail instead of one survivor
+  // after client-side filtering, and no wasted transfer.
+  final meta = user.userMetadata;
+  final favs =
+      ((meta?['preferred_sources'] as List?) ?? const []).cast<String>();
+  final segs = activeScopes(meta).map((s) => s.segment).toSet().toList();
   final lists = await Future.wait(
     slugs.map((s) async {
       try {
-        return await api.categoryFeed(s, limit: 6);
+        return await api.categoryFeed(s,
+            limit: favs.isEmpty ? 6 : 10,
+            sources: favs.toList(),
+            regions: segs);
       } catch (_) {
         return <Article>[];
       }

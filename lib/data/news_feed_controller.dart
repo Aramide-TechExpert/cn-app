@@ -113,11 +113,11 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
     // so keep pulling until enough VISIBLE stories accumulate or the
     // corpus ends. Bounded hops keep a worst-case refresh cheap.
     // Dig deeper when the admin surface gate is active (see feed_controller).
-    final maxHops = remote.defaultsFeed.isNotEmpty ||
-            remote.excludeFeed.isNotEmpty ||
-            ((meta?['preferred_sources'] as List?)?.isNotEmpty ?? false)
-        ? 10
-        : 5;
+    // Favorites are server-filtered — deep hops only for the admin gates.
+    final maxHops =
+        remote.defaultsFeed.isNotEmpty || remote.excludeFeed.isNotEmpty
+            ? 10
+            : 5;
     for (var hop = 0; hop < maxHops; hop++) {
       final page = await ref.read(apiClientProvider).feed(
             cursor: next,

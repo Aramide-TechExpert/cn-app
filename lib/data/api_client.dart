@@ -189,8 +189,12 @@ class ApiClient {
   }
 
   /// One page of a category feed (used by the topic screen). No cursor yet.
-  Future<List<Article>> categoryFeed(String slug, {int limit = 20}) async {
-    final page = await feed(category: slug, limit: limit);
+  /// [sources]/[regions] push the user's strict favorites + scopes into the
+  /// server so pages arrive pre-filtered (For You rail).
+  Future<List<Article>> categoryFeed(String slug,
+      {int limit = 20, List<String>? sources, List<String>? regions}) async {
+    final page = await feed(
+        category: slug, limit: limit, sources: sources, regions: regions);
     return page.items;
   }
 
