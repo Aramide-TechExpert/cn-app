@@ -120,7 +120,7 @@ void main() {
     });
   });
 
-  group('favorite publishers shape the feed (previously dead preference)', () {
+  group('favorite publishers — STRICT allow-list on the feeds', () {
     List<String> shape(Map<String, dynamic> meta, List<String> sources) => [
           for (final a in shapeArticlesForUser(
               [for (final s in sources) art(s)],
@@ -128,25 +128,34 @@ void main() {
             a.source
         ];
 
-    test('favorites lead the list', () {
+    test('ONLY favorited publishers appear — nothing else', () {
       expect(
           shape(const {
             'preferred_sources': ['CBS News']
           }, feed),
-          ['CBS News', 'The Jerusalem Post', 'India Today']);
+          ['CBS News']);
     });
 
-    test('favorites lead even ahead of region tiers', () {
+    test('strict inside region scope too', () {
       const meta = {
         'news_scope': 'region',
         'preferred_region': 'United States',
         'preferred_sources': ['reuters'],
       };
-      final shaped = shape(meta, const ['cbs news', 'reuters']);
-      expect(shaped.first, 'reuters');
+      expect(shape(meta, const ['cbs news', 'reuters']), ['reuters']);
     });
 
-    test('no favorites = unchanged order', () {
+    test('the location gate outranks favorites — an out-of-scope favorite '
+        'can never surface', () {
+      const meta = {
+        'news_scope': 'region',
+        'preferred_scopes': ['United Kingdom'],
+        'preferred_sources': ['ndtv'], // Indian national, outside the scope
+      };
+      expect(shape(meta, const ['ndtv', 'bbc news']), isEmpty);
+    });
+
+    test('no favorites = unchanged scope feed', () {
       expect(shape(const {}, feed), feed);
     });
   });

@@ -1241,32 +1241,26 @@ List<Article> shapeArticlesForUser(
   List<Article> items, {
   required Map<String, dynamic>? meta,
 }) {
-  final kept = gateSourcesForUser(items, meta: meta);
-  // Favorite publishers LEAD every list (2026-08-10 — the preference was
-  // previously saved but never consumed; favoriting changed nothing).
-  // Boost-first, never a filter: favorites jump ahead, everything else
-  // gate-visible still follows. The gate itself is untouched — the
-  // favorites picker only offers location-visible sources anyway.
+  var kept = gateSourcesForUser(items, meta: meta);
+  // Favorite publishers are a STRICT allow-list on the feeds ([QA-S1.3]
+  // decision 2026-08-15 — tightened from boost-first): when set, ONLY the
+  // favorited publishers appear, nothing else. The location gate still
+  // runs FIRST, so a favorite outside the user's scopes can never
+  // surface. No favorites = the scope feed, unchanged.
   final favs = ((meta?['preferred_sources'] as List?) ?? const [])
       .cast<String>()
       .toSet();
-  List<Article> favsFirst(List<Article> xs) {
-    if (favs.isEmpty) return xs;
-    final lead = <Article>[];
-    final rest = <Article>[];
-    for (final a in xs) {
-      (favs.contains(a.source) ? lead : rest).add(a);
-    }
-    return [...lead, ...rest];
+  if (favs.isNotEmpty) {
+    kept = kept.where((a) => favs.contains(a.source)).toList();
   }
 
   final scopes = activeScopes(meta);
-  if (scopes.isEmpty) return favsFirst(kept);
+  if (scopes.isEmpty) return kept;
   final tiers = [<Article>[], <Article>[], <Article>[], <Article>[]];
   for (final a in kept) {
     tiers[_tierForScopes(a.source, scopes)].add(a);
   }
-  return favsFirst([for (final t in tiers) ...t]);
+  return [for (final t in tiers) ...t];
 }
 
 /// Cluster-level preference shaping for the Clusters page: hide clusters

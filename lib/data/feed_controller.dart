@@ -88,8 +88,9 @@ class FeedController extends AsyncNotifier<List<Article>> {
     // With an admin surface gate active the newest slice is often mostly
     // non-picks — dig deeper so pages fill with picks instead of running
     // two cards long. minVisible is measured AFTER the full gate.
-    final gated =
-        remote.defaultsHome.isNotEmpty || remote.excludeHome.isNotEmpty;
+    final gated = remote.defaultsHome.isNotEmpty ||
+        remote.excludeHome.isNotEmpty ||
+        ((meta?['preferred_sources'] as List?)?.isNotEmpty ?? false);
     final maxHops = gated ? 10 : 5;
     for (var hop = 0; hop < maxHops; hop++) {
       final page = await ref.read(apiClientProvider).feed(
