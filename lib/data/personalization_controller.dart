@@ -36,11 +36,13 @@ final forYouFeedProvider = FutureProvider.autoDispose<List<Article>>((ref) async
     }
   }
   merged.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
-  // The rail lives on Home — the admin surface gate applies here too
-  // (skipped automatically when the user has a region/publisher preference).
+  // The rail lives on Home — FULL shaping applies ([QA-S1.3] ruling
+  // 2026-08-15): location gate first, then the STRICT favorites
+  // allow-list, then tiering — identical to every other feed surface.
+  // The admin surface gate still applies for no-preference users.
   return applySurfaceGate(
           ref,
-          gateSourcesForUser(merged, meta: user.userMetadata),
+          shapeArticlesForUser(merged, meta: user.userMetadata),
           remote.defaultsHome,
           remote.excludeHome)
       .take(12)
