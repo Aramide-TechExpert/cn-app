@@ -36,6 +36,9 @@ class ApiClient {
     // MULTI/cross-region preference: every selected segment — the server
     // returns the UNION (+ globals). Wins over [region] when non-empty.
     List<String>? regions,
+    // STRICT favorites: pages arrive favorites-only from the server (the
+    // client gate stays as the enforcement backstop).
+    List<String>? sources,
   }) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/feed',
@@ -51,6 +54,8 @@ class ApiClient {
           'regions': regions.join(',')
         else if (region != null)
           'region': region,
+        if (sources != null && sources.isNotEmpty)
+          'sources': sources.join(','),
       },
     );
     return FeedPage.fromJson(res.data ?? const {});

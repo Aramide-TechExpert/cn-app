@@ -12,7 +12,10 @@ import 'reading_history.dart';
 /// EVERY followed topic feeds the rail ([QA-S1.1] decision 2026-08-14 —
 /// previously capped at the first 4); fetches run in parallel and the
 /// merged rail still trims to its display size below.
-final forYouFeedProvider = FutureProvider.autoDispose<List<Article>>((ref) async {
+// Keep-alive ([QA-S1.3] fix): autoDispose made the rail vanish and reload
+// ("in and out") on every rebuild — the rail now holds its last content
+// while refreshing; the preference listener still invalidates it.
+final forYouFeedProvider = FutureProvider<List<Article>>((ref) async {
   final user = ref.watch(currentUserProvider);
   if (user == null) return const [];
   final followed = await ref.watch(interestsControllerProvider.future);

@@ -16,11 +16,14 @@ final videoPoolProvider = FutureProvider.autoDispose<List<Article>>((ref) async 
   if (!remote.videos) return const <Article>[];
   final vMeta = ref.read(currentUserProvider)?.userMetadata;
   final vSegments = activeScopes(vMeta).map((s) => s.segment).toSet().toList();
+  final vFavs =
+      ((vMeta?['preferred_sources'] as List?) ?? const []).cast<String>();
   final page = await ref.read(apiClientProvider).feed(
       limit: 24,
       video: true,
       region: vSegments.isEmpty ? 'Worldwide' : null,
-      regions: vSegments);
+      regions: vSegments,
+      sources: vFavs.toList());
   final playable = applySurfaceGate(
       ref,
       applyRegionPreference(ref,
@@ -132,6 +135,11 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
             regions: _filters.source != null
                 ? null
                 : activeScopes(meta).map((s) => s.segment).toSet().toList(),
+            sources: _filters.source != null
+                ? null
+                : ((meta?['preferred_sources'] as List?) ?? const [])
+                    .cast<String>()
+                    .toList(),
           );
       next = page.nextCursor;
       _cursor = page.nextCursor;

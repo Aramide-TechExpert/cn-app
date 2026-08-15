@@ -85,6 +85,11 @@ class FeedController extends AsyncNotifier<List<Article>> {
     final scopeSegments =
         activeScopes(meta).map((s) => s.segment).toSet().toList();
     final region = scopeSegments.isEmpty ? 'Worldwide' : null;
+    // Strict favorites go to the SERVER too — dense favorites-only pages
+    // in one hop instead of ten sifting hops.
+    final favs = ((meta?['preferred_sources'] as List?) ?? const [])
+        .cast<String>()
+        .toList();
     // With an admin surface gate active the newest slice is often mostly
     // non-picks — dig deeper so pages fill with picks instead of running
     // two cards long. minVisible is measured AFTER the full gate.
@@ -98,7 +103,8 @@ class FeedController extends AsyncNotifier<List<Article>> {
           limit: limit,
           since: _since,
           region: region,
-          regions: scopeSegments);
+          regions: scopeSegments,
+          sources: favs);
       next = page.nextCursor;
       _cursor = page.nextCursor;
       _hasMore = page.nextCursor != null;
