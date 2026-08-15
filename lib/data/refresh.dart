@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show AuthChangeEvent;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show AuthChangeEvent, Supabase;
 
 import '../utils/remote_settings.dart';
 import '../utils/source_regions.dart';
@@ -34,6 +35,7 @@ void _invalidateContent(void Function(ProviderOrFamily) invalidate) {
 
 DateTime _lastRemoteFetch = DateTime.fromMillisecondsSinceEpoch(0);
 String _lastRemoteJson = '';
+String _lastUserMetaJson = '';
 
 /// Fetch + apply the Control-panel config (settings + classifier deltas).
 /// Called at cold start AND every time the app returns to the foreground
@@ -62,6 +64,26 @@ Future<void> fetchAndApplyRemoteConfig(
     }
   } catch (_) {
     // Offline / transient — current (or compiled) config stays in force.
+  }
+  // Preference sync ([QA-S1.3] finding 2026-08-15): a session only learns
+  // about SERVER-side metadata changes (preferences saved from another
+  // device / the API) on token refresh — up to an hour stale. Refresh the
+  // session here (launch + resume) and re-shape all content the moment
+  // the account's preferences actually changed.
+  try {
+    final auth = Supabase.instance.client.auth;
+    if (auth.currentSession != null) {
+      final res = await auth.refreshSession();
+      final metaJson = jsonEncode(res.user?.userMetadata ?? const {});
+      final changed =
+          _lastUserMetaJson.isNotEmpty && metaJson != _lastUserMetaJson;
+      _lastUserMetaJson = metaJson;
+      if (changed && invalidateOnChange != null) {
+        _invalidateContent(invalidateOnChange);
+      }
+    }
+  } catch (_) {
+    // Offline — the stored session's preferences stay in force.
   }
 }
 
