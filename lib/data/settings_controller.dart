@@ -55,7 +55,9 @@ class SettingsController extends Notifier<AppSettings> {
         'dark' => ThemeMode.dark,
         _ => ThemeMode.system,
       },
-      textScale: _prefs!.getDouble(_kTextScale) ?? 1.0,
+      // No local pick yet → the Control panel's served default text size
+      // applies (small|default|large mapped to the app presets).
+      textScale: _prefs!.getDouble(_kTextScale) ?? remote.defaultTextScale,
       firstRunSeen: _prefs!.getBool(_kFirstRun) ?? false,
     );
   }

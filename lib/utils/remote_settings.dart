@@ -21,6 +21,7 @@ class RemoteSettings {
     this.interleave = true,
     this.homePageSize = 24,
     this.defaultTheme = 'system',
+    this.defaultTextSize = 'default',
     this.defaultsHome = const [],
     this.defaultsFeed = const [],
     this.defaultsVideos = const [],
@@ -48,6 +49,14 @@ class RemoteSettings {
   final bool interleave;
   final int homePageSize;
   final String defaultTheme; // system | dark | light
+  /// Admin default text size for users with no local pick:
+  /// small | default | large (maps to the app's text-scale presets).
+  final String defaultTextSize;
+  double get defaultTextScale => switch (defaultTextSize) {
+        'small' => 0.9,
+        'large' => 1.15,
+        _ => 1.0,
+      };
   final List<String> defaultsHome;
   final List<String> defaultsFeed;
   final List<String> defaultsVideos;
@@ -161,6 +170,12 @@ class RemoteSettings {
             when ['system', 'dark', 'light'].contains(t) =>
           t,
         _ => 'system',
+      },
+      defaultTextSize: switch (s['appearance']) {
+        {'defaultTextSize': final String t}
+            when ['small', 'default', 'large'].contains(t) =>
+          t,
+        _ => 'default',
       },
     );
   }
