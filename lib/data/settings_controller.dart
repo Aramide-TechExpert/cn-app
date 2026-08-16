@@ -57,7 +57,14 @@ class SettingsController extends Notifier<AppSettings> {
       },
       // No local pick yet → the Control panel's served default text size
       // applies (small|default|large mapped to the app presets).
-      textScale: _prefs!.getDouble(_kTextScale) ?? remote.defaultTextScale,
+      // Stored picks from the old ladder (1.0/1.15) snap to the tightened
+      // presets so the Settings row still highlights their choice.
+      textScale: switch (_prefs!.getDouble(_kTextScale)) {
+        null => remote.defaultTextScale,
+        1.0 => 0.95,
+        1.15 => 1.05,
+        final v => v,
+      },
       firstRunSeen: _prefs!.getBool(_kFirstRun) ?? false,
     );
   }

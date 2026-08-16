@@ -153,7 +153,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               const SizedBox(height: AppSpace.sm),
               _ChoiceRow<double>(
                 // non-const: double can't be a const map key (overrides ==)
-                options: {0.9: 'Small', 1.0: 'Default', 1.15: 'Large'},
+                // Tightened 2026-08-16 (owner): Default/Large read too big —
+                // the whole ladder sits closer to the compact look.
+                options: {0.9: 'Small', 0.95: 'Default', 1.05: 'Large'},
                 selected: settings.textScale,
                 onSelect: ctrl.setTextScale,
               ),

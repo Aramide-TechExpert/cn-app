@@ -54,8 +54,8 @@ class RemoteSettings {
   final String defaultTextSize;
   double get defaultTextScale => switch (defaultTextSize) {
         'small' => 0.9,
-        'large' => 1.15,
-        _ => 1.0,
+        'large' => 1.05,
+        _ => 0.95,
       };
   final List<String> defaultsHome;
   final List<String> defaultsFeed;
