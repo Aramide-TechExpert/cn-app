@@ -1134,15 +1134,20 @@ class _AppearanceStep extends ConsumerWidget {
           const SizedBox(height: AppSpace.xl),
           Text('Text size',
               style: AppText.bodyStrong.copyWith(color: c.text)),
-          Slider.adaptive(
-            value: settings.textScale.clamp(0.85, 1.3),
-            min: 0.85,
-            max: 1.3,
-            divisions: 9,
-            activeColor: c.brand,
-            label: '${(settings.textScale * 100).round()}%',
-            onChanged: (v) => notifier.setTextScale(v),
+          const SizedBox(height: AppSpace.sm),
+          // Same strict preset ladder as Settings (0.9/0.95/1.0) — the old
+          // free slider promised 85–130% but writes snap to the presets,
+          // so it could deliver a different size than it showed.
+          SegmentedButton<double>(
+            segments: const [
+              ButtonSegment(value: 0.9, label: Text('Small')),
+              ButtonSegment(value: 0.95, label: Text('Default')),
+              ButtonSegment(value: 1.0, label: Text('Large')),
+            ],
+            selected: {snapTextScale(settings.textScale)},
+            onSelectionChanged: (s) => notifier.setTextScale(s.first),
           ),
+          const SizedBox(height: AppSpace.sm),
           Text('The quick brown fox jumps over the lazy dog.',
               style: AppText.body.copyWith(
                   color: c.textSecondary,
