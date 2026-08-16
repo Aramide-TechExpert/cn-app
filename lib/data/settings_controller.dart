@@ -14,7 +14,7 @@ class AppSettings {
   // users (no stored key).
   const AppSettings({
     this.themeMode = ThemeMode.system,
-    this.textScale = 1.0,
+    this.textScale = 0.95, // pre-load flash matches the compiled Default
     this.firstRunSeen = true,
   });
   final ThemeMode themeMode;
@@ -57,6 +57,13 @@ class SettingsController extends Notifier<AppSettings> {
 
   @override
   AppSettings build() {
+    // Re-derive when served config applies: a cold start races the config
+    // fetch, so without this the COMPILED appearance defaults win over the
+    // admin's (check mark on Default instead of the served small). Reload
+    // re-reads local picks from disk — only no-pick fallbacks ever move.
+    void onRemoteApplied() => _load();
+    remoteConfigGeneration.addListener(onRemoteApplied);
+    ref.onDispose(() => remoteConfigGeneration.removeListener(onRemoteApplied));
     _load();
     return const AppSettings();
   }

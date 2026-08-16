@@ -251,4 +251,11 @@ void applyRemoteSettings(Map<String, dynamic> payload) {
   final minV = lifecycle['minAppVersion'];
   updateRequired.value =
       minV is String && minV.isNotEmpty && _cmpSemver(appVersion, minV) < 0;
+  remoteConfigGeneration.value++;
 }
+
+/// Bumped every time served config applies. Listeners that derive state
+/// from `remote` at load time (the settings controller's no-pick theme /
+/// text-size fallbacks) re-derive on it — otherwise a cold start races
+/// the config fetch and the COMPILED defaults win over the admin's.
+final ValueNotifier<int> remoteConfigGeneration = ValueNotifier(0);
