@@ -289,8 +289,11 @@ class WatchlistDetailPage extends ConsumerWidget {
         title: Text(watchlist.name, style: AppText.title.copyWith(color: c.text)),
       ),
       body: FutureBuilder<List<Article>>(
+        // Full strict shaping — location gate THEN the favorites allow-list
+        // (owner ruling 2026-08-16: favorites gate every surface, alerts
+        // and watchlists included), same as the feed surfaces.
         future: ref.read(apiClientProvider).search(query, limit: 30).then(
-            (r) => gateSourcesForUser(r,
+            (r) => shapeArticlesForUser(r,
                 meta: ref.read(currentUserProvider)?.userMetadata)),
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {

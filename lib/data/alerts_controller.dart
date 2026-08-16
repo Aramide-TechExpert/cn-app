@@ -81,6 +81,12 @@ class AlertsController extends AsyncNotifier<List<AlertItem>> {
     }
     final rows =
         await query.order('triggered_at', ascending: false).limit(80);
+    // Favorite publishers are a STRICT allow-list on every surface —
+    // alerts included (owner ruling 2026-08-16).
+    final favs = ((user.userMetadata?['preferred_sources'] as List?) ??
+            const [])
+        .cast<String>()
+        .toSet();
     final out = <AlertItem>[];
     for (final r in rows as List) {
       final m = r as Map<String, dynamic>;
@@ -90,11 +96,9 @@ class AlertsController extends AsyncNotifier<List<AlertItem>> {
       // same source-visibility rules as every feed surface — an alert
       // from an out-of-scope publisher never renders, even if the match
       // job inserted it before the generation-time gate existed.
-      if (!sourceVisible(
-          ((art as Map<String, dynamic>)['source'] ?? '').toString(),
-          user.userMetadata)) {
-        continue;
-      }
+      final src = ((art as Map<String, dynamic>)['source'] ?? '').toString();
+      if (!sourceVisible(src, user.userMetadata)) continue;
+      if (favs.isNotEmpty && !favs.contains(src)) continue;
       out.add(AlertItem(
         id: m['id'] as String,
         status: (m['status'] ?? 'unread') as String,
