@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/article.dart';
+import '../utils/source_regions.dart';
 import 'auth_controller.dart';
 
 /// One alert row (`user_alerts`): a watchlist match the `match` cron produced.
@@ -85,6 +86,15 @@ class AlertsController extends AsyncNotifier<List<AlertItem>> {
       final m = r as Map<String, dynamic>;
       final art = m['article'];
       if (art == null) continue; // article purged
+      // STRICT location gate (owner ruling 2026-08-16): alerts obey the
+      // same source-visibility rules as every feed surface — an alert
+      // from an out-of-scope publisher never renders, even if the match
+      // job inserted it before the generation-time gate existed.
+      if (!sourceVisible(
+          ((art as Map<String, dynamic>)['source'] ?? '').toString(),
+          user.userMetadata)) {
+        continue;
+      }
       out.add(AlertItem(
         id: m['id'] as String,
         status: (m['status'] ?? 'unread') as String,
