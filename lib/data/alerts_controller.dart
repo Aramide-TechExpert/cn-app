@@ -44,9 +44,13 @@ Article _articleFromRow(Map<String, dynamic> r) => Article(
       commentCount: 0,
     );
 
+// !inner: alerts whose article was purged carry nothing to show (the old
+// left join returned them with a null article and the app skipped them) —
+// inner join drops them in the query and lets the high-impact filter below
+// run against article columns.
 const _alertSelect =
     'id, status, triggered_at, watchlist:watchlists(name), '
-    'article:articles(id, external_id, title, excerpt, image, source, source_url, '
+    'article:articles!inner(id, external_id, title, excerpt, image, source, source_url, '
     'published_at, reading_minutes, impact, is_breaking, '
     'article_categories(category_slug))';
 
@@ -59,13 +63,23 @@ class AlertsController extends AsyncNotifier<List<AlertItem>> {
   Future<List<AlertItem>> build() async {
     final user = ref.watch(currentUserProvider);
     if (user == null) return [];
-    final rows = await ref
+    // "High-impact only" must filter IN THE QUERY, not after the 80-row
+    // cut: with a large inbox the newest 80 can be all Medium/Low while
+    // qualifying alerts sit deeper — filter-after-limit silently hid them
+    // ([QA-S1.4] finding 2026-08-16). The client-side filter below stays
+    // as the strict enforcement backstop.
+    final highOnly = user.userMetadata?['alerts_high_impact_only'] == true;
+    var query = ref
         .read(supabaseProvider)
         .from('user_alerts')
         .select(_alertSelect)
-        .eq('user_id', user.id)
-        .order('triggered_at', ascending: false)
-        .limit(80);
+        .eq('user_id', user.id);
+    if (highOnly) {
+      query = query.or('is_breaking.eq.true,impact.in.(Critical,High)',
+          referencedTable: 'articles');
+    }
+    final rows =
+        await query.order('triggered_at', ascending: false).limit(80);
     final out = <AlertItem>[];
     for (final r in rows as List) {
       final m = r as Map<String, dynamic>;
