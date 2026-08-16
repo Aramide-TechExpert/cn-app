@@ -37,6 +37,21 @@ const _kThemeMode = 'clustez:themeMode';
 const _kTextScale = 'clustez:textScale';
 const _kFirstRun = 'clustez:firstRunSeen';
 
+/// The ONLY text scales the app renders — an exact 5% ladder (owner
+/// 2026-08-16): Small 0.9, Default 0.95, Large 1.0 (the design's base).
+const kTextScalePresets = [0.9, 0.95, 1.0];
+
+/// Snap any stored/incoming value to the nearest preset — enforcement for
+/// values written by older ladders (1.0 was Default, 1.15/1.05 were Large)
+/// or corrupted prefs. 1.0 stays 1.0 (it is a preset: today's Large).
+double snapTextScale(double v) {
+  var best = kTextScalePresets.first;
+  for (final p in kTextScalePresets) {
+    if ((v - p).abs() < (v - best).abs()) best = p;
+  }
+  return best;
+}
+
 class SettingsController extends Notifier<AppSettings> {
   SharedPreferences? _prefs;
 
@@ -56,14 +71,12 @@ class SettingsController extends Notifier<AppSettings> {
         _ => ThemeMode.system,
       },
       // No local pick yet → the Control panel's served default text size
-      // applies (small|default|large mapped to the app presets).
-      // Stored picks from the old ladder (1.0/1.15) snap to the tightened
-      // presets so the Settings row still highlights their choice.
+      // applies (small|default|large mapped to the app presets). Stored
+      // picks are SNAPPED to the current ladder — only the three preset
+      // scales can ever render, whatever an old build (or bad data) wrote.
       textScale: switch (_prefs!.getDouble(_kTextScale)) {
         null => remote.defaultTextScale,
-        1.0 => 0.95,
-        1.15 => 1.05,
-        final v => v,
+        final v => snapTextScale(v),
       },
       firstRunSeen: _prefs!.getBool(_kFirstRun) ?? false,
     );
@@ -85,6 +98,7 @@ class SettingsController extends Notifier<AppSettings> {
   }
 
   Future<void> setTextScale(double scale) async {
+    scale = snapTextScale(scale); // presets only, ever
     state = state.copyWith(textScale: scale);
     await _ensure();
     await _prefs!.setDouble(_kTextScale, scale);
