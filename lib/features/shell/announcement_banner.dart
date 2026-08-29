@@ -24,7 +24,17 @@ class _AnnouncementBannerState extends State<AnnouncementBanner> {
   @override
   void initState() {
     super.initState();
+    // Re-check when served config lands/refreshes: a cold start mounts this
+    // BEFORE the launch fetch, so without this an active announcement would
+    // stay hidden all session (_dismissed starts true and never re-derives).
+    remoteConfigGeneration.addListener(_check);
     _check();
+  }
+
+  @override
+  void dispose() {
+    remoteConfigGeneration.removeListener(_check);
+    super.dispose();
   }
 
   Future<void> _check() async {
