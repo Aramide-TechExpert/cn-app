@@ -7,6 +7,7 @@ import '../../../theme/app_theme.dart';
 import '../../../theme/tokens.dart';
 import '../../../utils/format.dart';
 import '../../../utils/link_out.dart';
+import '../../../utils/remote_settings.dart';
 import 'article_actions.dart';
 import 'card_extras.dart';
 import 'inline_video.dart';
@@ -347,7 +348,8 @@ class VideoCard extends ConsumerWidget {
     return Column(children: [
       // Media: stream inline when the source carries a self-hosted video,
       // otherwise a link-out poster with the VIDEO tag + play overlay.
-      if (article.hasPlayableVideo)
+      // Remote videos switch is strict: off = no playback anywhere, poster only.
+      if (article.hasPlayableVideo && remote.videos)
         // News-video preview: 4s once, then the "Watch on <source>" end
         // card that links out to the publisher story.
         InlineVideo(
@@ -562,7 +564,8 @@ class VerticalCard extends ConsumerWidget {
       ),
     );
     // Real video → autoplaying inline player (Shorts); else link-out poster.
-    if (article.hasPlayableVideo) {
+    // Same strict remote switch as the feed cards: off = poster, no playback.
+    if (article.hasPlayableVideo && remote.videos) {
       return SizedBox(
         width: width,
         child: GestureDetector(
