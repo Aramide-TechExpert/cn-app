@@ -159,4 +159,44 @@ void main() {
       expect(shape(const {}, feed), feed);
     });
   });
+
+  group('source picker — gated like the surface it feeds ([QA-S2.15])', () {
+    const names = ['CBS News', 'India Today', 'Reuters', 'Punch'];
+
+    test('no preference + defaults set: picker offers ONLY the defaults', () {
+      expect(
+          gateSourceNames(names, null, const ['Reuters', 'CBS News'], const []),
+          ['CBS News', 'Reuters']);
+    });
+
+    test('no preference: a switched-off source is never offered', () {
+      expect(gateSourceNames(names, null, const [], const ['Punch']),
+          ['CBS News', 'India Today', 'Reuters']);
+    });
+
+    test('switch-off wins even when the source is in the defaults', () {
+      expect(
+          gateSourceNames(
+              names, null, const ['Reuters', 'Punch'], const ['Punch']),
+          ['Reuters']);
+    });
+
+    test('user preference precedes — the picker gate never runs', () {
+      const meta = {
+        'preferred_sources': ['Punch']
+      };
+      expect(gateSourceNames(names, meta, const ['Reuters'], const ['Punch']),
+          names);
+      const scoped = {
+        'news_scope': 'region',
+        'preferred_scopes': ['Africa']
+      };
+      expect(
+          gateSourceNames(names, scoped, const ['Reuters'], const []), names);
+    });
+
+    test('no gates configured = untouched list', () {
+      expect(gateSourceNames(names, null, const [], const []), names);
+    });
+  });
 }

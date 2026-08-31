@@ -6,7 +6,11 @@ import '../utils/remote_settings.dart';
 import '../utils/source_regions.dart';
 import 'auth_controller.dart';
 import 'feed_controller.dart'
-    show apiClientProvider, applyRegionPreference, applySurfaceGate;
+    show
+        apiClientProvider,
+        applyRegionPreference,
+        applySurfaceGate,
+        gateSourceNames;
 
 /// A small pool of playable news videos used for the Shorts rail + Reel.
 /// Source-interleaved so one publisher's clips don't fill the whole rail.
@@ -34,11 +38,17 @@ final videoPoolProvider = FutureProvider.autoDispose<List<Article>>((ref) async 
 });
 
 /// Distinct source names for the News Feed source picker (most frequent
-/// first). Strictly gated: other regions' national outlets never appear.
+/// first). Strictly gated twice: other regions' national outlets never
+/// appear, and for no-preference users the admin Feed-surface gate applies
+/// ([QA-S2.15]) — the picker only offers what the gated feed can show.
 final sourcesProvider = FutureProvider.autoDispose<List<String>>((ref) async {
   final names = await ref.read(apiClientProvider).sources();
   final meta = ref.read(currentUserProvider)?.userMetadata;
-  return names.where((s) => sourceVisible(s, meta)).toList();
+  return gateSourceNames(
+      names.where((s) => sourceVisible(s, meta)).toList(),
+      meta,
+      remote.defaultsFeed,
+      remote.excludeFeed);
 });
 
 /// The FULL ingest roster (ungated — callers gate with sourceVisible against
@@ -157,10 +167,13 @@ class NewsFeedController extends AsyncNotifier<List<Article>> {
       }
     }
     // One source at a time — except in the single-source filter view, where
-    // interleaving is meaningless and deferral would starve the list. The
-    // strict gate still applies (the picker hides gated sources anyway).
+    // interleaving is meaningless and deferral would starve the list. BOTH
+    // strict gates still apply: the picker only offers gated sources now,
+    // and this backstop keeps a stale or deep-linked pick from bypassing
+    // the admin surface gate ([QA-S2.15]).
     if (_filters.source != null) {
-      return gateSourcesForUser(collected, meta: meta);
+      return applySurfaceGate(ref, gateSourcesForUser(collected, meta: meta),
+          remote.defaultsFeed, remote.excludeFeed);
     }
     final r = interleaveBySource(
         applySurfaceGate(

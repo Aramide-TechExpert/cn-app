@@ -32,10 +32,9 @@ List<Article> applyRegionPreference(Ref ref, List<Article> items) =>
 List<Article> applySurfaceGate(Ref ref, List<Article> items,
     List<String> defaults, List<String> excludes) {
   if (defaults.isEmpty && excludes.isEmpty) return items;
-  final meta = ref.read(currentUserProvider)?.userMetadata;
-  final hasPref = activeSegment(meta) != null ||
-      ((meta?['preferred_sources'] as List?)?.isNotEmpty ?? false);
-  if (hasPref) return items;
+  if (hasSourcePreference(ref.read(currentUserProvider)?.userMetadata)) {
+    return items;
+  }
   var out = items;
   if (defaults.isNotEmpty) {
     final allow = defaults.toSet();
@@ -46,6 +45,30 @@ List<Article> applySurfaceGate(Ref ref, List<Article> items,
     out = out.where((a) => !block.contains(a.source)).toList();
   }
   return out;
+}
+
+/// True when the user has ANY source-shaping preference (region scope or
+/// favorite publishers) — the admin surface gates never run against them.
+/// The ONE definition of "has a preference": every gate must share it.
+bool hasSourcePreference(Map<String, dynamic>? meta) =>
+    activeSegment(meta) != null ||
+    ((meta?['preferred_sources'] as List?)?.isNotEmpty ?? false);
+
+/// The admin surface gate over SOURCE NAMES — pickers must only offer what
+/// the gated feed can actually show. [QA-S2.15]: the News Feed picker
+/// previously bypassed both layers, so a no-preference user could select
+/// (and see) a defaulted-out or switched-off source.
+List<String> gateSourceNames(List<String> names, Map<String, dynamic>? meta,
+    List<String> defaults, List<String> excludes) {
+  if (hasSourcePreference(meta) || (defaults.isEmpty && excludes.isEmpty)) {
+    return names;
+  }
+  final allow = defaults.toSet();
+  final block = excludes.toSet();
+  return [
+    for (final n in names)
+      if ((allow.isEmpty || allow.contains(n)) && !block.contains(n)) n
+  ];
 }
 
 /// Home feed: keyset-cursor infinite list over `/api/v1/feed`. The cursor +
