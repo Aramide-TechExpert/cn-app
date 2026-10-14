@@ -43,7 +43,13 @@ class PushService {
       final auth = Supabase.instance.client.auth;
       if (auth.currentSession != null) unawaited(_register());
       auth.onAuthStateChange.listen((state) {
-        if (state.event == AuthChangeEvent.signedIn) unawaited(_register());
+        // initialSession = restored session on app relaunch — must register
+        // there too, not only on fresh sign-ins (APNs token often isn't
+        // ready during the very first post-permission attempt).
+        final signedIn = state.event == AuthChangeEvent.signedIn ||
+            (state.event == AuthChangeEvent.initialSession &&
+                state.session != null);
+        if (signedIn) unawaited(_register());
       });
       FirebaseMessaging.instance.onTokenRefresh.listen(_save);
     } catch (e) {
@@ -51,25 +57,41 @@ class PushService {
     }
   }
 
+  bool _registering = false;
+
   Future<void> _register() async {
+    if (_registering) return;
+    _registering = true;
     try {
       final settings = await FirebaseMessaging.instance.requestPermission();
       if (settings.authorizationStatus == AuthorizationStatus.denied) return;
 
-      // iOS: the FCM token derives from the APNs token, which can lag a
-      // moment after permission — poll briefly instead of failing.
+      // iOS: the FCM token derives from the APNs token, which can lag well
+      // behind the permission grant — wait patiently, then retry getToken
+      // itself (it throws "apns-token-not-set" when called too early).
       if (Platform.isIOS) {
-        for (var i = 0; i < 5; i++) {
+        for (var i = 0; i < 15; i++) {
           final apns = await FirebaseMessaging.instance.getAPNSToken();
           if (apns != null) break;
-          await Future<void>.delayed(const Duration(seconds: 1));
+          await Future<void>.delayed(const Duration(seconds: 2));
         }
       }
-
-      final token = await FirebaseMessaging.instance.getToken();
-      if (token != null) await _save(token);
+      for (var i = 0; i < 3; i++) {
+        try {
+          final token = await FirebaseMessaging.instance.getToken();
+          if (token != null) {
+            await _save(token);
+            return;
+          }
+        } catch (e) {
+          debugPrint('push: getToken attempt ${i + 1} failed ($e)');
+        }
+        await Future<void>.delayed(const Duration(seconds: 3));
+      }
     } catch (e) {
       debugPrint('push: register skipped ($e)');
+    } finally {
+      _registering = false;
     }
   }
 
