@@ -3,7 +3,8 @@
 #
 # REQUIRES (App Store Connect / Apple Developer — see docs):
 #   - Paid Apple Developer Program membership ($99/yr) — TestFlight needs it.
-#   - Bundle id app.clustez.clustez registered + an App record in App Store Connect.
+#   - Bundle id com.clusternews.app registered (with Push Notifications capability)
+#     + an App record in App Store Connect.
 #   - An App Store Connect API key (Admin or App Manager role).
 # GitHub repo secrets used:
 #   ASC_KEY_ID       — the API key's Key ID
@@ -30,7 +31,7 @@ jobs:
       - name: Flutter deps + materialize iOS project
         run: |
           flutter pub get
-          flutter create --platforms=ios --org app.clustez .
+          flutter create --platforms=ios --org com.clusternews .
 
       - name: Write App Store Connect API key
         env:
@@ -39,6 +40,8 @@ jobs:
         run: |
           mkdir -p ios/private_keys
           echo "$ASC_API_KEY_P8" | base64 --decode > "ios/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          # Absolute copy for xcodebuild's cloud-signing auth flags.
+          echo "$ASC_API_KEY_P8" | base64 --decode > "$HOME/AuthKey_${ASC_KEY_ID}.p8"
 
       - name: Generate iOS config + CocoaPods
         run: |
@@ -49,7 +52,7 @@ jobs:
         run: |
           mkdir -p ios/fastlane
           cat > ios/fastlane/Appfile <<'APPFILE'
-          app_identifier("app.clustez.clustez")
+          app_identifier("com.clusternews.app")
           APPFILE
           cat > ios/fastlane/Fastfile <<'FASTFILE'
           default_platform(:ios)
@@ -69,7 +72,13 @@ jobs:
                 workspace: "Runner.xcworkspace",
                 scheme: "Runner",
                 export_method: "app-store",
-                xcargs: "-allowProvisioningUpdates",
+                # Cloud signing: CI has no logged-in Xcode account, so xcodebuild
+                # must authenticate with the ASC API key itself.
+                xcargs: "-allowProvisioningUpdates " \
+                  "-authenticationKeyPath #{ENV['HOME']}/AuthKey_#{ENV['ASC_KEY_ID']}.p8 " \
+                  "-authenticationKeyID #{ENV['ASC_KEY_ID']} " \
+                  "-authenticationKeyIssuerID #{ENV['ASC_ISSUER_ID']} " \
+                  "DEVELOPMENT_TEAM=#{ENV['APPLE_TEAM_ID']} CODE_SIGN_STYLE=Automatic",
                 export_options: {
                   signingStyle: "automatic",
                   teamID: ENV["APPLE_TEAM_ID"],

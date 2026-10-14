@@ -9,10 +9,11 @@ CocoaPods, or macOS upgrade needed — the Ventura machine just pushes code.
 
 0. **Paid Apple Developer Program** — https://developer.apple.com/programs/ ($99/yr).
    **Required** — TestFlight/ad-hoc cloud delivery does not work on a free account.
-1. **Register the bundle id** `app.clustez.clustez` — Developer portal →
-   Certificates, IDs & Profiles → Identifiers → +.
+1. **Register the bundle id** `com.clusternews.app` — Developer portal →
+   Certificates, IDs & Profiles → Identifiers → + → App IDs → App; tick the
+   **Push Notifications** capability before saving.
 2. **Create the app record** — App Store Connect → Apps → + → New App, pick the
-   `app.clustez.clustez` bundle id, name "Cluster News".
+   `com.clusternews.app` bundle id, name "Cluster News".
 3. **App Store Connect API key** — App Store Connect → Users and Access → Integrations
    → App Store Connect API → + → role **App Manager** (or Admin). Download the
    `AuthKey_XXXXXX.p8` (one-time download). Note the **Key ID** and **Issuer ID**.
