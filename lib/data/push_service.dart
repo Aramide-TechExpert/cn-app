@@ -28,9 +28,16 @@ class PushService {
     if (_started) return;
     _started = true;
     try {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
+      if (Platform.isIOS) {
+        // iOS is configured NATIVELY in AppDelegate (FirebaseApp.configure from
+        // GoogleService-Info.plist) so APNs registration happens at launch;
+        // here we just bind to that existing default app.
+        await Firebase.initializeApp();
+      } else {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+      }
       // iOS: show the system banner even when the app is foregrounded
       // (Android foreground messages are intentionally silent for now).
       await FirebaseMessaging.instance
