@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
 import 'config.dart';
 import 'data/api_client.dart';
+import 'data/push_service.dart';
 import 'data/reading_history.dart';
 import 'data/refresh.dart';
 import 'utils/remote_settings.dart';
@@ -25,6 +26,8 @@ Future<void> main() async {
       url: Config.supabaseUrl,
       anonKey: Config.supabaseAnonKey,
     );
+    // Breaking-news push (FCM): fire and forget — never blocks startup.
+    unawaited(PushService.instance.start());
   }
 
   // Merge Control-panel classifier deltas + remote product settings over
