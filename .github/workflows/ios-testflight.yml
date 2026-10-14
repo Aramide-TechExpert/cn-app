@@ -28,10 +28,8 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Flutter deps + materialize iOS project
-        run: |
-          flutter pub get
-          flutter create --platforms=ios --org com.clusternews .
+      - name: Flutter deps
+        run: flutter pub get
 
       - name: Write App Store Connect API key
         env:
@@ -45,7 +43,7 @@ jobs:
 
       - name: Generate iOS config + CocoaPods
         run: |
-          flutter build ios --release --config-only
+          flutter build ios --release --config-only --no-codesign
           cd ios && pod install --repo-update
 
       - name: Write fastlane config

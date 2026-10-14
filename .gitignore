@@ -19,14 +19,34 @@
 build/
 .packages
 
-# Native platform folders — generated in CI (and locally) via
-# `flutter create --platforms=android,ios .`; not committed.
-/android/
-/ios/
+# Unused platform folders — not committed. (android/ and ios/ ARE committed
+# since 2026-10-14: they carry real config — bundle ids, push entitlements,
+# Firebase files, URL schemes — that CI must not regenerate.)
 /web/
 /macos/
 /linux/
 /windows/
+
+# iOS — generated/machine-specific/deps (project files ARE tracked)
+ios/**/xcuserdata/
+ios/Flutter/.last_build_id
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral/
+ios/Flutter/flutter_export_environment.sh
+ios/Runner/GeneratedPluginRegistrant.*
+ios/Pods/
+ios/.symlinks/
+
+# Android — generated/secrets (project files ARE tracked)
+android/.gradle/
+android/.kotlin/
+android/local.properties
+android/key.properties
+android/*.jks
+android/**/GeneratedPluginRegistrant.java
 
 # Generated code
 *.g.dart
