@@ -95,5 +95,9 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # SwiftPM resolution makes -showBuildSettings slow; fastlane's base
+          # timeout is 3s which times out before Firebase's packages resolve.
+          FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: "300"
+          FASTLANE_XCODEBUILD_SETTINGS_RETRIES: "4"
         run: |
           cd ios && fastlane beta
