@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'tokens.dart';
 
-/// Builds the [ThemeData] for a brightness from the Clustez tokens.
-ThemeData buildClustezTheme(Brightness brightness) {
+/// Builds the [ThemeData] for a brightness from the Cluster News tokens.
+ThemeData buildClusterNewsTheme(Brightness brightness) {
   final c = brightness == Brightness.dark
-      ? ClustezColors.dark
-      : ClustezColors.light;
+      ? ClusterNewsColors.dark
+      : ClusterNewsColors.light;
 
   final base = ThemeData(brightness: brightness, useMaterial3: true);
 

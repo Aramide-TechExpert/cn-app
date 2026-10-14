@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:clustez/utils/source_regions.dart';
+import 'package:cluster_news/utils/source_regions.dart';
 
 /// Regression guard for the preference gate — the app's core feature.
 ///

@@ -1,5 +1,5 @@
-name: clustez
-description: "Clustez — native mobile news intelligence (Flutter/Dart)."
+name: cluster_news
+description: "Cluster News — native mobile news intelligence (Flutter/Dart)."
 publish_to: "none"
 version: 1.0.0+1
 

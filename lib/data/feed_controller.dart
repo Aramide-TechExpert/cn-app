@@ -147,7 +147,7 @@ class FeedController extends AsyncNotifier<List<Article>> {
   Future<List<Article>> _firstPage() async {
     _deferred = const [];
     // Larger first page so Home can fill hero + rail + bento + latest.
-    // Size is a remote knob (Clustez Control → Features).
+    // Size is a remote knob (Cluster News Control → Features).
     final items =
         await _collect(limit: remote.homePageSize, minVisible: 12);
     final r = interleaveBySource(

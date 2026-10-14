@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Locally-dismissed ("not interested") article ids — mirrors the web's
 /// localStorage dismissed list. Device-only; filtered out of feeds.
-const _kDismissed = 'clustez:dismissed';
+const _kDismissed = 'clusternews:dismissed';
 
 class DismissedController extends Notifier<Set<String>> {
   SharedPreferences? _prefs;

@@ -38,3 +38,7 @@ env.json
 # Symbolication / obfuscation
 app.*.symbols
 app.*.map.json
+
+# Android release signing — NEVER commit (backup offline instead)
+android/upload-keystore.jks
+android/key.properties

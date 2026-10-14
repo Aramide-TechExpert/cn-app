@@ -6,9 +6,9 @@ import '../../theme/tokens.dart';
 import '../../utils/link_out.dart';
 import '../../utils/remote_settings.dart';
 
-const _kDismissedAnnouncement = 'clustez:dismissed-announcement';
+const _kDismissedAnnouncement = 'clusternews:dismissed-announcement';
 
-/// Admin-authored banner from Clustez Control. Renders nothing when no
+/// Admin-authored banner from Cluster News Control. Renders nothing when no
 /// announcement is active or this device dismissed the current message id
 /// (a re-published announcement gets a new id and reappears).
 class AnnouncementBanner extends StatefulWidget {

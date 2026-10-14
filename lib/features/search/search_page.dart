@@ -50,7 +50,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           onChanged: _onChanged,
           style: TextStyle(color: c.text, fontSize: 17),
           decoration: InputDecoration(
-            hintText: 'Search Clustez',
+            hintText: 'Search Cluster News',
             hintStyle: TextStyle(color: c.textFaint),
             border: InputBorder.none,
           ),

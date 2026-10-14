@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:clustez/data/settings_controller.dart';
+import 'package:cluster_news/data/settings_controller.dart';
 
 void main() {
   group('text-scale ladder — STRICT presets only', () {

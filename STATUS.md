@@ -1,4 +1,4 @@
-# Clustez Flutter — Migration & Status
+# Cluster News Flutter — Migration & Status
 
 > Snapshot of the RN→Flutter pivot and where `clustez-flutter` stands.
 > Companion to `README.md` (how to run) and `AUTH_SETUP.md` (providers).
@@ -14,7 +14,7 @@ content pipeline (Next.js, in the private `Cluster` repo).
 | Carried over 100% | Rebuilt in Dart |
 | --- | --- |
 | `/api/v1` backend (+ `dbId`/RLS) | All UI (screens + widgets) |
-| Supabase data model + pipeline | Design tokens → `ClustezColors` ThemeExtension |
+| Supabase data model + pipeline | Design tokens → `ClusterNewsColors` ThemeExtension |
 | 5-tab IA + design language | Models → Dart classes w/ `fromJson` |
 | Link-out content model | Auth wiring → `supabase_flutter` |
 | Feature set / UX decisions | State → Riverpod; nav → go_router |
@@ -23,7 +23,7 @@ content pipeline (Next.js, in the private `Cluster` repo).
 ```
 lib/
 ├─ main.dart / app.dart / config.dart / router.dart
-├─ theme/      tokens (ClustezColors) + app_theme (ThemeData, AppText)
+├─ theme/      tokens (ClusterNewsColors) + app_theme (ThemeData, AppText)
 ├─ models/     Article, FeedPage, StoryCluster, TrendingTopic, ClusterDetail
 ├─ data/       api_client (dio /api/v1) + Riverpod controllers:
 │              feed · auth · engagement · discover · watch · saved
@@ -44,7 +44,7 @@ lib/
 1. Install Flutter (`~/development/flutter`, git clone stable) → `flutter doctor`.
 2. `flutter create --platforms=android,ios --org app.clustez --project-name clustez .`
 3. `flutter pub get` → **`flutter analyze`** → fix nits.
-4. Add the `clustez://login-callback` deep link (Android manifest + iOS plist;
+4. Add the `clusternews://login-callback` deep link (Android manifest + iOS plist;
    see `AUTH_SETUP.md`) + allow-list it in Supabase.
 5. `flutter run --dart-define-from-file=env.json` — verify Home feed + Google.
 6. Push to a new public `clustez-flutter` repo.

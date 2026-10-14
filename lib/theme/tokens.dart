@@ -21,10 +21,10 @@ abstract class AppRadii {
   static const double pill = 999;
 }
 
-/// Clustez color tokens, exposed via [ThemeExtension] so widgets read them with
-/// `Theme.of(context).extension<ClustezColors>()!`. Mirrors the RN design system.
+/// Cluster News color tokens, exposed via [ThemeExtension] so widgets read them with
+/// `Theme.of(context).extension<ClusterNewsColors>()!`. Mirrors the RN design system.
 @immutable
-class ClustezColors extends ThemeExtension<ClustezColors> {
+class ClusterNewsColors extends ThemeExtension<ClusterNewsColors> {
   final Color bg;
   final Color bgElevated;
   final Color bgInset;
@@ -44,7 +44,7 @@ class ClustezColors extends ThemeExtension<ClustezColors> {
   final Color breaking;
   final Color success;
 
-  const ClustezColors({
+  const ClusterNewsColors({
     required this.bg,
     required this.bgElevated,
     required this.bgInset,
@@ -79,7 +79,7 @@ class ClustezColors extends ThemeExtension<ClustezColors> {
     }
   }
 
-  static const ClustezColors light = ClustezColors(
+  static const ClusterNewsColors light = ClusterNewsColors(
     bg: Color(0xFFFFFFFF),
     bgElevated: Color(0xFFFFFFFF),
     bgInset: Color(0xFFF6F7F9),
@@ -100,7 +100,7 @@ class ClustezColors extends ThemeExtension<ClustezColors> {
     success: Color(0xFF30A46C),
   );
 
-  static const ClustezColors dark = ClustezColors(
+  static const ClusterNewsColors dark = ClusterNewsColors(
     bg: Color(0xFF0B0D12),
     bgElevated: Color(0xFF12151C),
     bgInset: Color(0xFF1A1E27),
@@ -122,7 +122,7 @@ class ClustezColors extends ThemeExtension<ClustezColors> {
   );
 
   @override
-  ClustezColors copyWith({
+  ClusterNewsColors copyWith({
     Color? bg,
     Color? bgElevated,
     Color? bgInset,
@@ -142,7 +142,7 @@ class ClustezColors extends ThemeExtension<ClustezColors> {
     Color? breaking,
     Color? success,
   }) {
-    return ClustezColors(
+    return ClusterNewsColors(
       bg: bg ?? this.bg,
       bgElevated: bgElevated ?? this.bgElevated,
       bgInset: bgInset ?? this.bgInset,
@@ -165,13 +165,13 @@ class ClustezColors extends ThemeExtension<ClustezColors> {
   }
 
   @override
-  ClustezColors lerp(ThemeExtension<ClustezColors>? other, double t) {
-    if (other is! ClustezColors) return this;
+  ClusterNewsColors lerp(ThemeExtension<ClusterNewsColors>? other, double t) {
+    if (other is! ClusterNewsColors) return this;
     return t < 0.5 ? this : other;
   }
 }
 
 /// Convenience accessor.
-extension ClustezColorsX on BuildContext {
-  ClustezColors get colors => Theme.of(this).extension<ClustezColors>()!;
+extension ClusterNewsColorsX on BuildContext {
+  ClusterNewsColors get colors => Theme.of(this).extension<ClusterNewsColors>()!;
 }

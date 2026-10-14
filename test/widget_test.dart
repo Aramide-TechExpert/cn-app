@@ -7,8 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   testWidgets('MaterialApp builds', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(home: Scaffold(body: Text('Clustez'))),
+      const MaterialApp(home: Scaffold(body: Text('Cluster News'))),
     );
-    expect(find.text('Clustez'), findsOneWidget);
+    expect(find.text('Cluster News'), findsOneWidget);
   });
 }

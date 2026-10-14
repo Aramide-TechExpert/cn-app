@@ -38,5 +38,5 @@ Future<void> main() async {
     defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
   );
 
-  runApp(const ProviderScope(child: ClustezApp()));
+  runApp(const ProviderScope(child: ClusterNewsApp()));
 }

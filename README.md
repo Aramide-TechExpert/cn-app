@@ -1,6 +1,6 @@
-# Clustez (Flutter)
+# Cluster News (Flutter)
 
-Native **iOS + Android** app for Clustez — a news-intelligence reader
+Native **iOS + Android** app for Cluster News — a news-intelligence reader
 (link-out model: cards open the publisher's page; article bodies are never
 reproduced). **Flutter/Dart** is the primary native stack; the React Native app
 (`clustez-mobile`) is kept for **web**. Backend (the `/api/v1` layer + Supabase
@@ -38,7 +38,7 @@ lib/
 ├─ app.dart            MaterialApp.router (light/dark themes)
 ├─ config.dart         env via --dart-define-from-file
 ├─ router.dart         5-tab StatefulShellRoute
-├─ theme/             tokens (ClustezColors ThemeExtension) + app_theme
+├─ theme/             tokens (ClusterNewsColors ThemeExtension) + app_theme
 ├─ models/            Article + FeedPage (fromJson, mirrors /api/v1)
 ├─ data/              api_client (dio) + feed_controller (Riverpod)
 ├─ utils/             format (timeAgo/readTime/monogram) + link_out

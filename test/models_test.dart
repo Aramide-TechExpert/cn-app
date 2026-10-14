@@ -1,5 +1,5 @@
-import 'package:clustez/models/article.dart';
-import 'package:clustez/models/cluster.dart';
+import 'package:cluster_news/models/article.dart';
+import 'package:cluster_news/models/cluster.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

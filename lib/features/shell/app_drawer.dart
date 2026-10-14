@@ -67,7 +67,7 @@ class AppDrawer extends ConsumerWidget {
                           style: AppText.headline.copyWith(color: c.brand)),
                     ),
                     const SizedBox(width: AppSpace.sm),
-                    Text('Clustez',
+                    Text('Cluster News',
                         style: AppText.title.copyWith(color: Colors.white)),
                   ]),
                   const SizedBox(height: AppSpace.lg),

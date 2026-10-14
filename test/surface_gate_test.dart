@@ -2,10 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:clustez/data/auth_controller.dart';
-import 'package:clustez/data/feed_controller.dart';
-import 'package:clustez/models/article.dart';
-import 'package:clustez/utils/source_regions.dart';
+import 'package:cluster_news/data/auth_controller.dart';
+import 'package:cluster_news/data/feed_controller.dart';
+import 'package:cluster_news/models/article.dart';
+import 'package:cluster_news/utils/source_regions.dart';
 
 /// Tests the SHIPPED applySurfaceGate — the admin per-surface switch-off:
 ///  - STRICT: an excluded source never appears, no fallback, even when

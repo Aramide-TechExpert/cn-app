@@ -33,9 +33,9 @@ class AppSettings {
       );
 }
 
-const _kThemeMode = 'clustez:themeMode';
-const _kTextScale = 'clustez:textScale';
-const _kFirstRun = 'clustez:firstRunSeen';
+const _kThemeMode = 'clusternews:themeMode';
+const _kTextScale = 'clusternews:textScale';
+const _kFirstRun = 'clusternews:firstRunSeen';
 
 /// The ONLY text scales the app renders — an exact 5% ladder (owner
 /// 2026-08-16): Small 0.9, Default 0.95, Large 1.0 (the design's base).

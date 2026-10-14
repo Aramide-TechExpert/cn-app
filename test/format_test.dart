@@ -1,4 +1,4 @@
-import 'package:clustez/utils/format.dart';
+import 'package:cluster_news/utils/format.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 String _ago(Duration d) =>

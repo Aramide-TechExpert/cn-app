@@ -12,7 +12,7 @@ CocoaPods, or macOS upgrade needed — the Ventura machine just pushes code.
 1. **Register the bundle id** `app.clustez.clustez` — Developer portal →
    Certificates, IDs & Profiles → Identifiers → +.
 2. **Create the app record** — App Store Connect → Apps → + → New App, pick the
-   `app.clustez.clustez` bundle id, name "Clustez".
+   `app.clustez.clustez` bundle id, name "Cluster News".
 3. **App Store Connect API key** — App Store Connect → Users and Access → Integrations
    → App Store Connect API → + → role **App Manager** (or Admin). Download the
    `AuthKey_XXXXXX.p8` (one-time download). Note the **Key ID** and **Issuer ID**.
