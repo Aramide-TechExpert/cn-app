@@ -42,8 +42,16 @@ jobs:
           echo "$ASC_API_KEY_P8" | base64 --decode > "$HOME/AuthKey_${ASC_KEY_ID}.p8"
 
       - name: Generate iOS config + CocoaPods
+        # The dart-defines bake the runtime config (Supabase, API base, Google
+        # sign-in ids) into Generated.xcconfig — without them the app ships
+        # configless and crashes with LateInitializationError on 'client'.
         run: |
-          flutter build ios --release --config-only --no-codesign
+          flutter build ios --release --config-only --no-codesign \
+            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
+            --dart-define=API_BASE=${{ secrets.API_BASE || 'https://clustez-mu.vercel.app/api/v1' }} \
+            --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }} \
+            --dart-define=GOOGLE_IOS_CLIENT_ID=${{ secrets.GOOGLE_IOS_CLIENT_ID }}
           cd ios && pod install --repo-update
 
       - name: Write fastlane config
