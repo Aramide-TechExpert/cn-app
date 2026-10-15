@@ -8,8 +8,8 @@ import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 
 /// Settings — app-side of the web /settings page. Appearance (theme + text
-/// size, device-local) and the signed-in account prefs (display name, email
-/// digest) that live in Supabase. Push is deferred (native FCM/APNs).
+/// size, device-local) and the signed-in account prefs (display name, push
+/// notifications, email digest) that live in Supabase.
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
@@ -24,6 +24,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _savingDigest = false;
   bool _digestOn = false;
   String _frequency = 'daily';
+  // Push preferences (auth metadata) — the push fan-out jobs honor these.
+  bool _pushBreaking = true;
+  bool _pushFresh = true;
 
   @override
   void initState() {
@@ -56,10 +59,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           .eq('user_id', user.id)
           .maybeSingle();
       if (!mounted) return;
+      final meta = user.userMetadata ?? {};
       setState(() {
         _name.text = (profile?['full_name'] as String?) ?? '';
         _digestOn = (sub?['is_active'] as bool?) ?? false;
         _frequency = (sub?['frequency'] as String?) ?? 'daily';
+        _pushBreaking = meta['alerts_breaking'] as bool? ?? true;
+        _pushFresh = meta['alerts_fresh'] as bool? ?? true;
         _loading = false;
       });
     } catch (_) {
@@ -85,6 +91,29 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _toast("Couldn't save profile");
     } finally {
       if (mounted) setState(() => _savingProfile = false);
+    }
+  }
+
+  /// Instant-save toggles; revert on failure so the UI never lies.
+  Future<void> _savePush({bool? breaking, bool? fresh}) async {
+    final prevB = _pushBreaking, prevF = _pushFresh;
+    setState(() {
+      if (breaking != null) _pushBreaking = breaking;
+      if (fresh != null) _pushFresh = fresh;
+    });
+    try {
+      await ref.read(authServiceProvider).updateProfile({
+        'alerts_breaking': _pushBreaking,
+        'alerts_fresh': _pushFresh,
+      });
+    } catch (_) {
+      _toast("Couldn't save notification preferences");
+      if (mounted) {
+        setState(() {
+          _pushBreaking = prevB;
+          _pushFresh = prevF;
+        });
+      }
     }
   }
 
@@ -231,6 +260,35 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   ),
                   icon: const Icon(Icons.tune, size: 18),
                   label: const Text('Edit preferences'),
+                ),
+              ],
+            ),
+
+            // ── Push notifications (auth metadata, honored by the
+            // pipeline's push-breaking / push-fresh fan-out jobs) ──
+            _Section(
+              icon: Icons.notifications_active_outlined,
+              title: 'Notifications',
+              children: [
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: c.brand,
+                  value: _pushBreaking,
+                  onChanged: (v) => _savePush(breaking: v),
+                  title: Text('Breaking news alerts',
+                      style: AppText.body.copyWith(color: c.text)),
+                  subtitle: Text('Critical stories, the moment they break',
+                      style: AppText.caption.copyWith(color: c.textFaint)),
+                ),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: c.brand,
+                  value: _pushFresh,
+                  onChanged: (v) => _savePush(fresh: v),
+                  title: Text('Fresh story nudges',
+                      style: AppText.body.copyWith(color: c.text)),
+                  subtitle: Text('A few times a day when new stories land',
+                      style: AppText.caption.copyWith(color: c.textFaint)),
                 ),
               ],
             ),
