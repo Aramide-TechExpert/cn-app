@@ -16,6 +16,7 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../firebase_options.dart';
+import '../utils/link_out.dart';
 
 class PushService {
   PushService._();
@@ -59,6 +60,13 @@ class PushService {
         if (signedIn) unawaited(_register());
       });
       FirebaseMessaging.instance.onTokenRefresh.listen(_save);
+
+      // Tap-through: a notification carries the story's publisher link in
+      // data.link — open it in the in-app browser, exactly like tapping the
+      // story's card in the feed.
+      FirebaseMessaging.onMessageOpenedApp.listen(_openFromMessage);
+      final initial = await FirebaseMessaging.instance.getInitialMessage();
+      if (initial != null) _openFromMessage(initial);
     } catch (e) {
       debugPrint('push: init skipped ($e)');
     }
@@ -99,6 +107,16 @@ class PushService {
       debugPrint('push: register skipped ($e)');
     } finally {
       _registering = false;
+    }
+  }
+
+  void _openFromMessage(RemoteMessage message) {
+    final link = message.data['link'];
+    if (link is String && link.isNotEmpty) {
+      // Small delay so the app shell finishes building on cold start.
+      Future<void>.delayed(const Duration(milliseconds: 400), () {
+        openArticle(link);
+      });
     }
   }
 
