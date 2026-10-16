@@ -21,6 +21,7 @@ import 'features/search/search_page.dart';
 import 'features/settings/settings_page.dart';
 import 'features/shell/scaffold_with_nav.dart';
 import 'features/you/you_page.dart';
+import 'features/story/story_page.dart';
 
 /// App routes: a 5-tab stateful shell (Home · News Feed · Clusters · Briefing ·
 /// You). Saved, Search, Insights and detail screens are pushed on top.
@@ -80,6 +81,13 @@ final router = GoRouter(
       path: '/setup',
       builder: (_, s) =>
           SetupFlowPage(edit: s.uri.queryParameters['edit'] == '1'),
+    ),
+    GoRoute(
+      path: '/story/:id',
+      builder: (_, s) => StoryPage(
+        id: s.pathParameters['id']!,
+        fallbackLink: s.uri.queryParameters['link'],
+      ),
     ),
     GoRoute(
       path: '/cluster/:id',

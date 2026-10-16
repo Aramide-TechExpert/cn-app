@@ -16,6 +16,7 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../firebase_options.dart';
+import '../router.dart';
 import '../utils/link_out.dart';
 
 class PushService {
@@ -111,13 +112,28 @@ class PushService {
   }
 
   void _openFromMessage(RemoteMessage message) {
+    final url = message.data['url'];
     final link = message.data['link'];
-    if (link is String && link.isNotEmpty) {
-      // Small delay so the app shell finishes building on cold start.
-      Future<void>.delayed(const Duration(milliseconds: 400), () {
-        openArticle(link);
-      });
+    // /articles/<id> → the IN-APP story screen (keeps the reader inside
+    // Cluster News — the publisher link is a button on that screen, not
+    // the destination). Publisher link-out is only the fallback.
+    String? id;
+    if (url is String && url.startsWith('/articles/')) {
+      id = url.substring('/articles/'.length);
     }
+    // Small delay so the app shell finishes building on cold start.
+    Future<void>.delayed(const Duration(milliseconds: 400), () {
+      if (id != null && id.isNotEmpty) {
+        router.push(Uri(
+          path: '/story/$id',
+          queryParameters: {
+            if (link is String && link.isNotEmpty) 'link': link,
+          },
+        ).toString());
+      } else if (link is String && link.isNotEmpty) {
+        openArticle(link);
+      }
+    });
   }
 
   Future<void> _save(String token) async {
