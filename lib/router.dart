@@ -21,6 +21,7 @@ import 'features/search/search_page.dart';
 import 'features/settings/settings_page.dart';
 import 'features/shell/scaffold_with_nav.dart';
 import 'features/you/you_page.dart';
+import 'features/story/digest_page.dart';
 import 'features/story/story_page.dart';
 
 /// App routes: a 5-tab stateful shell (Home · News Feed · Clusters · Briefing ·
@@ -88,6 +89,10 @@ final router = GoRouter(
         id: s.pathParameters['id']!,
         fallbackLink: s.uri.queryParameters['link'],
       ),
+    ),
+    GoRoute(
+      path: '/digest',
+      builder: (_, s) => DigestPage(ids: s.uri.queryParameters['ids'] ?? ''),
     ),
     GoRoute(
       path: '/cluster/:id',

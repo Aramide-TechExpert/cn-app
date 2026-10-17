@@ -114,12 +114,19 @@ class PushService {
   void _openFromMessage(RemoteMessage message) {
     final url = message.data['url'];
     final link = message.data['link'];
-    // /articles/<id> → the IN-APP story screen (keeps the reader inside
-    // Cluster News — the publisher link is a button on that screen, not
-    // the destination). Publisher link-out is only the fallback.
+    // Every tap stays IN-APP (the publisher link is a button on the story
+    // screen, not the destination):
+    //   /articles/<id>  → the story screen
+    //   /digest?ids=…   → the digest list (all stories on a ▶×3 push)
+    //   /cluster/<id>   → full coverage of a happening-now cluster
+    // Publisher link-out is only the last-resort fallback.
     String? id;
+    String? inAppRoute;
     if (url is String && url.startsWith('/articles/')) {
       id = url.substring('/articles/'.length);
+    } else if (url is String &&
+        (url.startsWith('/digest') || url.startsWith('/cluster/'))) {
+      inAppRoute = url;
     }
     // Small delay so the app shell finishes building on cold start.
     Future<void>.delayed(const Duration(milliseconds: 400), () {
@@ -130,6 +137,8 @@ class PushService {
             if (link is String && link.isNotEmpty) 'link': link,
           },
         ).toString());
+      } else if (inAppRoute != null) {
+        router.push(inAppRoute);
       } else if (link is String && link.isNotEmpty) {
         openArticle(link);
       }

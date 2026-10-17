@@ -25,8 +25,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _digestOn = false;
   String _frequency = 'daily';
   // Push preferences (auth metadata) — the push fan-out jobs honor these.
+  // One switch per channel: breaking / fresh digest / top pick / happening
+  // now / favorite-source watchlist (all default ON).
   bool _pushBreaking = true;
   bool _pushFresh = true;
+  bool _pushTop = true;
+  bool _pushHappening = true;
+  bool _pushWatchlist = true;
 
   @override
   void initState() {
@@ -66,6 +71,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _frequency = (sub?['frequency'] as String?) ?? 'daily';
         _pushBreaking = meta['alerts_breaking'] as bool? ?? true;
         _pushFresh = meta['alerts_fresh'] as bool? ?? true;
+        _pushTop = meta['alerts_top'] as bool? ?? true;
+        _pushHappening = meta['alerts_happening'] as bool? ?? true;
+        _pushWatchlist = meta['alerts_watchlist'] as bool? ?? true;
         _loading = false;
       });
     } catch (_) {
@@ -95,16 +103,32 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   /// Instant-save toggles; revert on failure so the UI never lies.
-  Future<void> _savePush({bool? breaking, bool? fresh}) async {
-    final prevB = _pushBreaking, prevF = _pushFresh;
+  Future<void> _savePush({
+    bool? breaking,
+    bool? fresh,
+    bool? top,
+    bool? happening,
+    bool? watchlist,
+  }) async {
+    final prevB = _pushBreaking,
+        prevF = _pushFresh,
+        prevT = _pushTop,
+        prevH = _pushHappening,
+        prevW = _pushWatchlist;
     setState(() {
       if (breaking != null) _pushBreaking = breaking;
       if (fresh != null) _pushFresh = fresh;
+      if (top != null) _pushTop = top;
+      if (happening != null) _pushHappening = happening;
+      if (watchlist != null) _pushWatchlist = watchlist;
     });
     try {
       await ref.read(authServiceProvider).updateProfile({
         'alerts_breaking': _pushBreaking,
         'alerts_fresh': _pushFresh,
+        'alerts_top': _pushTop,
+        'alerts_happening': _pushHappening,
+        'alerts_watchlist': _pushWatchlist,
       });
     } catch (_) {
       _toast("Couldn't save notification preferences");
@@ -112,6 +136,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         setState(() {
           _pushBreaking = prevB;
           _pushFresh = prevF;
+          _pushTop = prevT;
+          _pushHappening = prevH;
+          _pushWatchlist = prevW;
         });
       }
     }
@@ -287,7 +314,37 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   onChanged: (v) => _savePush(fresh: v),
                   title: Text('Fresh story nudges',
                       style: AppText.body.copyWith(color: c.text)),
-                  subtitle: Text('A few times a day when new stories land',
+                  subtitle: Text('A headline digest as new stories land',
+                      style: AppText.caption.copyWith(color: c.textFaint)),
+                ),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: c.brand,
+                  value: _pushTop,
+                  onChanged: (v) => _savePush(top: v),
+                  title: Text("Top stories — don't miss",
+                      style: AppText.body.copyWith(color: c.text)),
+                  subtitle: Text('AI-picked high-impact single stories',
+                      style: AppText.caption.copyWith(color: c.textFaint)),
+                ),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: c.brand,
+                  value: _pushHappening,
+                  onChanged: (v) => _savePush(happening: v),
+                  title: Text('Happening now',
+                      style: AppText.body.copyWith(color: c.text)),
+                  subtitle: Text('Developing stories gaining coverage',
+                      style: AppText.caption.copyWith(color: c.textFaint)),
+                ),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: c.brand,
+                  value: _pushWatchlist,
+                  onChanged: (v) => _savePush(watchlist: v),
+                  title: Text('Your sources',
+                      style: AppText.body.copyWith(color: c.text)),
+                  subtitle: Text('New stories from sources you follow',
                       style: AppText.caption.copyWith(color: c.textFaint)),
                 ),
               ],
