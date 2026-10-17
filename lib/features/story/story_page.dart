@@ -1,13 +1,19 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../../data/auth_controller.dart' show currentUserProvider;
+import '../../data/engagement_controller.dart';
 import '../../data/feed_controller.dart' show apiClientProvider;
 import '../../models/article.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../utils/format.dart';
 import '../../utils/link_out.dart';
+import '../feed/widgets/article_actions.dart';
 
 /// In-app story landing — where notification taps arrive. Shows the card's
 /// full orientation (image, AI summary, what happened / why it matters) so
@@ -30,6 +36,7 @@ class StoryPage extends ConsumerStatefulWidget {
 
 class _StoryPageState extends ConsumerState<StoryPage> {
   Article? _article;
+  ({String id, String title, int sources})? _cluster;
   bool _loading = true;
 
   @override
@@ -40,12 +47,22 @@ class _StoryPageState extends ConsumerState<StoryPage> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    final a = await ref.read(apiClientProvider).article(widget.id);
+    Article? a;
+    try {
+      a = await ref.read(apiClientProvider).article(widget.id);
+    } catch (_) {
+      a = null; // purged / offline — the missing-state UI handles it
+    }
     if (!mounted) return;
     setState(() {
       _article = a;
       _loading = false;
     });
+    final dbId = a?.dbId;
+    if (dbId != null) {
+      final cluster = await ref.read(apiClientProvider).clusterForArticle(dbId);
+      if (mounted && cluster != null) setState(() => _cluster = cluster);
+    }
   }
 
   @override
@@ -129,7 +146,9 @@ class _StoryPageState extends ConsumerState<StoryPage> {
                 children: [
                   if (a.isBreaking) _chip(c, 'BREAKING', danger: true),
                   _chip(c, a.impact.toUpperCase()),
-                  Text('${a.source} · ${timeAgo(a.publishedAt)}',
+                  if (a.trustScore != null) _chip(c, 'TRUST ${a.trustScore}'),
+                  Text(
+                      '${a.source} · ${timeAgo(a.publishedAt)} · ${readTime(a.readingMinutes)}',
                       style: AppText.caption.copyWith(color: c.textFaint)),
                 ],
               ),
@@ -153,7 +172,34 @@ class _StoryPageState extends ConsumerState<StoryPage> {
                         .copyWith(color: c.textSecondary, height: 1.5)),
                 const SizedBox(height: AppSpace.md),
               ],
-              const SizedBox(height: AppSpace.sm),
+              _actionsRow(c, a),
+              if (a.topics.isNotEmpty) ...[
+                const SizedBox(height: AppSpace.md),
+                Wrap(
+                  spacing: AppSpace.sm,
+                  runSpacing: AppSpace.xs,
+                  children: [
+                    for (final t in a.topics.take(6))
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: c.bgElevated,
+                          border: Border.all(color: c.border),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(t,
+                            style: AppText.caption
+                                .copyWith(color: c.textSecondary)),
+                      ),
+                  ],
+                ),
+              ],
+              if (_cluster != null) ...[
+                const SizedBox(height: AppSpace.md),
+                _fullCoverage(c, _cluster!),
+              ],
+              const SizedBox(height: AppSpace.md),
               FilledButton.icon(
                 style: FilledButton.styleFrom(
                   backgroundColor: c.brand,
@@ -174,6 +220,104 @@ class _StoryPageState extends ConsumerState<StoryPage> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Save · Share · More — the card actions, visible instead of buried.
+  Widget _actionsRow(ClusterNewsColors c, Article a) {
+    final dbId = a.dbId;
+    final marked = dbId != null &&
+        (ref
+                .watch(engagementProvider)
+                .valueOrNull
+                ?.bookmarked
+                .contains(dbId) ??
+            false);
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: marked ? c.brand : c.textSecondary,
+              side: BorderSide(color: c.border),
+              shape: const RoundedRectangleBorder(),
+            ),
+            onPressed: dbId == null
+                ? null
+                : () {
+                    if (ref.read(currentUserProvider) == null) {
+                      context.push('/sign-in');
+                      return;
+                    }
+                    HapticFeedback.selectionClick();
+                    ref.read(engagementProvider.notifier).toggleBookmark(dbId);
+                  },
+            icon: Icon(marked ? Icons.bookmark : Icons.bookmark_outline,
+                size: 18),
+            label: Text(marked ? 'Saved' : 'Save'),
+          ),
+        ),
+        const SizedBox(width: AppSpace.sm),
+        Expanded(
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: c.textSecondary,
+              side: BorderSide(color: c.border),
+              shape: const RoundedRectangleBorder(),
+            ),
+            onPressed: () {
+              final url = a.sourceUrl;
+              if (url != null && url.isNotEmpty) {
+                Share.share('${a.title}\n$url');
+              }
+            },
+            icon: const Icon(Icons.ios_share, size: 18),
+            label: const Text('Share'),
+          ),
+        ),
+        const SizedBox(width: AppSpace.sm),
+        IconButton(
+          onPressed: () => showArticleActions(context, ref, a),
+          icon: Icon(Icons.more_horiz, color: c.textSecondary),
+        ),
+      ],
+    );
+  }
+
+  /// "Full coverage" CTA — the same story from N sources (cluster detail).
+  Widget _fullCoverage(
+      ClusterNewsColors c, ({String id, String title, int sources}) cl) {
+    return InkWell(
+      onTap: () => context.push('/cluster/${cl.id}'),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpace.md),
+        decoration: BoxDecoration(
+          color: c.brand.withValues(alpha: .07),
+          border: Border.all(color: c.brand.withValues(alpha: .25)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.layers_outlined, color: c.brand, size: 22),
+            const SizedBox(width: AppSpace.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('FULL COVERAGE',
+                      style: AppText.caption.copyWith(
+                          color: c.brand,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.1)),
+                  const SizedBox(height: 2),
+                  Text('${cl.sources} sources are covering this story',
+                      style: AppText.body.copyWith(color: c.text)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: c.textFaint),
+          ],
+        ),
+      ),
     );
   }
 

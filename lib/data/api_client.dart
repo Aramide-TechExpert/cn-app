@@ -67,6 +67,31 @@ class ApiClient {
     return data == null ? null : Article.fromJson(data as Map<String, dynamic>);
   }
 
+  /// Full-coverage lookup: the multi-source cluster this article belongs
+  /// to (null for single-source stories). The endpoint returns a partial
+  /// cluster shape — parse defensively, fail to null.
+  Future<({String id, String title, int sources})?> clusterForArticle(
+      String dbId) async {
+    try {
+      final res = await _dio.get<Map<String, dynamic>>(
+        '/cluster-for-article',
+        queryParameters: {'articleId': dbId},
+      );
+      final data = res.data?['cluster'];
+      if (data is! Map<String, dynamic>) return null;
+      final count = (data['articleCount'] as num?)?.toInt() ??
+          ((data['sources'] as List?)?.length ?? 0);
+      if (count < 2) return null;
+      return (
+        id: data['id'] as String,
+        title: (data['title'] as String?) ?? '',
+        sources: count,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<List<StoryCluster>> clusters() async {
     final res = await _dio.get<Map<String, dynamic>>('/clusters');
     final list = (res.data?['clusters'] as List?) ?? const [];
