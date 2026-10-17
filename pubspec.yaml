@@ -1,5 +1,5 @@
 name: cluster_news
-description: "Cluster News — native mobile news intelligence (Flutter/Dart)."
+description: "Native mobile news reader (Flutter/Dart)."
 publish_to: "none"
 version: 1.0.0+1
 

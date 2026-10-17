@@ -1,30 +1,21 @@
-# Cluster News (Flutter)
+# News reader (Flutter)
 
-Native **iOS + Android** app for Cluster News — a news-intelligence reader
-(link-out model: cards open the publisher's page; article bodies are never
-reproduced). **Flutter/Dart** is the primary native stack; the React Native app
-(`clustez-mobile`) is kept for **web**. Backend (the `/api/v1` layer + Supabase
-+ content pipeline) is shared and unchanged — Flutter talks to the exact same
-backend the RN app did.
+Native **iOS + Android** news-intelligence reader (link-out model: cards open
+the publisher's page; article bodies are never reproduced). **Flutter/Dart** is
+the primary native stack. The backend (`/api/v1` layer + Supabase + content
+pipeline) lives in a separate private repo — this app is the client.
 
-> **Authored ahead of the SDK.** This `lib/` was hand-written before Flutter was
-> installed, so it hasn't been compiled yet. Finishing setup (below) runs
-> `flutter pub get` + `flutter analyze`, which will surface anything to fix.
-
-## Finish setup (once Flutter is installed)
+## Setup
 ```bash
-cd ~/Projects/clustez-flutter
-# 1. Generate the native platform folders (does NOT touch lib/)
-flutter create --platforms=android,ios --org app.clustez --project-name clustez .
-# 2. Resolve dependencies
+# 1. Resolve dependencies
 flutter pub get
-# 3. Sanity check
+# 2. Sanity check
 flutter analyze
-# 4. Run (inject config; anon key is client-safe)
+# 3. Run (inject config; anon key is client-safe)
 flutter run --dart-define-from-file=env.json
 ```
-`env.json` (gitignored) is already filled with the Supabase URL + anon key and
-the `/api/v1` base. See `env.example.json`.
+`env.json` (gitignored) holds the Supabase URL + anon key and the `/api/v1`
+base. See `env.example.json`.
 
 ## Stack
 - **Flutter** (Material 3) · **Riverpod** (state) · **go_router** (5-tab shell)
@@ -38,20 +29,16 @@ lib/
 ├─ app.dart            MaterialApp.router (light/dark themes)
 ├─ config.dart         env via --dart-define-from-file
 ├─ router.dart         5-tab StatefulShellRoute
-├─ theme/             tokens (ClusterNewsColors ThemeExtension) + app_theme
+├─ theme/             design tokens (ThemeExtension) + app_theme
 ├─ models/            Article + FeedPage (fromJson, mirrors /api/v1)
 ├─ data/              api_client (dio) + feed_controller (Riverpod)
 ├─ utils/             format (timeAgo/readTime/monogram) + link_out
 └─ features/
-   ├─ feed/          home_page + widgets/article_card  ← BUILT
+   ├─ feed/          home_page + widgets/article_card
    └─ shell/         scaffold_with_nav + placeholder_page
 ```
 
-## Status
-- **Built:** design system, `Article`/`FeedPage` models, `/api/v1` client,
-  Riverpod feed controller (keyset infinite pagination), **Home feed**
-  (infinite scroll + pull-to-refresh + link-out), 5-tab navigation shell.
-- **Stubs:** Discover · Watch · Saved · You (placeholder screens).
-- **Next:** `pub get`/analyze pass · auth (`supabase_flutter` + Google/email) ·
-  likes/bookmarks (direct Supabase, keyed by `dbId`) · Discover/clusters ·
-  Android APK + public release link.
+## CI
+GitHub Actions builds and verifies everything (`flutter-ci.yml` for Android
+analysis/APK, `ios-testflight.yml` for the signed iOS build) — no local
+Flutter SDK required. See `CI.md` and `IOS_TESTFLIGHT.md`.
