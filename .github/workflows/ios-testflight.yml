@@ -41,6 +41,35 @@ jobs:
           # Absolute copy for xcodebuild's cloud-signing auth flags.
           echo "$ASC_API_KEY_P8" | base64 --decode > "$HOME/AuthKey_${ASC_KEY_ID}.p8"
 
+      - name: Prune CI development certificates
+        # Each cloud-signing run mints a NEW Apple Development certificate
+        # (ephemeral runners can't reuse private keys) and the team cap is
+        # ~a dozen — builds start failing with "maximum number of
+        # certificates" (hit at build 16). Dev certs are disposable; the
+        # DISTRIBUTION cert TestFlight uses is a different type, untouched.
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          node -e '
+          const crypto = require("crypto"), fs = require("fs");
+          const key = fs.readFileSync(process.env.HOME + "/AuthKey_" + process.env.ASC_KEY_ID + ".p8", "utf8");
+          const b64 = o => Buffer.from(JSON.stringify(o)).toString("base64url");
+          const now = Math.floor(Date.now()/1000);
+          const h = b64({alg:"ES256", kid:process.env.ASC_KEY_ID, typ:"JWT"});
+          const c = b64({iss:process.env.ASC_ISSUER_ID, iat:now, exp:now+1200, aud:"appstoreconnect-v1"});
+          const sig = crypto.sign("sha256", Buffer.from(h+"."+c), {key, dsaEncoding:"ieee-p1363"}).toString("base64url");
+          const jwt = h+"."+c+"."+sig;
+          (async () => {
+            const r = await fetch("https://api.appstoreconnect.apple.com/v1/certificates?limit=200", {headers:{Authorization:"Bearer "+jwt}});
+            const {data} = await r.json();
+            for (const cert of (data||[]).filter(x => x.attributes.certificateType === "DEVELOPMENT")) {
+              const d = await fetch("https://api.appstoreconnect.apple.com/v1/certificates/" + cert.id, {method:"DELETE", headers:{Authorization:"Bearer "+jwt}});
+              console.log("pruned dev cert", cert.id, d.status);
+            }
+          })();
+          '
+
       - name: Generate iOS config + CocoaPods
         # The dart-defines bake the runtime config (Supabase, API base, Google
         # sign-in ids) into Generated.xcconfig — without them the app ships
