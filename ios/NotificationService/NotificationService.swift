@@ -1,5 +1,6 @@
 import UserNotifications
 import Intents
+import UIKit
 
 /// Enriches incoming pushes:
 ///  1. Attaches the article thumbnail (userInfo["fcm_options"]["image"]).
@@ -53,7 +54,13 @@ class NotificationService: UNNotificationServiceExtension {
       group.enter()
       URLSession.shared.dataTask(with: url) { data, _, _ in
         defer { group.leave() }
-        if let data = data, !data.isEmpty { logoData = data }
+        // Quality gate: only show logos that are actually crisp at avatar
+        // size — a blurry mark is worse than the app icon fallback.
+        if let data = data, !data.isEmpty,
+           let image = UIImage(data: data),
+           min(image.size.width * image.scale, image.size.height * image.scale) >= 80 {
+          logoData = data
+        }
       }.resume()
     }
 
