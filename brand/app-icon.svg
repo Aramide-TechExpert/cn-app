@@ -1,12 +1,10 @@
 <svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
-<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-<stop offset="0" stop-color="#3D7BFF"/><stop offset="1" stop-color="#1D50DB"/></linearGradient></defs>
-<rect width="1024" height="1024" fill="url(#bg)"/>
-<g transform="rotate(-14 512 540)"><rect x="252" y="320" width="520" height="420" rx="56" fill="#FF5A5F"/></g>
-<g transform="rotate(-3 512 530)"><rect x="252" y="305" width="520" height="420" rx="56" fill="#BFD4FF"/></g>
-<g transform="rotate(9 512 520)"><rect x="252" y="290" width="520" height="420" rx="56" fill="#FFFFFF"/>
-<circle cx="352" cy="396" r="30" fill="#FF5A5F"/>
-<rect x="412" y="370" width="292" height="52" rx="26" fill="#2D6BFF"/>
-<rect x="320" y="470" width="300" height="38" rx="19" fill="#2D6BFF" opacity="0.45"/>
-<rect x="320" y="548" width="336" height="38" rx="19" fill="#2D6BFF" opacity="0.45"/></g>
+<rect width="1024" height="1024" fill="#FFFFFF"/>
+<g transform="rotate(-9 512 520)"><rect x="52" y="210" width="920" height="640" rx="92" fill="#FF5A5F"/></g>
+<g transform="rotate(-2 512 514)"><rect x="52" y="198" width="920" height="640" rx="92" fill="#BFD4FF"/></g>
+<g transform="rotate(4 512 508)"><rect x="52" y="186" width="920" height="640" rx="92" fill="#2D6BFF"/>
+<circle cx="232.2" cy="376.8" r="48.8" fill="#FF5A5F"/>
+<rect x="325.5" y="336.5" width="487.6" height="80.6" rx="40.3" fill="#FFFFFF"/>
+<rect x="183.4" y="504" width="519.4" height="59.4" rx="29.7" fill="#FFFFFF" opacity="0.6"/>
+<rect x="183.4" y="622.7" width="593.6" height="59.4" rx="29.7" fill="#FFFFFF" opacity="0.6"/></g>
 </svg>
