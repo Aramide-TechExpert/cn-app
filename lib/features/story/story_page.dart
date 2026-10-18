@@ -14,12 +14,14 @@ import '../../theme/tokens.dart';
 import '../../utils/format.dart';
 import '../../utils/link_out.dart';
 import '../feed/widgets/article_actions.dart';
+import '../feed/widgets/card_variants.dart' show CompactCard;
 
-/// In-app story landing — where notification taps arrive. Shows the card's
-/// full orientation (image, AI summary, what happened / why it matters) so
-/// the reader stays INSIDE Cluster News; the publisher page is a deliberate
-/// button at the bottom, not the destination. This is the monetizable
-/// surface (future ad slot lives on this screen).
+/// In-app story landing — where notification taps arrive. Lean by design
+/// (owner ruling 2026-10-18: AI summary dropped for now): hero thumbnail,
+/// a few lines of the story, a prominent "Continue reading" that opens the
+/// publisher, then a MORE NEWS slider so the tap always has somewhere
+/// interesting to go next. This is the monetizable surface (future ad slot
+/// lives on this screen).
 class StoryPage extends ConsumerStatefulWidget {
   const StoryPage({super.key, required this.id, this.fallbackLink});
 
@@ -37,6 +39,7 @@ class StoryPage extends ConsumerStatefulWidget {
 class _StoryPageState extends ConsumerState<StoryPage> {
   Article? _article;
   ({String id, String title, int sources})? _cluster;
+  List<Article> _more = const [];
   bool _loading = true;
 
   @override
@@ -63,6 +66,18 @@ class _StoryPageState extends ConsumerState<StoryPage> {
       final cluster = await ref.read(apiClientProvider).clusterForArticle(dbId);
       if (mounted && cluster != null) setState(() => _cluster = cluster);
     }
+    // MORE NEWS rail: fresh feed items (minus this story) for the bottom
+    // slider — the tap-through should always have a next step.
+    try {
+      final page = await ref.read(apiClientProvider).feed(limit: 14);
+      if (!mounted) return;
+      setState(() {
+        _more = page.items
+            .where((m) => m.id != a?.id && m.hasImage)
+            .take(10)
+            .toList();
+      });
+    } catch (_) {} // the rail is a bonus, never an error state
   }
 
   @override
@@ -117,14 +132,9 @@ class _StoryPageState extends ConsumerState<StoryPage> {
   }
 
   Widget _story(ClusterNewsColors c, Article a) {
-    final sections = <(String, String)>[
-      if ((a.summary ?? '').isNotEmpty) ('Summary', a.summary!),
-      if ((a.whatHappened ?? '').isNotEmpty)
-        ('What happened', a.whatHappened!),
-      if ((a.whyItMatters ?? '').isNotEmpty)
-        ('Why it matters', a.whyItMatters!),
-    ];
-    final lede = sections.isEmpty ? a.excerpt : null;
+    // Non-AI preview only (owner ruling 2026-10-18: AI summary dropped for
+    // now) — the publisher's own excerpt, clamped to a few lines.
+    final preview = a.excerpt.trim();
 
     return ListView(
       padding: const EdgeInsets.only(bottom: AppSpace.xl),
@@ -146,7 +156,6 @@ class _StoryPageState extends ConsumerState<StoryPage> {
                 children: [
                   if (a.isBreaking) _chip(c, 'BREAKING', danger: true),
                   _chip(c, a.impact.toUpperCase()),
-                  if (a.trustScore != null) _chip(c, 'TRUST ${a.trustScore}'),
                   Text(
                       '${a.source} · ${timeAgo(a.publishedAt)} · ${readTime(a.readingMinutes)}',
                       style: AppText.caption.copyWith(color: c.textFaint)),
@@ -155,51 +164,15 @@ class _StoryPageState extends ConsumerState<StoryPage> {
               const SizedBox(height: AppSpace.md),
               Text(a.title,
                   style: AppText.headline.copyWith(color: c.text)),
-              const SizedBox(height: AppSpace.md),
-              if (lede != null)
-                Text(lede,
+              if (preview.isNotEmpty) ...[
+                const SizedBox(height: AppSpace.md),
+                Text(preview,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
                     style: AppText.body
                         .copyWith(color: c.textSecondary, height: 1.5)),
-              for (final (head, body) in sections) ...[
-                Text(head.toUpperCase(),
-                    style: AppText.caption.copyWith(
-                        color: c.brand,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.1)),
-                const SizedBox(height: AppSpace.xs),
-                Text(body,
-                    style: AppText.body
-                        .copyWith(color: c.textSecondary, height: 1.5)),
-                const SizedBox(height: AppSpace.md),
               ],
-              _actionsRow(c, a),
-              if (a.topics.isNotEmpty) ...[
-                const SizedBox(height: AppSpace.md),
-                Wrap(
-                  spacing: AppSpace.sm,
-                  runSpacing: AppSpace.xs,
-                  children: [
-                    for (final t in a.topics.take(6))
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: c.bgElevated,
-                          border: Border.all(color: c.border),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(t,
-                            style: AppText.caption
-                                .copyWith(color: c.textSecondary)),
-                      ),
-                  ],
-                ),
-              ],
-              if (_cluster != null) ...[
-                const SizedBox(height: AppSpace.md),
-                _fullCoverage(c, _cluster!),
-              ],
-              const SizedBox(height: AppSpace.md),
+              const SizedBox(height: AppSpace.lg),
               FilledButton.icon(
                 style: FilledButton.styleFrom(
                   backgroundColor: c.brand,
@@ -209,16 +182,43 @@ class _StoryPageState extends ConsumerState<StoryPage> {
                 onPressed: () =>
                     openArticle(a.sourceUrl ?? widget.fallbackLink, track: a),
                 icon: const Icon(Icons.open_in_new, size: 18),
-                label: Text('Read the full story on ${a.source}'),
+                label: const Text('Continue reading'),
               ),
               const SizedBox(height: AppSpace.xs),
               Center(
-                child: Text('Opens the publisher in the in-app browser',
+                child: Text('Full story on ${a.source}',
                     style: AppText.caption.copyWith(color: c.textFaint)),
               ),
+              const SizedBox(height: AppSpace.md),
+              _actionsRow(c, a),
+              if (_cluster != null) ...[
+                const SizedBox(height: AppSpace.md),
+                _fullCoverage(c, _cluster!),
+              ],
             ],
           ),
         ),
+        if (_more.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpace.lg, AppSpace.md, AppSpace.lg, AppSpace.sm),
+            child: Text('MORE NEWS',
+                style: AppText.caption.copyWith(
+                    color: c.brand,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.1)),
+          ),
+          SizedBox(
+            height: 244,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+              itemCount: _more.length,
+              separatorBuilder: (_, __) => const SizedBox(width: AppSpace.lg),
+              itemBuilder: (_, i) => CompactCard(article: _more[i], width: 220),
+            ),
+          ),
+        ],
       ],
     );
   }

@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,13 +6,15 @@ import '../../data/feed_controller.dart' show apiClientProvider;
 import '../../models/article.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
-import '../../utils/format.dart';
+import '../feed/widgets/card_variants.dart';
+import '../feed/widgets/magazine_card.dart';
+import '../feed/widgets/overlay_card.dart';
 
 /// In-app landing for the ▶×3 digest push — the FULL group of stories the
-/// notification listed (not just the lead), each with its thumbnail, tapping
-/// through to the in-app story screen. Keeps every headline on the push
-/// reachable and the reader inside Cluster News (owner ruling 2026-10-17:
-/// a list push must open the list, with thumbnails, never a single link).
+/// notification listed, rendered with the SAME dynamic card system as the
+/// Home feed (owner ruling 2026-10-18: the flat thumbnail list was "not in
+/// any way interesting" — this screen must look like Home/News, cycling
+/// through the full-width card variants).
 class DigestPage extends ConsumerStatefulWidget {
   const DigestPage({super.key, required this.ids});
 
@@ -75,14 +76,41 @@ class _DigestPageState extends ConsumerState<DigestPage> {
           ? const Center(child: CircularProgressIndicator())
           : articles.isEmpty
               ? _empty(c)
-              : ListView.separated(
-                  padding: const EdgeInsets.all(AppSpace.md),
+              : ListView.builder(
+                  padding: const EdgeInsets.only(bottom: AppSpace.xl),
                   itemCount: articles.length,
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(height: AppSpace.sm),
-                  itemBuilder: (_, i) => _DigestCard(article: articles[i]),
+                  itemBuilder: (_, i) => _digestCard(i, articles[i]),
                 ),
     );
+  }
+
+  /// The Home feed's variant cycle — every card style surfaces as you scroll,
+  /// with text fallbacks so image-led variants never render an empty box.
+  Widget _digestCard(int i, Article a) {
+    Widget overlay() => Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpace.xs),
+          child: OverlayCard(article: a),
+        );
+    switch (i % 7) {
+      case 0:
+        return a.hasImage ? WideCard(article: a) : FeaturedCard(article: a);
+      case 1:
+        return a.hasImage ? DefaultCard(article: a) : ListCard(article: a);
+      case 2:
+        return a.hasImage
+            ? SplitCard(article: a, imageRight: true)
+            : ListCard(article: a);
+      case 3:
+        return a.hasImage ? overlay() : ListCard(article: a);
+      case 4:
+        return a.hasImage ? MagazineCard(article: a) : ListCard(article: a);
+      case 5:
+        return FeaturedCard(article: a);
+      default:
+        return a.hasImage
+            ? SplitCard(article: a, imageRight: true)
+            : ListCard(article: a);
+    }
   }
 
   Widget _empty(ClusterNewsColors c) {
@@ -107,75 +135,4 @@ class _DigestPageState extends ConsumerState<DigestPage> {
       ),
     );
   }
-}
-
-class _DigestCard extends StatelessWidget {
-  const _DigestCard({required this.article});
-
-  final Article article;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    final a = article;
-    return Material(
-      color: c.bgElevated,
-      child: InkWell(
-        onTap: () => context.push('/story/${a.id}'),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpace.sm),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: SizedBox(
-                  width: 92,
-                  height: 72,
-                  child: a.hasImage
-                      ? CachedNetworkImage(
-                          imageUrl: a.image,
-                          fit: BoxFit.cover,
-                          errorWidget: (_, __, ___) => _placeholder(c),
-                        )
-                      : _placeholder(c),
-                ),
-              ),
-              const SizedBox(width: AppSpace.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      a.title,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.body.copyWith(
-                        color: c.text,
-                        fontWeight: FontWeight.w600,
-                        height: 1.25,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${a.source} · ${timeAgo(a.publishedAt)}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.caption.copyWith(color: c.textFaint),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _placeholder(ClusterNewsColors c) => Container(
-        color: c.bgInset,
-        alignment: Alignment.center,
-        child: Icon(Icons.public, size: 22, color: c.textFaint),
-      );
 }
