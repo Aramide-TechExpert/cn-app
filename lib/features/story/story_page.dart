@@ -13,6 +13,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../utils/format.dart';
 import '../../utils/link_out.dart';
+import '../../utils/source_regions.dart' show activeScopes;
 import '../feed/widgets/article_actions.dart';
 import '../feed/widgets/card_variants.dart' show CompactCard;
 
@@ -67,9 +68,22 @@ class _StoryPageState extends ConsumerState<StoryPage> {
       if (mounted && cluster != null) setState(() => _cluster = cluster);
     }
     // MORE NEWS rail: fresh feed items (minus this story) for the bottom
-    // slider — the tap-through should always have a next step.
+    // slider — STRICTLY the user's own feed shape (region scopes + favorite
+    // sources, same server params as Home — owner ruling 2026-10-18), never
+    // a random global slice.
     try {
-      final page = await ref.read(apiClientProvider).feed(limit: 14);
+      final meta = ref.read(currentUserProvider)?.userMetadata;
+      final scopeSegments =
+          activeScopes(meta).map((s) => s.segment).toSet().toList();
+      final favs = ((meta?['preferred_sources'] as List?) ?? const [])
+          .cast<String>()
+          .toList();
+      final page = await ref.read(apiClientProvider).feed(
+            limit: 14,
+            region: scopeSegments.isEmpty ? 'Worldwide' : null,
+            regions: scopeSegments,
+            sources: favs,
+          );
       if (!mounted) return;
       setState(() {
         _more = page.items
