@@ -30,6 +30,18 @@ class NotificationService: UNNotificationServiceExtension {
     let imageUrl = (fcmOptions?["image"] as? String).flatMap(URL.init(string:))
     let logoUrl = (userInfo["logo"] as? String).flatMap(URL.init(string:))
 
+    // Delivery receipt — fire-and-forget (never joins the group, never delays
+    // display). The backend watchdog compares receipts against sends to catch
+    // pushes that stop reaching the device (owner outage 2026-10-18).
+    if let rcpt = URL(string: "https://clustez-mu.vercel.app/api/push/receipt") {
+      var req = URLRequest(url: rcpt)
+      req.httpMethod = "POST"
+      req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+      let tag = (userInfo["gcm.notification.tag"] as? String) ?? ""
+      req.httpBody = try? JSONSerialization.data(withJSONObject: ["tag": tag])
+      URLSession.shared.dataTask(with: req).resume()
+    }
+
     let group = DispatchGroup()
     var logoData: Data?
 
