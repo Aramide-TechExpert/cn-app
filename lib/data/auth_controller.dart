@@ -66,6 +66,9 @@ class AuthService {
   /// alert prefs, setup_complete…) — synced across devices by Supabase auth.
   Future<void> updateProfile(Map<String, dynamic> data) async {
     await _client.auth.updateUser(UserAttributes(data: data));
+    // Every prefs save re-personalizes this user's pushes immediately
+    // (fire-and-forget, throttled) instead of waiting for the next cycle.
+    PushService.instance.requestRefresh();
   }
 
   /// NATIVE in-app Google sign-in: the iOS account sheet produces an id

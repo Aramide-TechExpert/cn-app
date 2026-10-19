@@ -183,6 +183,34 @@ class PushService {
     }
   }
 
+  DateTime? _lastRefreshPing;
+
+  /// Ask the backend to re-run push personalization for this user NOW —
+  /// fired after every preference save so changes reach the lock screen in
+  /// seconds instead of next pipeline cycle. Fire-and-forget; the server
+  /// throttles per-user too, this local 30s gate just avoids burst spam
+  /// from multi-toggle saves.
+  void requestRefresh() {
+    final now = DateTime.now();
+    if (_lastRefreshPing != null &&
+        now.difference(_lastRefreshPing!) < const Duration(seconds: 30)) {
+      return;
+    }
+    _lastRefreshPing = now;
+    final jwt = Supabase.instance.client.auth.currentSession?.accessToken;
+    if (jwt == null) return;
+    unawaited(() async {
+      try {
+        await Dio().post<void>(
+          '${Config.apiBase}/push/refresh',
+          options: Options(headers: {'Authorization': 'Bearer $jwt'}),
+        );
+      } catch (e) {
+        debugPrint('push: refresh ping skipped ($e)');
+      }
+    }());
+  }
+
   /// Release this device's token for the current account. MUST run BEFORE
   /// auth.signOut() (the backend needs the session to prove ownership) —
   /// otherwise the signed-out account keeps receiving pushes here.
