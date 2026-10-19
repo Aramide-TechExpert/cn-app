@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config.dart';
+import 'push_service.dart';
 
 /// Deep-link the OAuth redirect returns to (web-browser OAuth FALLBACK only —
 /// the primary Google path is native signInWithIdToken, no browser). Must be
@@ -101,5 +102,11 @@ class AuthService {
     );
   }
 
-  Future<void> signOut() => _client.auth.signOut();
+  Future<void> signOut() async {
+    // Release the device push token FIRST (needs the live session to prove
+    // ownership) — otherwise this device keeps getting the signed-out
+    // account's pushes until another account claims it.
+    await PushService.instance.unregister();
+    await _client.auth.signOut();
+  }
 }

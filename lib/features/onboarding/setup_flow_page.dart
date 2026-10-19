@@ -254,13 +254,19 @@ class _SetupFlowPageState extends ConsumerState<SetupFlowPage> {
             padding: const EdgeInsets.fromLTRB(
                 AppSpace.sm, AppSpace.sm, AppSpace.sm, 0),
             child: Row(children: [
-              IconButton(
-                onPressed: _step == 0 ? _dismiss : () => _goTo(_step - 1),
-                icon: Icon(
-                    _step == 0 ? Icons.close : Icons.arrow_back_ios_new,
-                    size: 20,
-                    color: c.textSecondary),
-              ),
+              // First run has NO close — the wizard is a hard gate (owner
+              // 2026-10-19); each step stays skippable so it's still fast.
+              // Edit mode (from Settings) keeps the X.
+              if (_step > 0 || widget.edit)
+                IconButton(
+                  onPressed: _step == 0 ? _dismiss : () => _goTo(_step - 1),
+                  icon: Icon(
+                      _step == 0 ? Icons.close : Icons.arrow_back_ios_new,
+                      size: 20,
+                      color: c.textSecondary),
+                )
+              else
+                const SizedBox(width: 48),
               const Spacer(),
               TextButton(
                 onPressed:

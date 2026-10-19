@@ -10,11 +10,13 @@ library;
 import 'dart:async' show unawaited;
 import 'dart:io' show Platform;
 
+import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config.dart';
 import '../firebase_options.dart';
 import '../router.dart';
 import '../utils/link_out.dart';
@@ -145,18 +147,61 @@ class PushService {
     });
   }
 
+  /// Claim the token for the SIGNED-IN account via the backend (service
+  /// role): a direct Supabase upsert can't reassign a row the previous
+  /// account owns (RLS, correctly) — which left devices receiving the OLD
+  /// account's pushes after a switch (owner report 2026-10-19).
   Future<void> _save(String token) async {
     try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) return;
-      await Supabase.instance.client.from('device_push_tokens').upsert({
-        'user_id': user.id,
-        'fcm_token': token,
-        'platform': Platform.isIOS ? 'ios' : 'android',
-        'last_seen_at': DateTime.now().toUtc().toIso8601String(),
-      }, onConflict: 'fcm_token');
+      final auth = Supabase.instance.client.auth;
+      final jwt = auth.currentSession?.accessToken;
+      if (jwt == null) return;
+      await Dio().post<void>(
+        '${Config.apiBase}/push/register',
+        data: {
+          'token': token,
+          'platform': Platform.isIOS ? 'ios' : 'android',
+        },
+        options: Options(headers: {'Authorization': 'Bearer $jwt'}),
+      );
     } catch (e) {
-      debugPrint('push: token save failed ($e)');
+      debugPrint('push: token claim failed ($e)');
+      // Offline/endpoint failure: the direct upsert still covers the
+      // same-account (re)register case.
+      try {
+        final user = Supabase.instance.client.auth.currentUser;
+        if (user == null) return;
+        await Supabase.instance.client.from('device_push_tokens').upsert({
+          'user_id': user.id,
+          'fcm_token': token,
+          'platform': Platform.isIOS ? 'ios' : 'android',
+          'last_seen_at': DateTime.now().toUtc().toIso8601String(),
+        }, onConflict: 'fcm_token');
+      } catch (e2) {
+        debugPrint('push: token save failed ($e2)');
+      }
+    }
+  }
+
+  /// Release this device's token for the current account. MUST run BEFORE
+  /// auth.signOut() (the backend needs the session to prove ownership) —
+  /// otherwise the signed-out account keeps receiving pushes here.
+  Future<void> unregister() async {
+    try {
+      final jwt =
+          Supabase.instance.client.auth.currentSession?.accessToken;
+      if (jwt == null) return;
+      final token = await FirebaseMessaging.instance
+          .getToken()
+          .timeout(const Duration(seconds: 5));
+      if (token == null) return;
+      await Dio().delete<void>(
+        '${Config.apiBase}/push/register',
+        data: {'token': token},
+        options: Options(headers: {'Authorization': 'Bearer $jwt'}),
+      );
+    } catch (e) {
+      debugPrint('push: unregister skipped ($e)');
     }
   }
 }

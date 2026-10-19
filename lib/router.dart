@@ -1,5 +1,10 @@
-import 'package:go_router/go_router.dart';
+import 'dart:async' show StreamSubscription;
 
+import 'package:flutter/foundation.dart' show ChangeNotifier;
+import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'config.dart';
 import 'utils/remote_settings.dart';
 import 'features/alerts/alerts_page.dart';
 import 'features/auth/sign_in_page.dart';
@@ -24,10 +29,44 @@ import 'features/you/you_page.dart';
 import 'features/story/digest_page.dart';
 import 'features/story/story_page.dart';
 
+/// Re-runs the router's redirect on every auth event (sign-in, sign-out,
+/// metadata updates like setup_complete) so the setup gate reacts live.
+class _AuthRefresh extends ChangeNotifier {
+  _AuthRefresh() {
+    if (Config.hasSupabase) {
+      _sub = Supabase.instance.client.auth.onAuthStateChange
+          .listen((_) => notifyListeners());
+    }
+  }
+  StreamSubscription<AuthState>? _sub;
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
 /// App routes: a 5-tab stateful shell (Home · News Feed · Clusters · Briefing ·
 /// You). Saved, Search, Insights and detail screens are pushed on top.
 final router = GoRouter(
   initialLocation: '/',
+  refreshListenable: _AuthRefresh(),
+  // HARD setup gate (owner 2026-10-19: "all signup should be strictly gated
+  // to user flow and preferences — it's a must"): any signed-in account that
+  // hasn't finished the setup wizard is routed there no matter how the
+  // session arrived (fresh signup, email-confirm relaunch, account switch,
+  // deep link). The sign-in page's own redirect stays as the fast path.
+  redirect: (_, state) {
+    if (!Config.hasSupabase) return null;
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return null;
+    if (user.userMetadata?['setup_complete'] == true) return null;
+    final loc = state.matchedLocation;
+    const allowed = ['/setup', '/sign-in', '/onboarding', '/legal-sources'];
+    if (allowed.any(loc.startsWith)) return null;
+    return '/setup';
+  },
   routes: [
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>
