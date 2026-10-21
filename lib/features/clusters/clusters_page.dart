@@ -42,7 +42,7 @@ class _ClustersPageState extends ConsumerState<ClustersPage> {
       };
 
   PopupMenuItem<_ClusterView> _viewItem(
-      ClusterNewsColors c, _ClusterView v, String label) {
+      NewsLoopColors c, _ClusterView v, String label) {
     final sel = _view == v;
     return PopupMenuItem(
       value: v,
@@ -57,7 +57,7 @@ class _ClustersPageState extends ConsumerState<ClustersPage> {
     );
   }
 
-  PopupMenuItem<String> _timeItem(ClusterNewsColors c, String value, String label) {
+  PopupMenuItem<String> _timeItem(NewsLoopColors c, String value, String label) {
     final sel = (_since ?? '') == value;
     return PopupMenuItem(
       value: value,

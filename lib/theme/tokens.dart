@@ -21,10 +21,10 @@ abstract class AppRadii {
   static const double pill = 999;
 }
 
-/// Cluster News color tokens, exposed via [ThemeExtension] so widgets read them with
-/// `Theme.of(context).extension<ClusterNewsColors>()!`. Mirrors the RN design system.
+/// News Loop color tokens, exposed via [ThemeExtension] so widgets read them with
+/// `Theme.of(context).extension<NewsLoopColors>()!`. Mirrors the RN design system.
 @immutable
-class ClusterNewsColors extends ThemeExtension<ClusterNewsColors> {
+class NewsLoopColors extends ThemeExtension<NewsLoopColors> {
   final Color bg;
   final Color bgElevated;
   final Color bgInset;
@@ -44,7 +44,7 @@ class ClusterNewsColors extends ThemeExtension<ClusterNewsColors> {
   final Color breaking;
   final Color success;
 
-  const ClusterNewsColors({
+  const NewsLoopColors({
     required this.bg,
     required this.bgElevated,
     required this.bgInset,
@@ -79,7 +79,7 @@ class ClusterNewsColors extends ThemeExtension<ClusterNewsColors> {
     }
   }
 
-  static const ClusterNewsColors light = ClusterNewsColors(
+  static const NewsLoopColors light = NewsLoopColors(
     bg: Color(0xFFFFFFFF),
     bgElevated: Color(0xFFFFFFFF),
     bgInset: Color(0xFFF6F7F9),
@@ -100,7 +100,7 @@ class ClusterNewsColors extends ThemeExtension<ClusterNewsColors> {
     success: Color(0xFF30A46C),
   );
 
-  static const ClusterNewsColors dark = ClusterNewsColors(
+  static const NewsLoopColors dark = NewsLoopColors(
     bg: Color(0xFF0B0D12),
     bgElevated: Color(0xFF12151C),
     bgInset: Color(0xFF1A1E27),
@@ -122,7 +122,7 @@ class ClusterNewsColors extends ThemeExtension<ClusterNewsColors> {
   );
 
   @override
-  ClusterNewsColors copyWith({
+  NewsLoopColors copyWith({
     Color? bg,
     Color? bgElevated,
     Color? bgInset,
@@ -142,7 +142,7 @@ class ClusterNewsColors extends ThemeExtension<ClusterNewsColors> {
     Color? breaking,
     Color? success,
   }) {
-    return ClusterNewsColors(
+    return NewsLoopColors(
       bg: bg ?? this.bg,
       bgElevated: bgElevated ?? this.bgElevated,
       bgInset: bgInset ?? this.bgInset,
@@ -165,13 +165,13 @@ class ClusterNewsColors extends ThemeExtension<ClusterNewsColors> {
   }
 
   @override
-  ClusterNewsColors lerp(ThemeExtension<ClusterNewsColors>? other, double t) {
-    if (other is! ClusterNewsColors) return this;
+  NewsLoopColors lerp(ThemeExtension<NewsLoopColors>? other, double t) {
+    if (other is! NewsLoopColors) return this;
     return t < 0.5 ? this : other;
   }
 }
 
 /// Convenience accessor.
-extension ClusterNewsColorsX on BuildContext {
-  ClusterNewsColors get colors => Theme.of(this).extension<ClusterNewsColors>()!;
+extension NewsLoopColorsX on BuildContext {
+  NewsLoopColors get colors => Theme.of(this).extension<NewsLoopColors>()!;
 }

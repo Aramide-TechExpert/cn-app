@@ -1,4 +1,4 @@
-package com.clusternews.app
+package com.newsloop.app
 
 import io.flutter.embedding.android.FlutterActivity
 

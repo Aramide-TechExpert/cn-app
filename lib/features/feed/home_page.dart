@@ -73,7 +73,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         FeedView.list => Icons.view_headline,
       };
 
-  PopupMenuItem<FeedView> _viewItem(ClusterNewsColors c, FeedView v, String label) {
+  PopupMenuItem<FeedView> _viewItem(NewsLoopColors c, FeedView v, String label) {
     final sel = _view == v;
     return PopupMenuItem(
       value: v,
@@ -89,7 +89,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   PopupMenuItem<String> _timeItem(
-      ClusterNewsColors c, String value, String label, String? current) {
+      NewsLoopColors c, String value, String label, String? current) {
     final sel = (current ?? '') == value;
     return PopupMenuItem(
       value: value,
@@ -337,7 +337,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     const SizedBox(width: AppSpace.xs),
                   ],
                 ),
-                // Admin announcement (Cluster News Control), when active.
+                // Admin announcement (News Loop Control), when active.
                 const SliverToBoxAdapter(child: AnnouncementBanner()),
                 // News content analysis — swipeable stat text (ports the web
                 // dashboard StatsRow) pinned at the top of Home, with an FX +
@@ -361,7 +361,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Welcome to Cluster News',
+                              Text('Welcome to News Loop',
                                   style:
                                       AppText.bodyStrong.copyWith(color: c.text)),
                               Text('Personalize your feed in a few taps',

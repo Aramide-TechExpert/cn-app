@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'tokens.dart';
 
-/// Builds the [ThemeData] for a brightness from the Cluster News tokens.
-ThemeData buildClusterNewsTheme(Brightness brightness) {
+/// Builds the [ThemeData] for a brightness from the News Loop tokens.
+ThemeData buildNewsLoopTheme(Brightness brightness) {
   final c = brightness == Brightness.dark
-      ? ClusterNewsColors.dark
-      : ClusterNewsColors.light;
+      ? NewsLoopColors.dark
+      : NewsLoopColors.light;
 
   final base = ThemeData(brightness: brightness, useMaterial3: true);
 

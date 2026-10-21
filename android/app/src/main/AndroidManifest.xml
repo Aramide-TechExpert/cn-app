@@ -5,7 +5,7 @@
     <!-- Android 13+ runtime notification permission (FCM breaking-news push). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
-        android:label="Cluster News"
+        android:label="News Loop"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

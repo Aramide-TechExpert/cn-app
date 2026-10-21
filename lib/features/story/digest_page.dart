@@ -113,7 +113,7 @@ class _DigestPageState extends ConsumerState<DigestPage> {
     }
   }
 
-  Widget _empty(ClusterNewsColors c) {
+  Widget _empty(NewsLoopColors c) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpace.lg),

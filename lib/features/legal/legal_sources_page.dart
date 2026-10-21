@@ -14,7 +14,7 @@ final feedSourcesProvider = FutureProvider.autoDispose<List<String>>((ref) async
   return list;
 });
 
-/// Sources & attribution — mirrors the web /legal/sources page: how Cluster News
+/// Sources & attribution — mirrors the web /legal/sources page: how News Loop
 /// uses public feeds, attribution/link-out policy, the live source list, and
 /// the takedown contact.
 class LegalSourcesPage extends ConsumerWidget {
@@ -38,7 +38,7 @@ class LegalSourcesPage extends ConsumerWidget {
             AppSpace.lg, AppSpace.md, AppSpace.lg, AppSpace.x3),
         children: [
           _p(c,
-              'Cluster News is an AI news-intelligence app. We monitor public RSS '
+              'News Loop is an AI news-intelligence app. We monitor public RSS '
               'feeds from major publishers and use AI to generate original '
               'summaries, context, and signals (impact, trust, clusters) from '
               'the facts they report. We do not republish source articles '
@@ -47,7 +47,7 @@ class LegalSourcesPage extends ConsumerWidget {
           _p(c,
               'Every story shows the original publisher and links out — '
               '"Read original at [Source]" — back to their page. Tapping any '
-              'card opens the publisher directly; Cluster News never reproduces the '
+              'card opens the publisher directly; News Loop never reproduces the '
               'full article body.'),
           const SizedBox(height: AppSpace.xl),
           Text('Publishers in your feed',
@@ -99,6 +99,6 @@ class LegalSourcesPage extends ConsumerWidget {
     );
   }
 
-  Widget _p(ClusterNewsColors c, String text) =>
+  Widget _p(NewsLoopColors c, String text) =>
       Text(text, style: AppText.body.copyWith(color: c.textSecondary, height: 1.5));
 }

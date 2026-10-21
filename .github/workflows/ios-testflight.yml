@@ -3,7 +3,7 @@
 #
 # REQUIRES (App Store Connect / Apple Developer — see docs):
 #   - Paid Apple Developer Program membership ($99/yr) — TestFlight needs it.
-#   - Bundle id com.clusternews.app registered (with Push Notifications capability)
+#   - Bundle id com.newsloop.app registered (with Push Notifications capability)
 #     + an App record in App Store Connect.
 #   - An App Store Connect API key (Admin or App Manager role).
 # GitHub repo secrets used:
@@ -87,7 +87,7 @@ jobs:
         run: |
           mkdir -p ios/fastlane
           cat > ios/fastlane/Appfile <<'APPFILE'
-          app_identifier("com.clusternews.app")
+          app_identifier("com.newsloop.app")
           APPFILE
           cat > ios/fastlane/Fastfile <<'FASTFILE'
           default_platform(:ios)

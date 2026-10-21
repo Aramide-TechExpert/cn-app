@@ -6,7 +6,7 @@ import '../models/cluster.dart';
 import '../models/stats.dart';
 import '../models/widgets_data.dart';
 
-/// Typed client for the Cluster News mobile backend (`/api/v1`) — channel 2 of the
+/// Typed client for the News Loop mobile backend (`/api/v1`) — channel 2 of the
 /// hybrid model (public feed + secret-backed aggregates). User-owned writes go
 /// direct to Supabase elsewhere.
 class ApiClient {
@@ -136,7 +136,7 @@ class ApiClient {
         .toList();
   }
 
-  /// The FULL ingest roster (every publisher Cluster News carries), not just the
+  /// The FULL ingest roster (every publisher News Loop carries), not just the
   /// sources currently in the corpus — for pickers like "Favorite your
   /// publishers" that must offer a location's complete roster.
   Future<List<String>> publishers() async {

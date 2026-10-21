@@ -860,7 +860,7 @@ const Map<String, SourceInfo> _sources = {
 };
 
 // ── Served classifier overlay ───────────────────────────────────────────────
-// The Cluster News Control panel can add sources / re-tag regions / force
+// The News Loop Control panel can add sources / re-tag regions / force
 // flagships after this app shipped. `/api/v1/source-map` serves those
 // DELTAS; applyServedSourceMap merges them over the compiled-in classifier
 // at startup. Offline or on failure the built-in map alone applies.

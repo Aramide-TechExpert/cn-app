@@ -1,4 +1,4 @@
-/// Remote product settings from Cluster News Control (`/api/v1/app-settings`).
+/// Remote product settings from News Loop Control (`/api/v1/app-settings`).
 /// Fetched fire-and-forget at launch and merged over these compiled-in
 /// defaults — offline or on failure the defaults apply, which match the
 /// server's own defaults exactly. Read via [remote].
@@ -181,7 +181,7 @@ class RemoteSettings {
   }
 }
 
-/// Admin-authored banner from Cluster News Control (null = none active).
+/// Admin-authored banner from News Loop Control (null = none active).
 class Announcement {
   const Announcement({
     required this.id,
