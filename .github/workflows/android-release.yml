@@ -19,6 +19,12 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      # Runner default is Java 25 — too new for the project's Gradle 8.12
+      # (needs <= 23). Pin the JDK the toolchain is known-good on.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
