@@ -1,4 +1,4 @@
-package com.newsignal.app
+package com.newssignal.app
 
 import io.flutter.embedding.android.FlutterActivity
 

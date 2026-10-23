@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.newsignal.app</string>
+	<string>com.newssignal.app</string>
 	<key>PROJECT_ID</key>
 	<string>central-catcher-479022-r6</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:1198287548:ios:b666d44353c8bcc4433eb9</string>
+	<string>1:1198287548:ios:079ddb8d7c3e9bae433eb9</string>
 </dict>
 </plist>

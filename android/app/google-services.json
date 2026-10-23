@@ -91,6 +91,35 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1198287548:android:72f2c9799e7132c8433eb9",
+        "android_client_info": {
+          "package_name": "com.newssignal.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1198287548-6f9d6g0g08fecmbbf4auoecr2v4sl4kk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAaWqr8cV0h45fCgOTxpqniZiI-3ZuTzuk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1198287548-6f9d6g0g08fecmbbf4auoecr2v4sl4kk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"

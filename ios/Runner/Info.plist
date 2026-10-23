@@ -22,10 +22,10 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>com.newsignal.app</string>
+			<string>com.newssignal.app</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>newsignal</string>
+				<string>newssignal</string>
 			</array>
 		</dict>
 		<dict>
