@@ -21,10 +21,10 @@ abstract class AppRadii {
   static const double pill = 999;
 }
 
-/// News Loop color tokens, exposed via [ThemeExtension] so widgets read them with
-/// `Theme.of(context).extension<NewsLoopColors>()!`. Mirrors the RN design system.
+/// News Signal color tokens, exposed via [ThemeExtension] so widgets read them with
+/// `Theme.of(context).extension<NewsSignalColors>()!`. Mirrors the RN design system.
 @immutable
-class NewsLoopColors extends ThemeExtension<NewsLoopColors> {
+class NewsSignalColors extends ThemeExtension<NewsSignalColors> {
   final Color bg;
   final Color bgElevated;
   final Color bgInset;
@@ -44,7 +44,7 @@ class NewsLoopColors extends ThemeExtension<NewsLoopColors> {
   final Color breaking;
   final Color success;
 
-  const NewsLoopColors({
+  const NewsSignalColors({
     required this.bg,
     required this.bgElevated,
     required this.bgInset,
@@ -79,7 +79,7 @@ class NewsLoopColors extends ThemeExtension<NewsLoopColors> {
     }
   }
 
-  static const NewsLoopColors light = NewsLoopColors(
+  static const NewsSignalColors light = NewsSignalColors(
     bg: Color(0xFFFFFFFF),
     bgElevated: Color(0xFFFFFFFF),
     bgInset: Color(0xFFF6F7F9),
@@ -100,7 +100,7 @@ class NewsLoopColors extends ThemeExtension<NewsLoopColors> {
     success: Color(0xFF30A46C),
   );
 
-  static const NewsLoopColors dark = NewsLoopColors(
+  static const NewsSignalColors dark = NewsSignalColors(
     bg: Color(0xFF0B0D12),
     bgElevated: Color(0xFF12151C),
     bgInset: Color(0xFF1A1E27),
@@ -122,7 +122,7 @@ class NewsLoopColors extends ThemeExtension<NewsLoopColors> {
   );
 
   @override
-  NewsLoopColors copyWith({
+  NewsSignalColors copyWith({
     Color? bg,
     Color? bgElevated,
     Color? bgInset,
@@ -142,7 +142,7 @@ class NewsLoopColors extends ThemeExtension<NewsLoopColors> {
     Color? breaking,
     Color? success,
   }) {
-    return NewsLoopColors(
+    return NewsSignalColors(
       bg: bg ?? this.bg,
       bgElevated: bgElevated ?? this.bgElevated,
       bgInset: bgInset ?? this.bgInset,
@@ -165,13 +165,13 @@ class NewsLoopColors extends ThemeExtension<NewsLoopColors> {
   }
 
   @override
-  NewsLoopColors lerp(ThemeExtension<NewsLoopColors>? other, double t) {
-    if (other is! NewsLoopColors) return this;
+  NewsSignalColors lerp(ThemeExtension<NewsSignalColors>? other, double t) {
+    if (other is! NewsSignalColors) return this;
     return t < 0.5 ? this : other;
   }
 }
 
 /// Convenience accessor.
-extension NewsLoopColorsX on BuildContext {
-  NewsLoopColors get colors => Theme.of(this).extension<NewsLoopColors>()!;
+extension NewsSignalColorsX on BuildContext {
+  NewsSignalColors get colors => Theme.of(this).extension<NewsSignalColors>()!;
 }

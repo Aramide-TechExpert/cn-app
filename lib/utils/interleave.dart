@@ -19,7 +19,7 @@ import 'remote_settings.dart';
   List<Article> incoming, {
   bool flush = false,
 }) {
-  // Remote switch (News Loop Control → Features): pass-through when off.
+  // Remote switch (News Signal Control → Features): pass-through when off.
   if (!remote.interleave) {
     return (emitted: incoming, deferred: const <Article>[]);
   }

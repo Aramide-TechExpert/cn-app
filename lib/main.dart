@@ -41,5 +41,5 @@ Future<void> main() async {
     defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
   );
 
-  runApp(const ProviderScope(child: NewsLoopApp()));
+  runApp(const ProviderScope(child: NewsSignalApp()));
 }

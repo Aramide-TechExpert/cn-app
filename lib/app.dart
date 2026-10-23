@@ -8,7 +8,7 @@ import 'router.dart';
 import 'theme/app_theme.dart';
 import 'utils/remote_settings.dart';
 
-/// Full-screen gate for maintenance mode / forced update (News Loop Control).
+/// Full-screen gate for maintenance mode / forced update (News Signal Control).
 class _LifecycleGate extends StatelessWidget {
   const _LifecycleGate({required this.child});
   final Widget child;
@@ -27,7 +27,7 @@ class _LifecycleGate extends StatelessWidget {
               : (
                   '⬆️',
                   'Update required',
-                  'This version of News Loop is out of date. Please install the latest build to continue.'
+                  'This version of News Signal is out of date. Please install the latest build to continue.'
                 );
           return Scaffold(
             body: Center(
@@ -56,14 +56,14 @@ class _LifecycleGate extends StatelessWidget {
   }
 }
 
-class NewsLoopApp extends ConsumerStatefulWidget {
-  const NewsLoopApp({super.key});
+class NewsSignalApp extends ConsumerStatefulWidget {
+  const NewsSignalApp({super.key});
 
   @override
-  ConsumerState<NewsLoopApp> createState() => _NewsLoopAppState();
+  ConsumerState<NewsSignalApp> createState() => _NewsSignalAppState();
 }
 
-class _NewsLoopAppState extends ConsumerState<NewsLoopApp>
+class _NewsSignalAppState extends ConsumerState<NewsSignalApp>
     with WidgetsBindingObserver {
   @override
   void initState() {
@@ -98,12 +98,12 @@ class _NewsLoopAppState extends ConsumerState<NewsLoopApp>
     ref.watch(preferenceRefreshListener);
     final settings = ref.watch(settingsControllerProvider);
     return MaterialApp.router(
-      title: 'News Loop',
+      title: 'News Signal',
       // Show the red DEBUG ribbon on debug builds — an unmistakable tell that
       // this is the Flutter build (RN had none). Auto-hidden in release.
       debugShowCheckedModeBanner: true,
-      theme: buildNewsLoopTheme(Brightness.light),
-      darkTheme: buildNewsLoopTheme(Brightness.dark),
+      theme: buildNewsSignalTheme(Brightness.light),
+      darkTheme: buildNewsSignalTheme(Brightness.dark),
       themeMode: settings.themeMode,
       // User-chosen text size (Settings → Appearance) overrides the OS scale.
       builder: (context, child) => MediaQuery(

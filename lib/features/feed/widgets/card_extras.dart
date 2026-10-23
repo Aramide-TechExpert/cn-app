@@ -280,7 +280,7 @@ class EngagementBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Remote switch (News Loop Control → Features).
+    // Remote switch (News Signal Control → Features).
     if (!remote.engagement) return const SizedBox.shrink();
     final c = context.colors;
     final dbId = article.dbId;

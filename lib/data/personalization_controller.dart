@@ -98,7 +98,7 @@ const _fallbackCategories = <CategoryOption>[
 
 final categoriesProvider = FutureProvider<List<CategoryOption>>((ref) async {
   try {
-    // Presentation is admin-controlled (News Loop Control → Categories):
+    // Presentation is admin-controlled (News Signal Control → Categories):
     // sort_order drives display order, hidden drops a topic from pickers
     // (existing follows/assignments keep working).
     final rows = await ref

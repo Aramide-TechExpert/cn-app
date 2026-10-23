@@ -57,7 +57,7 @@ class OnboardingPage extends ConsumerWidget {
                             .copyWith(color: c.onBrand, fontSize: 26)),
                   ),
                   const SizedBox(height: AppSpace.lg),
-                  Text('Welcome to News Loop',
+                  Text('Welcome to News Signal',
                       style: AppText.display.copyWith(color: c.text)),
                   const SizedBox(height: AppSpace.sm),
                   Text(

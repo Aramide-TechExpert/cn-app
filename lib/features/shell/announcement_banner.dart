@@ -8,7 +8,7 @@ import '../../utils/remote_settings.dart';
 
 const _kDismissedAnnouncement = 'clusternews:dismissed-announcement';
 
-/// Admin-authored banner from News Loop Control. Renders nothing when no
+/// Admin-authored banner from News Signal Control. Renders nothing when no
 /// announcement is active or this device dismissed the current message id
 /// (a re-published announcement gets a new id and reappears).
 class AnnouncementBanner extends StatefulWidget {

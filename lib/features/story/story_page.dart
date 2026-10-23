@@ -113,7 +113,7 @@ class _StoryPageState extends ConsumerState<StoryPage> {
   }
 
   /// Article gone (purged window) — offer the publisher page instead.
-  Widget _missing(NewsLoopColors c) {
+  Widget _missing(NewsSignalColors c) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpace.lg),
@@ -145,7 +145,7 @@ class _StoryPageState extends ConsumerState<StoryPage> {
     );
   }
 
-  Widget _story(NewsLoopColors c, Article a) {
+  Widget _story(NewsSignalColors c, Article a) {
     // Non-AI preview only (owner ruling 2026-10-18: AI summary dropped for
     // now) — the publisher's own excerpt, clamped to a few lines.
     final preview = a.excerpt.trim();
@@ -238,7 +238,7 @@ class _StoryPageState extends ConsumerState<StoryPage> {
   }
 
   /// Save · Share · More — the card actions, visible instead of buried.
-  Widget _actionsRow(NewsLoopColors c, Article a) {
+  Widget _actionsRow(NewsSignalColors c, Article a) {
     final dbId = a.dbId;
     final marked = dbId != null &&
         (ref
@@ -300,7 +300,7 @@ class _StoryPageState extends ConsumerState<StoryPage> {
 
   /// "Full coverage" CTA — the same story from N sources (cluster detail).
   Widget _fullCoverage(
-      NewsLoopColors c, ({String id, String title, int sources}) cl) {
+      NewsSignalColors c, ({String id, String title, int sources}) cl) {
     return InkWell(
       onTap: () => context.push('/cluster/${cl.id}'),
       child: Container(
@@ -335,7 +335,7 @@ class _StoryPageState extends ConsumerState<StoryPage> {
     );
   }
 
-  Widget _chip(NewsLoopColors c, String label, {bool danger = false}) {
+  Widget _chip(NewsSignalColors c, String label, {bool danger = false}) {
     final color = danger ? const Color(0xFFE5484D) : c.brand;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

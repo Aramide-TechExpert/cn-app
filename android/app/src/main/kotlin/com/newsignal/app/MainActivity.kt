@@ -1,4 +1,4 @@
-package com.newsloop.app
+package com.newsignal.app
 
 import io.flutter.embedding.android.FlutterActivity
 

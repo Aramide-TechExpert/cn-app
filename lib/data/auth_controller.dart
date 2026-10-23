@@ -11,7 +11,7 @@ import 'push_service.dart';
 /// the primary Google path is native signInWithIdToken, no browser). Must be
 /// allow-listed in Supabase (Authentication → URL Configuration) AND
 /// registered as a URL scheme in the native platform config.
-const String kAuthRedirect = 'newsloop://login-callback';
+const String kAuthRedirect = 'newsignal://login-callback';
 
 final supabaseProvider = Provider<SupabaseClient>(
   (ref) => Supabase.instance.client,

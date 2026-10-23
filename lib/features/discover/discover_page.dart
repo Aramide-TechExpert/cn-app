@@ -62,7 +62,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
         FeedView.list => Icons.view_headline,
       };
 
-  PopupMenuItem<FeedView> _viewItem(NewsLoopColors c, FeedView v, String label) {
+  PopupMenuItem<FeedView> _viewItem(NewsSignalColors c, FeedView v, String label) {
     final sel = _view == v;
     return PopupMenuItem(
       value: v,
@@ -78,7 +78,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   }
 
   PopupMenuItem<String> _timeItem(
-      NewsLoopColors c, String value, String label, String? current) {
+      NewsSignalColors c, String value, String label, String? current) {
     final sel = (current ?? '') == value;
     return PopupMenuItem(
       value: value,

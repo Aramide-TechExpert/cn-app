@@ -228,7 +228,7 @@ class _SignInCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Sign in to News Loop',
+          Text('Sign in to News Signal',
               style: AppText.headline.copyWith(color: c.text)),
           const SizedBox(height: 4),
           Text('Save stories, follow topics, and sync across devices.',
