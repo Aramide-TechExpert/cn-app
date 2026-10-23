@@ -1,0 +1,67 @@
+# Signed Android App Bundle for Google Play (News Signal, com.newssignal.app).
+# Manual-dispatch only: reconstructs android/key.properties + the upload
+# keystore from repo secrets, builds a release AAB, and uploads it as a run
+# artifact (repo is public, so artifact storage is free — the 2026-06 quota
+# problem applied to the private repo). The AAB is signed with the UPLOAD key;
+# Google re-signs with the Play App Signing key on their side.
+name: android-release
+
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: android-release
+  cancel-in-progress: true
+
+jobs:
+  aab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      # Fill in uncommitted generated files (gradlew, local.properties, …);
+      # existing committed files are left untouched.
+      - run: flutter create --platforms=android --org app.clustez .
+      - run: flutter pub get
+
+      - name: Materialize signing config
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > android/upload-keystore.jks
+          umask 077
+          cat > android/key.properties << EOF
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=upload-keystore.jks
+          EOF
+
+      - name: Build signed AAB
+        run: |
+          flutter build appbundle --release \
+            --build-number=${{ github.run_number }} \
+            --build-name=1.0.${{ github.run_number }} \
+            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
+            --dart-define=API_BASE=${{ secrets.API_BASE || 'https://clustez-mu.vercel.app/api/v1' }}
+
+      - name: Verify signature is the upload key (not debug)
+        run: |
+          jar=$(ls build/app/outputs/bundle/release/*.aab)
+          keytool -printcert -jarfile "$jar" | head -5
+          keytool -printcert -jarfile "$jar" | grep -q "CN=News Signal" \
+            && echo "signed with upload key" \
+            || { echo "::error::AAB not signed with upload key"; exit 1; }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: newssignal-release-aab
+          path: build/app/outputs/bundle/release/*.aab
+          retention-days: 7
