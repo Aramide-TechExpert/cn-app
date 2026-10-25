@@ -15,9 +15,8 @@ class Config {
 
   /// Google OAuth clients for NATIVE in-app sign-in (signInWithIdToken — no
   /// browser round-trip). Web client = the one in Supabase's Google provider
-  /// (the id-token audience); iOS client = created in the same Google Cloud
-  /// project. NOTE: the iOS OAuth client was registered for the old bundle id
-  /// (app.clustez.clustez) — it must be updated/recreated for com.newssignal.app.
+  /// (the id-token audience); iOS client = "News Signal iOS" for com.newssignal.app (2026-10-25);
+  /// its reversed id is the URL scheme in Info.plist — keep the two in sync.
   static const String googleWebClientId =
       String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
   static const String googleIosClientId =
