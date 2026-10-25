@@ -135,7 +135,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                 ),
               ),
               const SizedBox(height: AppSpace.sm),
-              Text('CLUSTEZ',
+              Text('NEWS SIGNAL',
                   style: AppText.micro
                       .copyWith(color: c.brand, letterSpacing: 1.2)),
               const SizedBox(height: AppSpace.xs),
