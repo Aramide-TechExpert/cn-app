@@ -6,15 +6,14 @@ import '../../data/feed_controller.dart' show apiClientProvider;
 import '../../models/article.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
-import '../feed/widgets/card_variants.dart';
-import '../feed/widgets/magazine_card.dart';
-import '../feed/widgets/overlay_card.dart';
+import '../../utils/interleave.dart' show throttleVideoCards;
+import '../feed/widgets/feed_pattern.dart';
 
 /// In-app landing for the ▶×3 digest push — the FULL group of stories the
-/// notification listed, rendered with the SAME dynamic card system as the
-/// Home feed (owner ruling 2026-10-18: the flat thumbnail list was "not in
-/// any way interesting" — this screen must look like Home/News, cycling
-/// through the full-width card variants).
+/// notification listed, rendered with the SAME feed template as Home/News
+/// (owner rulings 2026-10-18 + 2026-10-26: shared pattern via
+/// feed_pattern.dart — row planning, 2-up pairs, variant cycle, video
+/// throttle — so this screen always matches the feeds), closed by a footer.
 class DigestPage extends ConsumerStatefulWidget {
   const DigestPage({super.key, required this.ids});
 
@@ -76,41 +75,60 @@ class _DigestPageState extends ConsumerState<DigestPage> {
           ? const Center(child: CircularProgressIndicator())
           : articles.isEmpty
               ? _empty(c)
-              : ListView.builder(
-                  padding: const EdgeInsets.only(bottom: AppSpace.xl),
-                  itemCount: articles.length,
-                  itemBuilder: (_, i) => _digestCard(i, articles[i]),
-                ),
+              : _feed(context, articles),
     );
   }
 
-  /// The Home feed's variant cycle — every card style surfaces as you scroll,
-  /// with text fallbacks so image-led variants never render an empty box.
-  Widget _digestCard(int i, Article a) {
-    Widget overlay() => Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpace.xs),
-          child: OverlayCard(article: a),
-        );
-    switch (i % 7) {
-      case 0:
-        return a.hasImage ? WideCard(article: a) : FeaturedCard(article: a);
-      case 1:
-        return a.hasImage ? DefaultCard(article: a) : ListCard(article: a);
-      case 2:
-        return a.hasImage
-            ? SplitCard(article: a, imageRight: true)
-            : ListCard(article: a);
-      case 3:
-        return a.hasImage ? overlay() : ListCard(article: a);
-      case 4:
-        return a.hasImage ? MagazineCard(article: a) : ListCard(article: a);
-      case 5:
-        return FeaturedCard(article: a);
-      default:
-        return a.hasImage
-            ? SplitCard(article: a, imageRight: true)
-            : ListCard(article: a);
-    }
+  /// The Home feed template verbatim: planned rows (singles + 2-up pairs),
+  /// the full-width variant cycle, video throttling and band logic — then
+  /// the footer as the last row.
+  Widget _feed(BuildContext context, List<Article> articles) {
+    final videoOk = throttleVideoCards(articles);
+    final rows = planFeedRows(articles);
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: AppSpace.xl),
+      itemCount: rows.length + 1,
+      itemBuilder: (context, i) {
+        if (i == rows.length) return _footer(context);
+        final row = rows[i];
+        if (row.length == 2) return feedPairRow(context, row);
+        final a = row.first;
+        return feedCard(i, a,
+            flushBelow: feedFlushBelow(rows, i, videoOk),
+            videoOk: videoOk.contains(a.id));
+      },
+    );
+  }
+
+  /// End-of-digest footer: closes the fixed list (no pagination here) and
+  /// hands the reader to the live feed.
+  Widget _footer(BuildContext context) {
+    final c = context.colors;
+    return Column(
+      children: [
+        Divider(height: 1, thickness: 1, color: c.border),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpace.lg, AppSpace.xl, AppSpace.lg, AppSpace.lg),
+          child: Column(
+            children: [
+              Text("That's your digest",
+                  style: AppText.headline.copyWith(color: c.text)),
+              const SizedBox(height: AppSpace.sm),
+              Text('More stories are landing on the feed right now.',
+                  textAlign: TextAlign.center,
+                  style: AppText.body.copyWith(color: c.textSecondary)),
+              const SizedBox(height: AppSpace.lg),
+              FilledButton(
+                onPressed: () => context.go('/'),
+                style: FilledButton.styleFrom(backgroundColor: c.brand),
+                child: const Text('Open the full feed'),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _empty(NewsSignalColors c) {
