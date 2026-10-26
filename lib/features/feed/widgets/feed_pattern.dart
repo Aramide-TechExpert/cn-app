@@ -131,3 +131,54 @@ bool feedFlushBelow(List<List<Article>> rows, int i, Set<String> videoOk) {
       isBigImageCardAt(i + 1, nextRow.first,
           videoOk: videoOk.contains(nextRow.first.id));
 }
+
+/// The FEED page (news-feed tab) card rhythm — a bold full-bleed Overlay hero
+/// leads, then a tight cadence interleaves full-bleed Overlay, panoramic
+/// Wide, Split (both directions) and a big Magazine between standard Default
+/// cards — variety is obvious every few cards, not once every 7.
+/// Video → VideoCard (throttled); image-less → Featured (with "why it
+/// matters") else List.
+Widget newsFeedCard(int i, Article a,
+    {bool flushBelow = false, bool videoOk = false}) {
+  // Play icon ONLY for a real, captured, playable video — never the loose
+  // hasVideo detector (which fires on ads / embeds / thumbnail players).
+  if (a.hasPlayableVideo && a.hasImage && videoOk) {
+    return VideoCard(article: a, flushBelow: flushBelow);
+  }
+  if (!a.hasImage) {
+    return (a.whyItMatters ?? '').isNotEmpty
+        ? FeaturedCard(article: a)
+        : ListCard(article: a);
+  }
+  if (i == 0) {
+    return OverlayCard(
+        article: a, height: 300, flushBelow: flushBelow); // bold full-bleed hero
+  }
+  switch (i % 6) {
+    case 0:
+      return WideCard(article: a, flushBelow: flushBelow); // panoramic 2:1
+    case 2:
+      return OverlayCard(article: a, flushBelow: flushBelow); // full-bleed
+    case 3:
+      return SplitCard(article: a, flushBelow: flushBelow); // image left
+    case 4:
+      return MagazineCard(article: a, flushBelow: flushBelow); // large image-top
+    case 5:
+      return SplitCard(
+          article: a, imageRight: true, flushBelow: flushBelow); // image right
+    default:
+      return DefaultCard(article: a, flushBelow: flushBelow); // standard
+  }
+}
+
+/// Feed-page band decision: grey gap only between two stacked single rows
+/// that both carry images (the Feed page's simpler big-image test).
+bool newsFeedFlushBelow(List<List<Article>> rows, int i) {
+  final row = rows[i];
+  final next = i + 1 < rows.length ? rows[i + 1] : null;
+  return row.length == 1 &&
+      row.first.hasImage &&
+      next != null &&
+      next.length == 1 &&
+      next.first.hasImage;
+}

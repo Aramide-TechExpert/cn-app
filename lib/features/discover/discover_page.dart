@@ -9,10 +9,10 @@ import '../../data/source_signals.dart';
 import '../../utils/interleave.dart' show throttleVideoCards;
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
+import '../feed/widgets/feed_pattern.dart';
 import '../feed/widgets/card_extras.dart';
 import '../feed/widgets/card_variants.dart';
 import '../feed/widgets/magazine_card.dart';
-import '../feed/widgets/overlay_card.dart';
 import '../../models/article.dart';
 import '../shell/app_drawer.dart';
 
@@ -110,79 +110,6 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     if (_scroll.hasClients) _scroll.jumpTo(0);
   }
 
-  /// Dynamic card rhythm — gives the feed *visibly* distinct card shapes instead
-  /// of a flat column (mirrors the web mosaic/bucketed feed). A bold full-bleed
-  /// Overlay hero leads, then a tight 4-card cadence interleaves a full-bleed
-  /// Overlay, a panoramic Wide, and a big Magazine between standard Default
-  /// cards — so variety is obvious every few cards, not once every 7.
-  /// Video → VideoCard; image-less → Featured (with "why it matters") else List.
-  Widget _cardFor(int i, Article a, {bool flushBelow = false}) {
-    // Play icon ONLY for a real, captured, playable video — never the loose
-    // hasVideo detector (which fires on ads / embeds / thumbnail players).
-    // Throttled: news sources now carry lots of video, so only the ids in
-    // _videoOk (≈1 per 10 items) promote — the rest render as image cards.
-    if (a.hasPlayableVideo && a.hasImage && _videoOk.contains(a.id)) {
-      return VideoCard(article: a, flushBelow: flushBelow);
-    }
-    if (!a.hasImage) {
-      return (a.whyItMatters ?? '').isNotEmpty
-          ? FeaturedCard(article: a)
-          : ListCard(article: a);
-    }
-    if (i == 0) {
-      return OverlayCard(
-          article: a, height: 300, flushBelow: flushBelow); // bold full-bleed hero
-    }
-    switch (i % 6) {
-      case 0:
-        return WideCard(article: a, flushBelow: flushBelow); // panoramic 2:1
-      case 2:
-        return OverlayCard(article: a, flushBelow: flushBelow); // full-bleed
-      case 3:
-        return SplitCard(article: a, flushBelow: flushBelow); // image left
-      case 4:
-        return MagazineCard(article: a, flushBelow: flushBelow); // large image-top
-      case 5:
-        return SplitCard(
-            article: a, imageRight: true, flushBelow: flushBelow); // image right
-      default:
-        return DefaultCard(article: a, flushBelow: flushBelow); // standard
-    }
-  }
-
-  /// A row that renders as a big full-bleed image card (used to drop the band
-  /// above it to a thin line when two such cards stack together).
-  bool _isBigImageRow(Article a) => a.hasImage;
-
-  /// Plan the feed into rows: mostly single full-width cards, with a periodic
-  /// 2-up compact pair (two small cards side-by-side) to break the single-column
-  /// rhythm — the structural variety that keeps the feed from reading as one
-  /// repeated style. Pairs only group plain image cards (not video/text).
-  List<List<Article>> _planRows(List<Article> items) {
-    final rows = <List<Article>>[];
-    var i = 0, r = 0;
-    while (i < items.length) {
-      final a = items[i];
-      final next = i + 1 < items.length ? items[i + 1] : null;
-      final pairable = r > 0 &&
-          r % 4 == 1 &&
-          a.hasImage &&
-          !a.hasPlayableVideo &&
-          next != null &&
-          next.hasImage &&
-          !next.hasPlayableVideo;
-      if (pairable) {
-        rows.add([a, next]);
-        i += 2;
-      } else {
-        rows.add([a]);
-        i += 1;
-      }
-      r++;
-    }
-    return rows;
-  }
-
   /// Splice playable videos from the pool into the planned rows (~1 every 6
   /// rows, capped at the pool size), de-duped against what's already shown, so
   /// video is sprinkled through the feed instead of clustered.
@@ -206,28 +133,6 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     return out;
   }
 
-  /// Render one planned row: a 2-up compact pair, or a single styled card.
-  Widget _rowWidget(BuildContext context, int r, List<Article> row,
-      {bool flushBelow = true}) {
-    if (row.length == 2) {
-      return Column(children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpace.lg, AppSpace.md, AppSpace.lg, AppSpace.md),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: CompactCard(article: row[0])),
-              const SizedBox(width: AppSpace.md),
-              Expanded(child: CompactCard(article: row[1])),
-            ],
-          ),
-        ),
-        Divider(height: 1, thickness: 1, color: context.colors.border),
-      ]);
-    }
-    return _cardFor(r, row.first, flushBelow: flushBelow);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -400,23 +305,22 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                         ? const <Article>[]
                         : (ref.watch(videoPoolProvider).valueOrNull ??
                             const <Article>[]);
-                    final rows = _interleaveVideos(_planRows(items), pool);
+                    final rows =
+                        _interleaveVideos(planFeedRows(items), pool);
                     return SliverList.builder(
                       itemCount: rows.length + 1,
                       itemBuilder: (context, i) {
                         if (i == rows.length) return loader();
                         final row = rows[i];
-                        // Grey band ONLY between two stacked big image cards.
-                        final next = i + 1 < rows.length ? rows[i + 1] : null;
-                        final flushBelow = row.length == 1 &&
-                            _isBigImageRow(row.first) &&
-                            next != null &&
-                            next.length == 1 &&
-                            _isBigImageRow(next.first);
                         return FadeSlideIn(
                           key: ValueKey(row.first.id),
-                          child: _rowWidget(context, i, row,
-                              flushBelow: flushBelow),
+                          child: row.length == 2
+                              ? feedPairRow(context, row)
+                              : newsFeedCard(i, row.first,
+                                  // Grey band ONLY between two stacked big
+                                  // image cards.
+                                  flushBelow: newsFeedFlushBelow(rows, i),
+                                  videoOk: _videoOk.contains(row.first.id)),
                         );
                       },
                     );

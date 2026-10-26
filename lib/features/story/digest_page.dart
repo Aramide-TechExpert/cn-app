@@ -7,13 +7,15 @@ import '../../models/article.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../utils/interleave.dart' show throttleVideoCards;
+import '../feed/widgets/card_extras.dart' show FadeSlideIn;
 import '../feed/widgets/feed_pattern.dart';
 
 /// In-app landing for the ▶×3 digest push — the FULL group of stories the
-/// notification listed, rendered with the SAME feed template as Home/News
-/// (owner rulings 2026-10-18 + 2026-10-26: shared pattern via
-/// feed_pattern.dart — row planning, 2-up pairs, variant cycle, video
-/// throttle — so this screen always matches the feeds), closed by a footer.
+/// notification listed, rendered EXACTLY like the FEED tab (owner ruling
+/// 2026-10-27: the Feed page's thumbnail/card style, not Home's) via the
+/// shared newsFeedCard template: Overlay hero, 6-step cycle, 2-up pairs,
+/// fade-slide entrances. Lives INSIDE the Feed shell branch so the app
+/// footer menu shows (router.dart).
 class DigestPage extends ConsumerStatefulWidget {
   const DigestPage({super.key, required this.ids});
 
@@ -79,55 +81,26 @@ class _DigestPageState extends ConsumerState<DigestPage> {
     );
   }
 
-  /// The Home feed template verbatim: planned rows (singles + 2-up pairs),
-  /// the full-width variant cycle, video throttling and band logic — then
-  /// the footer as the last row.
+  /// The FEED tab's template verbatim: planned rows (singles + 2-up compact
+  /// pairs), the news-feed card cycle (Overlay hero first), video throttle,
+  /// band logic and fade-slide entrances.
   Widget _feed(BuildContext context, List<Article> articles) {
     final videoOk = throttleVideoCards(articles);
     final rows = planFeedRows(articles);
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: AppSpace.xl),
-      itemCount: rows.length + 1,
+      itemCount: rows.length,
       itemBuilder: (context, i) {
-        if (i == rows.length) return _footer(context);
         final row = rows[i];
-        if (row.length == 2) return feedPairRow(context, row);
-        final a = row.first;
-        return feedCard(i, a,
-            flushBelow: feedFlushBelow(rows, i, videoOk),
-            videoOk: videoOk.contains(a.id));
+        return FadeSlideIn(
+          key: ValueKey(row.first.id),
+          child: row.length == 2
+              ? feedPairRow(context, row)
+              : newsFeedCard(i, row.first,
+                  flushBelow: newsFeedFlushBelow(rows, i),
+                  videoOk: videoOk.contains(row.first.id)),
+        );
       },
-    );
-  }
-
-  /// End-of-digest footer: closes the fixed list (no pagination here) and
-  /// hands the reader to the live feed.
-  Widget _footer(BuildContext context) {
-    final c = context.colors;
-    return Column(
-      children: [
-        Divider(height: 1, thickness: 1, color: c.border),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpace.lg, AppSpace.xl, AppSpace.lg, AppSpace.lg),
-          child: Column(
-            children: [
-              Text("That's your digest",
-                  style: AppText.headline.copyWith(color: c.text)),
-              const SizedBox(height: AppSpace.sm),
-              Text('More stories are landing on the feed right now.',
-                  textAlign: TextAlign.center,
-                  style: AppText.body.copyWith(color: c.textSecondary)),
-              const SizedBox(height: AppSpace.lg),
-              FilledButton(
-                onPressed: () => context.go('/'),
-                style: FilledButton.styleFrom(backgroundColor: c.brand),
-                child: const Text('Open the full feed'),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 

@@ -79,6 +79,14 @@ final router = GoRouter(
         StatefulShellBranch(
           routes: [
             GoRoute(path: '/discover', builder: (_, __) => const DiscoverPage()),
+            // Digest/Fresh-stories lands INSIDE the Feed branch so the app
+            // footer menu stays visible (owner 2026-10-27) — push() stacks it
+            // over /discover, so back pops to the Feed tab.
+            GoRoute(
+              path: '/digest',
+              builder: (_, s) =>
+                  DigestPage(ids: s.uri.queryParameters['ids'] ?? ''),
+            ),
           ],
         ),
         StatefulShellBranch(
@@ -128,10 +136,6 @@ final router = GoRouter(
         id: s.pathParameters['id']!,
         fallbackLink: s.uri.queryParameters['link'],
       ),
-    ),
-    GoRoute(
-      path: '/digest',
-      builder: (_, s) => DigestPage(ids: s.uri.queryParameters['ids'] ?? ''),
     ),
     GoRoute(
       path: '/cluster/:id',
