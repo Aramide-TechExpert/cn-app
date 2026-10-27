@@ -102,6 +102,14 @@ final router = GoRouter(
                 // not just the drawer link (deep links included).
                 redirect: (_, __) => remote.clusters ? null : '/',
                 builder: (_, __) => const ClustersPage()),
+            // Full-coverage landing (happening-now pushes included) lives
+            // INSIDE the shell so the app footer menu stays visible
+            // (owner 2026-10-27, same ruling as /digest).
+            GoRoute(
+              path: '/cluster/:id',
+              redirect: (_, __) => remote.clusters ? null : '/',
+              builder: (_, s) => ClusterDetailPage(id: s.pathParameters['id']!),
+            ),
           ],
         ),
         StatefulShellBranch(
@@ -136,11 +144,6 @@ final router = GoRouter(
         id: s.pathParameters['id']!,
         fallbackLink: s.uri.queryParameters['link'],
       ),
-    ),
-    GoRoute(
-      path: '/cluster/:id',
-      redirect: (_, __) => remote.clusters ? null : '/',
-      builder: (_, s) => ClusterDetailPage(id: s.pathParameters['id']!),
     ),
     GoRoute(
       path: '/topic/:slug',

@@ -6,7 +6,9 @@ import '../../data/source_signals.dart';
 import '../../models/article.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
-import '../feed/widgets/article_card.dart';
+import '../../utils/interleave.dart' show throttleVideoCards;
+import '../feed/widgets/card_extras.dart' show FadeSlideIn;
+import '../feed/widgets/feed_pattern.dart';
 
 class ClusterDetailPage extends ConsumerWidget {
   const ClusterDetailPage({super.key, required this.id});
@@ -44,10 +46,19 @@ class ClusterDetailPage extends ConsumerWidget {
               .map((a) => a.whyItMatters)
               .firstWhere((w) => w != null && w.isNotEmpty, orElse: () => null);
 
+          // Horizontal padding lives on the HEADER block only — the story
+          // list below is the shared feed template, whose cards manage their
+          // own gutters (full-bleed variants must reach the screen edges).
+          final videoOk = throttleVideoCards(timeline);
+          final rows = planFeedRows(timeline);
           return ListView(
-            padding: const EdgeInsets.fromLTRB(
-                AppSpace.lg, AppSpace.lg, AppSpace.lg, AppSpace.x3),
+            padding: const EdgeInsets.only(top: AppSpace.lg, bottom: AppSpace.x3),
             children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
               Text('FULL COVERAGE',
                   style:
                       AppText.micro.copyWith(color: c.brand, letterSpacing: 1)),
@@ -87,8 +98,21 @@ class ClusterDetailPage extends ConsumerWidget {
               Text('How it developed',
                   style: AppText.headline.copyWith(color: c.text, fontSize: 16)),
               const SizedBox(height: AppSpace.sm),
-              for (final a in timeline)
-                ArticleCard(article: a),
+                  ],
+                ),
+              ),
+              // The FEED tab's template, enforced: same shared newsFeedCard
+              // cycle / pairs / bands as /discover and the digest landing —
+              // never a bespoke card style on a notification landing.
+              for (var i = 0; i < rows.length; i++)
+                FadeSlideIn(
+                  key: ValueKey(rows[i].first.id),
+                  child: rows[i].length == 2
+                      ? feedPairRow(context, rows[i])
+                      : newsFeedCard(i, rows[i].first,
+                          flushBelow: newsFeedFlushBelow(rows, i),
+                          videoOk: videoOk.contains(rows[i].first.id)),
+                ),
             ],
           );
         },

@@ -6,11 +6,14 @@ import 'card_variants.dart';
 import 'magazine_card.dart';
 import 'overlay_card.dart';
 
-/// The Home "Latest" feed template — row planning, the full-width variant
-/// cycle, the 2-up compact pair, and the big-image band logic — extracted so
-/// every screen that shows a story list (Home, the digest/Fresh-stories
-/// landing) renders the SAME pattern from one source of truth. Change the
-/// rhythm here and every surface follows.
+/// THE feed template — single source of truth for every story-list surface.
+/// ENFORCED consumers (owner ruling 2026-10-27 — never a bespoke card cycle
+/// on any story list or notification landing; add new surfaces HERE):
+///   • Home "Latest"            → feedCard + planFeedRows + feedFlushBelow
+///   • Feed tab (/discover)     → newsFeedCard + planFeedRows + newsFeedFlushBelow
+///   • Digest landing (/digest) → newsFeedCard (same as Feed tab)
+///   • Full coverage (/cluster) → newsFeedCard (same as Feed tab)
+/// Change the rhythm here and every surface follows.
 ///
 /// Cycles the feed through every full-width variant so each card style
 /// surfaces as you scroll. Falls back to a text variant when an article has
