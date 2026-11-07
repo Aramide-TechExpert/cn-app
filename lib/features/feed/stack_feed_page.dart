@@ -63,7 +63,7 @@ class _StackFeedPageState extends ConsumerState<StackFeedPage> {
               onPageChanged: (i) {
                 if (i >= stack.length - 3) ctrl.loadMore();
               },
-              itemBuilder: (_, i) => StackCard(article: stack[i]),
+              itemBuilder: (_, i) => _StackCard(article: stack[i]),
             ),
             // Close affordance back to Home.
             Positioned(
@@ -82,9 +82,8 @@ class _StackFeedPageState extends ConsumerState<StackFeedPage> {
   }
 }
 
-/// One full-bleed Reel story.
-class StackCard extends ConsumerWidget {
-  const StackCard({super.key, required this.article});
+class _StackCard extends ConsumerWidget {
+  const _StackCard({required this.article});
   final Article article;
 
   @override

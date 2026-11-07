@@ -17,6 +17,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/interleave.dart' show throttleVideoCards;
 import '../../theme/tokens.dart';
 import '../../utils/link_out.dart';
+import '../discover/discover_page.dart' show FeedView;
 import '../shell/app_drawer.dart';
 import 'widgets/card_extras.dart';
 import 'widgets/feed_pattern.dart';

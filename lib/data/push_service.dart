@@ -116,27 +116,26 @@ class PushService {
   void _openFromMessage(RemoteMessage message) {
     final url = message.data['url'];
     final link = message.data['link'];
-    // Every tap stays IN-APP and lands on the REAL Feed page with the pushed
-    // stories pinned on top (owner ruling 2026-11-08 — single stories and
-    // ▶×3 digests ride the SAME /digest landing); clusters keep their
-    // full-coverage page. Publisher link-out is only the last-resort
-    // fallback (and the purged-story fallback via ?link=).
-    String? ids;
+    // Every tap stays IN-APP (the publisher link is a button on the story
+    // screen, not the destination):
+    //   /articles/<id>  → the story screen
+    //   /digest?ids=…   → the digest list (all stories on a ▶×3 push)
+    //   /cluster/<id>   → full coverage of a happening-now cluster
+    // Publisher link-out is only the last-resort fallback.
+    String? id;
     String? inAppRoute;
     if (url is String && url.startsWith('/articles/')) {
-      ids = url.substring('/articles/'.length);
-    } else if (url is String && url.startsWith('/digest')) {
-      ids = Uri.tryParse(url)?.queryParameters['ids'];
-    } else if (url is String && url.startsWith('/cluster/')) {
+      id = url.substring('/articles/'.length);
+    } else if (url is String &&
+        (url.startsWith('/digest') || url.startsWith('/cluster/'))) {
       inAppRoute = url;
     }
     // Small delay so the app shell finishes building on cold start.
     Future<void>.delayed(const Duration(milliseconds: 400), () {
-      if (ids != null && ids!.isNotEmpty) {
+      if (id != null && id.isNotEmpty) {
         router.push(Uri(
-          path: '/digest',
+          path: '/story/$id',
           queryParameters: {
-            'ids': ids,
             if (link is String && link.isNotEmpty) 'link': link,
           },
         ).toString());
