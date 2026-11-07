@@ -82,9 +82,7 @@ class _StackFeedPageState extends ConsumerState<StackFeedPage> {
   }
 }
 
-/// One full-bleed Reel story — public: the single-push notification landing
-/// (PushLandingPage) renders the EXACT same card, so the Reel format is one
-/// code path wherever it appears.
+/// One full-bleed Reel story.
 class StackCard extends ConsumerWidget {
   const StackCard({super.key, required this.article});
   final Article article;

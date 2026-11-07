@@ -17,8 +17,17 @@ import '../shell/app_drawer.dart';
 
 /// News Feed — the filterable article stream (category · sort · impact),
 /// mirroring the web feed. Full-width square cards.
+///
+/// [pinned] — notification landings (owner ruling 2026-11-08): every push
+/// tap lands on THIS page, the real Feed, with the pushed stories prepended
+/// as the first cards (story 1 renders as the big hero naturally). No clone
+/// page exists anymore, so the landing cannot diverge from the Feed — it IS
+/// the Feed.
 class DiscoverPage extends ConsumerStatefulWidget {
-  const DiscoverPage({super.key});
+  const DiscoverPage({super.key, this.pinned = const <Article>[]});
+
+  /// Stories to pin ahead of the stream (pushed-notification landings).
+  final List<Article> pinned;
 
   @override
   ConsumerState<DiscoverPage> createState() => _DiscoverPageState();
@@ -201,9 +210,17 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                 ),
               ),
               data: (allItems) {
-                final items = allItems
+                // Pushed-notification stories lead the stream (deduped from
+                // the feed below so a story never renders twice).
+                final pinned = widget.pinned
                     .where((a) => !dismissed.contains(a.id))
                     .toList();
+                final pinnedIds = pinned.map((a) => a.id).toSet();
+                final items = [
+                  ...pinned,
+                  ...allItems.where((a) =>
+                      !dismissed.contains(a.id) && !pinnedIds.contains(a.id)),
+                ];
                 // Few inline video cards, not walls of them — except in the
                 // dedicated Videos filter view, where video IS the content.
                 _videoOk = filters.video

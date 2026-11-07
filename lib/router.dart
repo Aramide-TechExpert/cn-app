@@ -26,8 +26,7 @@ import 'features/search/search_page.dart';
 import 'features/settings/settings_page.dart';
 import 'features/shell/scaffold_with_nav.dart';
 import 'features/you/you_page.dart';
-import 'features/story/digest_page.dart';
-import 'features/story/push_landing_page.dart';
+import 'features/story/push_feed_landing.dart';
 import 'features/story/story_page.dart';
 
 /// Re-runs the router's redirect on every auth event (sign-in, sign-out,
@@ -81,13 +80,16 @@ final router = GoRouter(
         StatefulShellBranch(
           routes: [
             GoRoute(path: '/discover', builder: (_, __) => const DiscoverPage()),
-            // Digest/Fresh-stories lands INSIDE the Feed branch so the app
-            // footer menu stays visible (owner 2026-10-27) — push() stacks it
-            // over /discover, so back pops to the Feed tab.
+            // EVERY push tap lands INSIDE the Feed branch on the REAL Feed
+            // page with the pushed stories pinned on top (owner ruling
+            // 2026-11-08 — no clone landing screens). push() stacks it over
+            // /discover, so back pops to the plain Feed tab.
             GoRoute(
               path: '/digest',
-              builder: (_, s) =>
-                  DigestPage(ids: s.uri.queryParameters['ids'] ?? ''),
+              builder: (_, s) => PushFeedLanding(
+                ids: s.uri.queryParameters['ids'] ?? '',
+                fallbackLink: s.uri.queryParameters['link'],
+              ),
             ),
           ],
         ),
@@ -143,16 +145,6 @@ final router = GoRouter(
     GoRoute(
       path: '/story/:id',
       builder: (_, s) => StoryPage(
-        id: s.pathParameters['id']!,
-        fallbackLink: s.uri.queryParameters['link'],
-      ),
-    ),
-    // Single-push notification landing — full-screen Reel format (owner
-    // ruling 2026-11-07), so it sits OUTSIDE the shell: no footer, the close
-    // X returns home. The digest/cluster landings stay in-shell as before.
-    GoRoute(
-      path: '/push-story/:id',
-      builder: (_, s) => PushLandingPage(
         id: s.pathParameters['id']!,
         fallbackLink: s.uri.queryParameters['link'],
       ),
