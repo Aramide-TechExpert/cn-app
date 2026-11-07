@@ -1155,13 +1155,18 @@ const Set<String> _worldwideFlagships = {
   'npr technology', 'nyt technology', 'time', 'wall street journal',
   'usa today', 'politico', 'the atlantic', 'axios', 'pbs newshour',
   'propublica',
+  // 2026-11-07 second sweep: the remaining household-name tier.
+  'the hill', 'huffpost', 'vox', 'yahoo news', 'new york post',
+  'the daily beast',
   // United Kingdom
   'bbc news', 'bbc business', 'bbc technology', 'financial times',
   'the economist', 'the times', 'the telegraph', 'sky news',
   'the independent', 'the guardian business', 'the guardian tech',
+  'itv news', 'channel 4 news', 'daily mail', 'the mirror',
+  'evening standard', 'metro', 'i news',
   // Canada
   'cbc news', 'the globe and mail', 'national post', 'toronto star',
-  'ctv news', 'global news',
+  'ctv news', 'global news', 'bnn bloomberg', 'citynews', "maclean's",
   // Europe
   'politico europe', 'euractiv', 'le monde', 'el país',
   'spiegel international', 'the irish times', 'kyiv independent',
@@ -1169,18 +1174,22 @@ const Set<String> _worldwideFlagships = {
   // Middle East
   'al arabiya', 'asharq al-awsat', 'al-monitor', 'middle east eye',
   'arab news', 'the national', 'gulf news', 'haaretz', 'times of israel',
-  'the jerusalem post', 'trt world',
+  'the jerusalem post', 'trt world', 'khaleej times', 'anadolu agency',
+  'ynetnews',
   // India
   'times of india', 'the hindu', 'hindustan times', 'the indian express',
-  'ndtv', 'india today', 'the economic times',
+  'ndtv', 'india today', 'the economic times', 'business standard',
+  'deccan herald', 'the telegraph india',
   // Asia-Pacific
   'nikkei asia', 'the diplomat', 'asia times', 'south china morning post',
   'the japan times', 'the straits times', 'cna', 'the korea herald',
-  'bangkok post', 'dawn', 'the jakarta post', 'kyodo news',
+  'bangkok post', 'dawn', 'the jakarta post', 'kyodo news', 'nhk world',
+  'yonhap', 'the asahi shimbun', 'philippine daily inquirer',
   // Australia & NZ
   'abc australia', 'sydney morning herald', 'the age', 'the australian',
   'guardian australia', 'australian financial review', 'news.com.au',
-  'new zealand herald', 'stuff', 'rnz',
+  'new zealand herald', 'stuff', 'rnz', 'sbs news', '9news', '7news',
+  '1news',
   // Latin America
   'buenos aires times', 'mexico news daily', 'rio times', 'mercopress',
 };
