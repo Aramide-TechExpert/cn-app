@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../utils/remote_settings.dart';
 import '../../data/dismissed_controller.dart';
 import '../../data/news_feed_controller.dart';
 import '../../data/source_signals.dart';
@@ -11,13 +10,10 @@ import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../feed/widgets/feed_pattern.dart';
 import '../feed/widgets/card_extras.dart';
-import '../feed/widgets/card_variants.dart';
-import '../feed/widgets/magazine_card.dart';
 import '../../models/article.dart';
 import '../shell/app_drawer.dart';
 
 /// Feed layout the user can switch between (mirrors the web view options).
-enum FeedView { mixed, magazine, grid, list }
 
 /// News Feed — the filterable article stream (category · sort · impact),
 /// mirroring the web feed. Full-width square cards.
@@ -31,12 +27,7 @@ class DiscoverPage extends ConsumerStatefulWidget {
 class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   final _scroll = ScrollController();
   // Feed layout — its OWN served default (independent of Home's), user-overridable.
-  FeedView _view = switch (remote.feedView) {
-    'magazine' => FeedView.magazine,
-    'grid' => FeedView.grid,
-    'list' => FeedView.list,
-    _ => FeedView.mixed,
-  };
+  FeedView _view = servedFeedView();
   Set<String> _videoOk = const {}; // ids allowed to render as video cards
 
   @override
@@ -110,28 +101,6 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     if (_scroll.hasClients) _scroll.jumpTo(0);
   }
 
-  /// Splice playable videos from the pool into the planned rows (~1 every 6
-  /// rows, capped at the pool size), de-duped against what's already shown, so
-  /// video is sprinkled through the feed instead of clustered.
-  List<List<Article>> _interleaveVideos(
-      List<List<Article>> rows, List<Article> pool) {
-    if (pool.isEmpty) return rows;
-    final seen = <String>{};
-    for (final r in rows) {
-      for (final a in r) {
-        seen.add(a.id);
-      }
-    }
-    final vids = pool.where((a) => !seen.contains(a.id)).toList();
-    if (vids.isEmpty) return rows;
-    final out = <List<Article>>[];
-    var vi = 0;
-    for (var i = 0; i < rows.length; i++) {
-      out.add(rows[i]);
-      if ((i + 1) % 10 == 0 && vi < vids.length) out.add([vids[vi++]]);
-    }
-    return out;
-  }
 
 
   @override
@@ -258,73 +227,22 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                               child: CircularProgressIndicator.adaptive())
                           : const SizedBox(height: AppSpace.lg),
                     );
-                switch (_view) {
-                  case FeedView.list:
-                    return SliverList.builder(
-                      itemCount: items.length + 1,
-                      itemBuilder: (context, i) => i == items.length
-                          ? loader()
-                          : FadeSlideIn(
-                              key: ValueKey(items[i].id),
-                              child: ListCard(article: items[i])),
-                    );
-                  case FeedView.magazine:
-                    return SliverList.builder(
-                      itemCount: items.length + 1,
-                      itemBuilder: (context, i) => i == items.length
-                          ? loader()
-                          : FadeSlideIn(
-                              key: ValueKey(items[i].id),
-                              child: MagazineCard(article: items[i])),
-                    );
-                  case FeedView.grid:
-                    return SliverPadding(
-                      padding: const EdgeInsets.all(AppSpace.lg),
-                      sliver: SliverGrid(
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: AppSpace.lg,
-                          crossAxisSpacing: AppSpace.lg,
-                          childAspectRatio: 0.6,
-                        ),
-                        delegate: SliverChildBuilderDelegate(
-                          (context, i) => FadeSlideIn(
-                            key: ValueKey(items[i].id),
-                            child: CompactCard(
-                                article: items[i], width: double.infinity),
-                          ),
-                          childCount: items.length,
-                        ),
-                      ),
-                    );
-                  case FeedView.mixed:
-                    // Weave a few license-safe videos into the feed (capped,
-                    // ~1 per 6 cards). Skipped when the Videos filter is on.
-                    final pool = filters.video
-                        ? const <Article>[]
-                        : (ref.watch(videoPoolProvider).valueOrNull ??
-                            const <Article>[]);
-                    final rows =
-                        _interleaveVideos(planFeedRows(items), pool);
-                    return SliverList.builder(
-                      itemCount: rows.length + 1,
-                      itemBuilder: (context, i) {
-                        if (i == rows.length) return loader();
-                        final row = rows[i];
-                        return FadeSlideIn(
-                          key: ValueKey(row.first.id),
-                          child: row.length == 2
-                              ? feedPairRow(context, row)
-                              : newsFeedCard(i, row.first,
-                                  // Grey band ONLY between two stacked big
-                                  // image cards.
-                                  flushBelow: newsFeedFlushBelow(rows, i),
-                                  videoOk: _videoOk.contains(row.first.id)),
-                        );
-                      },
-                    );
-                }
+                // Weave a few license-safe videos into the mixed feed
+                // (capped, ~1 per 10 rows). Skipped when the Videos filter
+                // is on. Rendering itself is the SHARED newsFeedBody — the
+                // same sliver every Feed-shaped landing embeds.
+                final pool = (_view != FeedView.mixed || filters.video)
+                    ? const <Article>[]
+                    : (ref.watch(videoPoolProvider).valueOrNull ??
+                        const <Article>[]);
+                return newsFeedBody(
+                  context,
+                  view: _view,
+                  items: items,
+                  videoOk: _videoOk,
+                  videoPool: pool,
+                  trailing: loader(),
+                );
               },
             ),
           ],

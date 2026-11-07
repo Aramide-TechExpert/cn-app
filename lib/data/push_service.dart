@@ -116,10 +116,10 @@ class PushService {
   void _openFromMessage(RemoteMessage message) {
     final url = message.data['url'];
     final link = message.data['link'];
-    // Every tap stays IN-APP (the publisher link is a button on the story
-    // screen, not the destination):
-    //   /articles/<id>  → the story screen
-    //   /digest?ids=…   → the digest list (all stories on a ▶×3 push)
+    // Every tap stays IN-APP (the publisher link is a button on the landing,
+    // not the destination):
+    //   /articles/<id>  → full-screen Reel landing (owner ruling 2026-11-07)
+    //   /digest?ids=…   → the Feed-identical digest list (▶×3 push)
     //   /cluster/<id>   → full coverage of a happening-now cluster
     // Publisher link-out is only the last-resort fallback.
     String? id;
@@ -134,7 +134,7 @@ class PushService {
     Future<void>.delayed(const Duration(milliseconds: 400), () {
       if (id != null && id.isNotEmpty) {
         router.push(Uri(
-          path: '/story/$id',
+          path: '/push-story/$id',
           queryParameters: {
             if (link is String && link.isNotEmpty) 'link': link,
           },

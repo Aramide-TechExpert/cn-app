@@ -27,6 +27,7 @@ import 'features/settings/settings_page.dart';
 import 'features/shell/scaffold_with_nav.dart';
 import 'features/you/you_page.dart';
 import 'features/story/digest_page.dart';
+import 'features/story/push_landing_page.dart';
 import 'features/story/story_page.dart';
 
 /// Re-runs the router's redirect on every auth event (sign-in, sign-out,
@@ -50,7 +51,8 @@ class _AuthRefresh extends ChangeNotifier {
 /// App routes: a 5-tab stateful shell (Home · News Feed · Clusters · Briefing ·
 /// You). Saved, Search, Insights and detail screens are pushed on top.
 final router = GoRouter(
-  initialLocation: '/',
+  initialLocation:
+      '/digest?ids=41d94a2d-e6aa-403c-80fe-3570c927bbf4,e892a7b7-e18b-458b-91cc-ad85b123b343,d8fb25c2-9f39-4e91-a53a-315385ca64b8,584708e8-138c-4d6f-9fcc-5862373fbe84,9962d0c9-cc71-463a-b48f-9ecb45f5b664,05380fbe-c33e-4c51-b60a-b60770cddc84', // TEMP local verify
   refreshListenable: _AuthRefresh(),
   // HARD setup gate (owner 2026-10-19: "all signup should be strictly gated
   // to user flow and preferences — it's a must"): any signed-in account that
@@ -141,6 +143,16 @@ final router = GoRouter(
     GoRoute(
       path: '/story/:id',
       builder: (_, s) => StoryPage(
+        id: s.pathParameters['id']!,
+        fallbackLink: s.uri.queryParameters['link'],
+      ),
+    ),
+    // Single-push notification landing — full-screen Reel format (owner
+    // ruling 2026-11-07), so it sits OUTSIDE the shell: no footer, the close
+    // X returns home. The digest/cluster landings stay in-shell as before.
+    GoRoute(
+      path: '/push-story/:id',
+      builder: (_, s) => PushLandingPage(
         id: s.pathParameters['id']!,
         fallbackLink: s.uri.queryParameters['link'],
       ),

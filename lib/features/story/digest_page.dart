@@ -7,15 +7,14 @@ import '../../models/article.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../utils/interleave.dart' show throttleVideoCards;
-import '../feed/widgets/card_extras.dart' show FadeSlideIn;
 import '../feed/widgets/feed_pattern.dart';
 
 /// In-app landing for the ▶×3 digest push — the FULL group of stories the
-/// notification listed, rendered EXACTLY like the FEED tab (owner ruling
-/// 2026-10-27: the Feed page's thumbnail/card style, not Home's) via the
-/// shared newsFeedCard template: Overlay hero, 6-step cycle, 2-up pairs,
-/// fade-slide entrances. Lives INSIDE the Feed shell branch so the app
-/// footer menu shows (router.dart).
+/// notification listed, rendered EXACTLY like the FEED tab (owner rulings
+/// 2026-10-27 + strict re-enforcement 2026-11-07): the page embeds the
+/// SHARED newsFeedBody sliver in the SAME served layout mode as /discover,
+/// so the arrangement is one code path and cannot diverge. Lives INSIDE the
+/// Feed shell branch so the app footer menu shows (router.dart).
 class DigestPage extends ConsumerStatefulWidget {
   const DigestPage({super.key, required this.ids});
 
@@ -66,41 +65,43 @@ class _DigestPageState extends ConsumerState<DigestPage> {
   Widget build(BuildContext context) {
     final c = context.colors;
     final articles = _articles ?? const <Article>[];
+    // STRICT Feed parity (owner ruling 2026-11-07): the same scroll chrome
+    // as /discover (pinned+floating bar, bouncing physics) and the SAME
+    // shared newsFeedBody sliver in the SAME served layout mode — this page
+    // renders nothing of its own, so it cannot drift from the Feed tab.
     return Scaffold(
       backgroundColor: c.bg,
-      appBar: AppBar(
-        backgroundColor: c.bg,
-        surfaceTintColor: Colors.transparent,
-        title: Text('Fresh stories', style: AppText.title.copyWith(color: c.text)),
+      body: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            floating: true,
+            backgroundColor: c.bg,
+            surfaceTintColor: Colors.transparent,
+            title: Text('Fresh stories',
+                style: AppText.title.copyWith(color: c.text)),
+          ),
+          if (_loading)
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (articles.isEmpty)
+            SliverFillRemaining(hasScrollBody: false, child: _empty(c))
+          else ...[
+            newsFeedBody(
+              context,
+              view: servedFeedView(),
+              items: articles,
+              videoOk: throttleVideoCards(articles),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: AppSpace.xl)),
+          ],
+        ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : articles.isEmpty
-              ? _empty(c)
-              : _feed(context, articles),
-    );
-  }
-
-  /// The FEED tab's template verbatim: planned rows (singles + 2-up compact
-  /// pairs), the news-feed card cycle (Overlay hero first), video throttle,
-  /// band logic and fade-slide entrances.
-  Widget _feed(BuildContext context, List<Article> articles) {
-    final videoOk = throttleVideoCards(articles);
-    final rows = planFeedRows(articles);
-    return ListView.builder(
-      padding: const EdgeInsets.only(bottom: AppSpace.xl),
-      itemCount: rows.length,
-      itemBuilder: (context, i) {
-        final row = rows[i];
-        return FadeSlideIn(
-          key: ValueKey(row.first.id),
-          child: row.length == 2
-              ? feedPairRow(context, row)
-              : newsFeedCard(i, row.first,
-                  flushBelow: newsFeedFlushBelow(rows, i),
-                  videoOk: videoOk.contains(row.first.id)),
-        );
-      },
     );
   }
 

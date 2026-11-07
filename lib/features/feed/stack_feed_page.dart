@@ -63,7 +63,7 @@ class _StackFeedPageState extends ConsumerState<StackFeedPage> {
               onPageChanged: (i) {
                 if (i >= stack.length - 3) ctrl.loadMore();
               },
-              itemBuilder: (_, i) => _StackCard(article: stack[i]),
+              itemBuilder: (_, i) => StackCard(article: stack[i]),
             ),
             // Close affordance back to Home.
             Positioned(
@@ -82,8 +82,11 @@ class _StackFeedPageState extends ConsumerState<StackFeedPage> {
   }
 }
 
-class _StackCard extends ConsumerWidget {
-  const _StackCard({required this.article});
+/// One full-bleed Reel story — public: the single-push notification landing
+/// (PushLandingPage) renders the EXACT same card, so the Reel format is one
+/// code path wherever it appears.
+class StackCard extends ConsumerWidget {
+  const StackCard({super.key, required this.article});
   final Article article;
 
   @override
