@@ -131,6 +131,10 @@ const Map<String, SourceInfo> _sources = {
   'the hill': SourceInfo('United States', 'United States', _n),
   'la times': SourceInfo('United States', 'United States', _n),
   'washington post': SourceInfo('United States', 'United States', _n),
+  // WaPo rides three source names (edge-lane feeds) — classify + flagship
+  // all of them so none drop out of any feed the main name appears in.
+  'washington post politics': SourceInfo('United States', 'United States', _n),
+  'washington post world': SourceInfo('United States', 'United States', _n),
   'wall street journal': SourceInfo('United States', 'United States', _n),
   'usa today': SourceInfo('United States', 'United States', _n),
   'msnbc': SourceInfo('United States', 'United States', _n),
@@ -1146,7 +1150,8 @@ bool _inSegment(SourceInfo i, String segment) =>
 const Set<String> _worldwideFlagships = {
   // United States
   'cnn', 'fox news', 'abc news', 'cbs news', 'nbc news', 'new york times',
-  'washington post', 'la times', 'npr news', 'npr business',
+  'washington post', 'washington post politics', 'washington post world',
+  'msnbc', 'la times', 'npr news', 'npr business',
   'npr technology', 'nyt technology', 'time', 'wall street journal',
   'usa today', 'politico', 'the atlantic', 'axios', 'pbs newshour',
   'propublica',
