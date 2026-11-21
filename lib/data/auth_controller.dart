@@ -28,6 +28,16 @@ final currentUserProvider = Provider<User?>((ref) {
   return ref.watch(supabaseProvider).auth.currentUser;
 });
 
+/// True if the user has customized any push preferences (not all defaults).
+/// Used to show/hide the persistent preference-setting callout.
+final preferencesCustomizedProvider = Provider<bool>((ref) {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return true; // Hide for unsigned users
+  final meta = user.userMetadata ?? {};
+  // Check if the user has explicitly marked preferences as customized
+  return (meta['preferences_customized'] as bool?) ?? false;
+});
+
 final authServiceProvider = Provider<AuthService>(
   (ref) => AuthService(ref.watch(supabaseProvider)),
 );

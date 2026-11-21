@@ -129,6 +129,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         'alerts_top': _pushTop,
         'alerts_happening': _pushHappening,
         'alerts_watchlist': _pushWatchlist,
+        'preferences_customized': true, // Mark that the user has customized prefs
       });
     } catch (_) {
       _toast("Couldn't save notification preferences");
