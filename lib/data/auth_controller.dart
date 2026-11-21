@@ -29,14 +29,16 @@ final currentUserProvider = Provider<User?>((ref) {
 });
 
 /// True if the user has customized any push preferences (not all defaults).
-/// Used to show/hide the persistent preference-setting callout.
 final preferencesCustomizedProvider = Provider<bool>((ref) {
   final user = ref.watch(currentUserProvider);
   if (user == null) return true; // Hide for unsigned users
   final meta = user.userMetadata ?? {};
-  // Check if the user has explicitly marked preferences as customized
   return (meta['preferences_customized'] as bool?) ?? false;
 });
+
+/// Session-local flag: whether the preference-callout dialog was shown this session.
+/// Resets to false when user signs out or prefs are customized.
+final prefCalloutShownProvider = StateProvider<bool>((ref) => false);
 
 final authServiceProvider = Provider<AuthService>(
   (ref) => AuthService(ref.watch(supabaseProvider)),

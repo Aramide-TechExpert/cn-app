@@ -32,10 +32,11 @@ stack — switching tabs and back shows it again. Any push landing that modifies
 **Rule:** iterate push landings ONLY on screens outside `DiscoverPage`. The
 `/story/:id` and `/digest` routes already handle this correctly.
 
-## Push notification landing (current — v5 / build 40)
-- **Single push** → `/story/:id` → `StoryPage` (top-level route, outside shell):
-  renders via `newsFeedCard(0, article)` = Feed Overlay hero, then "Continue
-  reading" CTA, Full Coverage row, MORE NEWS via `planFeedRows` + `newsFeedCard`
+## Push notification landing (current — v5 / build 44+)
+- **Single push** → `/story/:id` → `StoryPage` (inside Feed shell branch, footer nav visible):
+  renders via `newsFeedCard(0, article)` = Feed Overlay hero, then Full Coverage row,
+  then featured first more-news card (full-width), then rest of more-news via
+  `planFeedRows` + `newsFeedCard` + `feedPairRow`
 - **Digest (multi-push)** → `/digest?ids=` → `DigestPage` (inside Feed shell branch,
   stacks over `/discover` so footer nav stays): renders via `planFeedRows` +
   `newsFeedCard` + `feedPairRow` — identical to the Feed tab

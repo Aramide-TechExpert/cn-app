@@ -109,10 +109,14 @@ class _StoryPageState extends ConsumerState<StoryPage> {
     );
   }
 
-  /// CustomScrollView matching the Feed page: pinned AppBar + slivers.
+  /// CustomScrollView matching the Feed page: pinned AppBar + hero + featured
+  /// first more-news card + feed-rhythm more-news.
   Widget _story(BuildContext context, NewsSignalColors c, Article a) {
     final videoOk = throttleVideoCards([a, ..._more]);
-    final moreRows = planFeedRows(_more);
+    // First more-news card featured separately; rest follow feed rhythm.
+    final firstMore = _more.isNotEmpty ? _more.first : null;
+    final restMore = _more.length > 1 ? _more.skip(1).toList() : const [];
+    final restRows = planFeedRows(restMore);
 
     return CustomScrollView(
       controller: _scroll,
@@ -134,7 +138,7 @@ class _StoryPageState extends ConsumerState<StoryPage> {
             // ── Main story — exact Feed Overlay hero (index 0) ─────────────────
             FadeSlideIn(
               child: newsFeedCard(0, a,
-                  flushBelow: moreRows.isNotEmpty || _cluster != null,
+                  flushBelow: firstMore != null || _cluster != null,
                   videoOk: videoOk.contains(a.id)),
             ),
 
@@ -147,29 +151,35 @@ class _StoryPageState extends ConsumerState<StoryPage> {
               ),
             ],
 
-            // ── More news section header ────────────────────────────────────────
-            if (moreRows.isNotEmpty) ...[
+            // ── Featured first more-news card (full-width) ──────────────────────
+            if (firstMore != null) ...[
+              const SizedBox(height: AppSpace.md),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpace.lg, AppSpace.xl, AppSpace.lg, AppSpace.sm),
+                    AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
                 child: Text(
-                  'MORE NEWS',
+                  'RELATED',
                   style: AppText.caption.copyWith(
                       color: c.brand,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.1),
                 ),
               ),
+              FadeSlideIn(
+                child: newsFeedCard(0, firstMore,
+                    flushBelow: restRows.isNotEmpty,
+                    videoOk: videoOk.contains(firstMore.id)),
+              ),
             ],
           ]),
         ),
 
-        // ── More news — Feed card rhythm ────────────────────────────────────
-        if (moreRows.isNotEmpty)
+        // ── Rest of more news — Feed card rhythm ────────────────────────────────
+        if (restRows.isNotEmpty)
           SliverList.builder(
-            itemCount: moreRows.length,
+            itemCount: restRows.length,
             itemBuilder: (context, i) {
-              final row = moreRows[i];
+              final row = restRows[i];
               return FadeSlideIn(
                 key: ValueKey(row.first.id),
                 child: row.length == 2
@@ -177,7 +187,7 @@ class _StoryPageState extends ConsumerState<StoryPage> {
                     : newsFeedCard(
                         i + 1, // start at 1 → Wide card, then Feed cycle
                         row.first,
-                        flushBelow: newsFeedFlushBelow(moreRows, i),
+                        flushBelow: newsFeedFlushBelow(restRows, i),
                         videoOk: videoOk.contains(row.first.id),
                       ),
               );

@@ -87,6 +87,15 @@ final router = GoRouter(
               builder: (_, s) =>
                   DigestPage(ids: s.uri.queryParameters['ids'] ?? ''),
             ),
+            // Single-story push landing also inside Feed branch so footer nav
+            // shows (owner request: include footer on single push landing).
+            GoRoute(
+              path: '/story/:id',
+              builder: (_, s) => StoryPage(
+                id: s.pathParameters['id']!,
+                fallbackLink: s.uri.queryParameters['link'],
+              ),
+            ),
           ],
         ),
         StatefulShellBranch(
@@ -137,13 +146,6 @@ final router = GoRouter(
       path: '/setup',
       builder: (_, s) =>
           SetupFlowPage(edit: s.uri.queryParameters['edit'] == '1'),
-    ),
-    GoRoute(
-      path: '/story/:id',
-      builder: (_, s) => StoryPage(
-        id: s.pathParameters['id']!,
-        fallbackLink: s.uri.queryParameters['link'],
-      ),
     ),
     GoRoute(
       path: '/topic/:slug',

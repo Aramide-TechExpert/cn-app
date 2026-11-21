@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../data/auth_controller.dart' show currentUserProvider, preferencesCustomizedProvider;
+import '../../data/auth_controller.dart' show currentUserProvider, preferencesCustomizedProvider, prefCalloutShownProvider;
 import '../../data/discover_controller.dart'
     show statsProvider, clustersProvider, widgetsDataProvider;
 import '../../data/dismissed_controller.dart';
@@ -47,6 +47,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     _ => FeedView.mixed,
   };
   Timer? _statsTimer;
+
+  String? _lastUserId;
 
   @override
   void initState() {
@@ -130,7 +132,43 @@ class _HomePageState extends ConsumerState<HomePage> {
     final dismissed = ref.watch(dismissedProvider);
     final user = ref.watch(currentUserProvider);
     final prefsCustomized = ref.watch(preferencesCustomizedProvider);
-    final showPrefCallout = user != null && !prefsCustomized;
+    final shouldShowPrefCallout = user != null && !prefsCustomized;
+    final calloutShown = ref.watch(prefCalloutShownProvider);
+
+    // Reset callout-shown flag when user changes (account switch or sign-out).
+    if (_lastUserId != user?.id) {
+      _lastUserId = user?.id;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(prefCalloutShownProvider.notifier).state = false;
+      });
+    }
+
+    // Show preference-callout popup once per session when user has uncustomized prefs.
+    if (shouldShowPrefCallout && !calloutShown) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(prefCalloutShownProvider.notifier).state = true;
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.md)),
+            icon: Icon(Icons.notifications_none, color: c.brand),
+            title: Text('Customize push notifications', style: AppText.bodyStrong.copyWith(color: c.text)),
+            content: Text('Choose which stories get sent to you', style: AppText.caption.copyWith(color: c.textSecondary)),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(_), child: const Text('Later')),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: c.brand),
+                onPressed: () {
+                  Navigator.pop(_);
+                  context.push('/settings');
+                },
+                child: const Text('Settings'),
+              ),
+            ],
+          ),
+        );
+      });
+    }
 
     return Scaffold(
       backgroundColor: c.bg,
@@ -384,43 +422,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                               .read(settingsControllerProvider.notifier)
                               .markFirstRunSeen(),
                           child: Icon(Icons.close, size: 18, color: c.textFaint),
-                        ),
-                      ]),
-                    ),
-                  ),
-
-                // Persistent preference-setting callout (shown until user customizes prefs).
-                if (showPrefCallout)
-                  SliverToBoxAdapter(
-                    child: Container(
-                      margin: const EdgeInsets.fromLTRB(
-                          AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
-                      padding: const EdgeInsets.all(AppSpace.lg),
-                      decoration: BoxDecoration(
-                        color: c.brand.withValues(alpha: 0.08),
-                        border: Border.all(color: c.brand.withValues(alpha: 0.2)),
-                        borderRadius: BorderRadius.circular(AppRadii.sm),
-                      ),
-                      child: Row(children: [
-                        Icon(Icons.notifications_none, color: c.brand, size: 20),
-                        const SizedBox(width: AppSpace.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Customize push notifications',
-                                  style:
-                                      AppText.bodyStrong.copyWith(color: c.text)),
-                              Text('Choose which stories get sent to you',
-                                  style: AppText.caption
-                                      .copyWith(color: c.textSecondary)),
-                            ],
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => context.push('/settings'),
-                          child: Text('Settings',
-                              style: AppText.callout.copyWith(color: c.brand)),
                         ),
                       ]),
                     ),
