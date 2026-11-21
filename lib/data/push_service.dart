@@ -99,6 +99,10 @@ class PushService {
           final token = await FirebaseMessaging.instance.getToken();
           if (token != null) {
             await _save(token);
+            // After claiming the token, immediately refresh preferences so
+            // pushes for THIS account use THIS account's preferences (not a
+            // stale cached preference from a previous account on this device).
+            requestRefresh();
             return;
           }
         } catch (e) {
@@ -214,22 +218,31 @@ class PushService {
   /// Release this device's token for the current account. MUST run BEFORE
   /// auth.signOut() (the backend needs the session to prove ownership) —
   /// otherwise the signed-out account keeps receiving pushes here.
+  /// Failures are logged — if unregister fails, the token persists and may
+  /// cause stale preferences on subsequent sign-ins to other accounts.
   Future<void> unregister() async {
     try {
       final jwt =
           Supabase.instance.client.auth.currentSession?.accessToken;
-      if (jwt == null) return;
+      if (jwt == null) {
+        debugPrint('push: unregister skipped (no session)');
+        return;
+      }
       final token = await FirebaseMessaging.instance
           .getToken()
           .timeout(const Duration(seconds: 5));
-      if (token == null) return;
+      if (token == null) {
+        debugPrint('push: unregister skipped (no token)');
+        return;
+      }
       await Dio().delete<void>(
         '${Config.apiBase}/push/register',
         data: {'token': token},
         options: Options(headers: {'Authorization': 'Bearer $jwt'}),
       );
+      debugPrint('push: unregister succeeded');
     } catch (e) {
-      debugPrint('push: unregister skipped ($e)');
+      debugPrint('push: ⚠️ unregister FAILED — token may persist ($e)');
     }
   }
 }

@@ -247,6 +247,25 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                     style: AppText.body
                         .copyWith(color: c.text, fontWeight: FontWeight.w600)),
               ),
+              const SizedBox(height: AppSpace.md),
+              OutlinedButton.icon(
+                onPressed: disabled
+                    ? null
+                    : () => _run('apple',
+                        ref.read(authServiceProvider).signInWithApple),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                  side: BorderSide(color: c.border),
+                ),
+                icon: _busy == 'apple'
+                    ? const SizedBox(
+                        width: 18, height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : Icon(Icons.apple, size: 26, color: c.text),
+                label: Text('Continue with Apple',
+                    style: AppText.body
+                        .copyWith(color: c.text, fontWeight: FontWeight.w600)),
+              ),
               const SizedBox(height: AppSpace.xl),
               Text(
                 'You can keep reading without an account. Sign in when you want to save and sync.',

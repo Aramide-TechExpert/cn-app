@@ -105,6 +105,15 @@ class AuthService {
     );
   }
 
+  /// Browser-based Apple OAuth sign-in. Available on iOS, macOS, and web.
+  /// Supabase handles the redirect and token verification.
+  Future<void> signInWithApple() async {
+    await _client.auth.signInWithOAuth(
+      OAuthProvider.apple,
+      redirectTo: kAuthRedirect,
+    );
+  }
+
   Future<void> signOut() async {
     // Release the device push token FIRST (needs the live session to prove
     // ownership) — otherwise this device keeps getting the signed-out
