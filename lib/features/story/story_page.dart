@@ -14,10 +14,10 @@ import '../feed/widgets/card_extras.dart' show FadeSlideIn;
 import '../feed/widgets/feed_pattern.dart';
 
 /// Single-story push landing — renders the notified article as a Feed Overlay
-/// hero (identical card template to the Feed tab), then a "Continue reading"
-/// CTA, an optional Full Coverage row, and a More News section in the same
+/// hero (identical card template to the Feed tab), then More News in the same
 /// Feed card rhythm. Lives as a TOP-LEVEL route (outside the shell) so it
 /// never interferes with the Feed tab stack (router.dart /story/:id).
+/// Layout matches the Feed page exactly: CustomScrollView + slivers + pinned AppBar.
 class StoryPage extends ConsumerStatefulWidget {
   const StoryPage({super.key, required this.id, this.fallbackLink});
 
@@ -33,6 +33,7 @@ class StoryPage extends ConsumerStatefulWidget {
 }
 
 class _StoryPageState extends ConsumerState<StoryPage> {
+  final _scroll = ScrollController();
   Article? _article;
   ({String id, String title, int sources})? _cluster;
   List<Article> _more = const [];
@@ -42,6 +43,12 @@ class _StoryPageState extends ConsumerState<StoryPage> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -91,117 +98,146 @@ class _StoryPageState extends ConsumerState<StoryPage> {
     final c = context.colors;
     return Scaffold(
       backgroundColor: c.bg,
-      appBar: AppBar(
-        backgroundColor: c.bg,
-        surfaceTintColor: Colors.transparent,
-        title: Text('Story', style: AppText.title.copyWith(color: c.text)),
+      body: RefreshIndicator.adaptive(
+        onRefresh: _load,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _article == null
+                ? _missing(c)
+                : _story(context, c, _article!),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _article == null
-              ? _missing(c)
-              : _story(context, c, _article!),
     );
   }
 
+  /// CustomScrollView matching the Feed page: pinned AppBar + slivers.
   Widget _story(BuildContext context, NewsSignalColors c, Article a) {
     final videoOk = throttleVideoCards([a, ..._more]);
     final moreRows = planFeedRows(_more);
 
-    return ListView(
-      padding: const EdgeInsets.only(bottom: AppSpace.xl),
-      children: [
-        // ── Main story — exact Feed Overlay hero (index 0) ─────────────────
-        newsFeedCard(0, a,
-            flushBelow: moreRows.isNotEmpty || _cluster != null,
-            videoOk: videoOk.contains(a.id)),
-
-        // ── Continue reading CTA ────────────────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpace.lg, AppSpace.md, AppSpace.lg, 0),
-          child: FilledButton.icon(
-            style: FilledButton.styleFrom(
-              backgroundColor: c.brand,
-              minimumSize: const Size.fromHeight(44),
-              shape: const RoundedRectangleBorder(),
-            ),
-            onPressed: () =>
-                openArticle(a.sourceUrl ?? widget.fallbackLink, track: a),
-            icon: const Icon(Icons.open_in_new, size: 16),
-            label: Text('Continue reading on ${a.source}'),
+    return CustomScrollView(
+      controller: _scroll,
+      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      slivers: [
+        SliverAppBar(
+          pinned: true,
+          floating: true,
+          backgroundColor: c.bg,
+          surfaceTintColor: Colors.transparent,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: c.text),
+            onPressed: () => context.pop(),
           ),
+          title: Text(a.source, style: AppText.title.copyWith(color: c.text)),
+        ),
+        SliverList(
+          delegate: SliverChildListDelegate([
+            // ── Main story — exact Feed Overlay hero (index 0) ─────────────────
+            FadeSlideIn(
+              child: newsFeedCard(0, a,
+                  flushBelow: moreRows.isNotEmpty || _cluster != null,
+                  videoOk: videoOk.contains(a.id)),
+            ),
+
+            // ── Full coverage ───────────────────────────────────────────────────
+            if (_cluster != null) ...[
+              const SizedBox(height: AppSpace.md),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+                child: _fullCoverage(c, _cluster!),
+              ),
+            ],
+
+            // ── More news section header ────────────────────────────────────────
+            if (moreRows.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpace.lg, AppSpace.xl, AppSpace.lg, AppSpace.sm),
+                child: Text(
+                  'MORE NEWS',
+                  style: AppText.caption.copyWith(
+                      color: c.brand,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1),
+                ),
+              ),
+            ],
+          ]),
         ),
 
-        // ── Full coverage ───────────────────────────────────────────────────
-        if (_cluster != null) ...[
-          const SizedBox(height: AppSpace.md),
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: AppSpace.lg),
-            child: _fullCoverage(c, _cluster!),
-          ),
-        ],
-
         // ── More news — Feed card rhythm ────────────────────────────────────
-        if (moreRows.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-                AppSpace.lg, AppSpace.xl, AppSpace.lg, AppSpace.sm),
-            child: Text(
-              'MORE NEWS',
-              style: AppText.caption.copyWith(
-                  color: c.brand,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.1),
-            ),
+        if (moreRows.isNotEmpty)
+          SliverList.builder(
+            itemCount: moreRows.length,
+            itemBuilder: (context, i) {
+              final row = moreRows[i];
+              return FadeSlideIn(
+                key: ValueKey(row.first.id),
+                child: row.length == 2
+                    ? feedPairRow(context, row)
+                    : newsFeedCard(
+                        i + 1, // start at 1 → Wide card, then Feed cycle
+                        row.first,
+                        flushBelow: newsFeedFlushBelow(moreRows, i),
+                        videoOk: videoOk.contains(row.first.id),
+                      ),
+              );
+            },
           ),
-          for (var i = 0; i < moreRows.length; i++)
-            FadeSlideIn(
-              key: ValueKey(moreRows[i].first.id),
-              child: moreRows[i].length == 2
-                  ? feedPairRow(context, moreRows[i])
-                  : newsFeedCard(
-                      i + 1, // start at 1 → Wide card, then Feed cycle
-                      moreRows[i].first,
-                      flushBelow: newsFeedFlushBelow(moreRows, i),
-                      videoOk: videoOk.contains(moreRows[i].first.id),
-                    ),
-            ),
-        ],
+
+        // ── Bottom padding ──────────────────────────────────────────────────────
+        const SliverToBoxAdapter(
+          child: SizedBox(height: AppSpace.xl),
+        ),
       ],
     );
   }
 
   Widget _missing(NewsSignalColors c) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpace.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.history_toggle_off, size: 40, color: c.textFaint),
-            const SizedBox(height: AppSpace.md),
-            Text('This story has left the fresh window.',
-                textAlign: TextAlign.center,
-                style: AppText.body.copyWith(color: c.textSecondary)),
-            const SizedBox(height: AppSpace.md),
-            if (widget.fallbackLink != null &&
-                widget.fallbackLink!.isNotEmpty) ...[
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: c.brand,
-                  shape: const RoundedRectangleBorder(),
-                ),
-                onPressed: () => openArticle(widget.fallbackLink),
-                child: const Text('Read it on the publisher site'),
-              ),
-              const SizedBox(height: AppSpace.sm),
-            ],
-            TextButton(onPressed: _load, child: const Text('Retry')),
-          ],
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          pinned: true,
+          backgroundColor: c.bg,
+          surfaceTintColor: Colors.transparent,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: c.text),
+            onPressed: () => context.pop(),
+          ),
+          title: Text('Story', style: AppText.title.copyWith(color: c.text)),
         ),
-      ),
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpace.lg),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.history_toggle_off, size: 40, color: c.textFaint),
+                  const SizedBox(height: AppSpace.md),
+                  Text('This story has left the fresh window.',
+                      textAlign: TextAlign.center,
+                      style: AppText.body.copyWith(color: c.textSecondary)),
+                  const SizedBox(height: AppSpace.md),
+                  if (widget.fallbackLink != null &&
+                      widget.fallbackLink!.isNotEmpty) ...[
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: c.brand,
+                        shape: const RoundedRectangleBorder(),
+                      ),
+                      onPressed: () => openArticle(widget.fallbackLink),
+                      child: const Text('Read it on the publisher site'),
+                    ),
+                    const SizedBox(height: AppSpace.sm),
+                  ],
+                  TextButton(onPressed: _load, child: const Text('Retry')),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

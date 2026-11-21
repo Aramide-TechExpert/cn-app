@@ -27,6 +27,7 @@ class DigestPage extends ConsumerStatefulWidget {
 }
 
 class _DigestPageState extends ConsumerState<DigestPage> {
+  final _scroll = ScrollController();
   List<Article>? _articles;
   bool _loading = true;
 
@@ -34,6 +35,12 @@ class _DigestPageState extends ConsumerState<DigestPage> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -68,62 +75,95 @@ class _DigestPageState extends ConsumerState<DigestPage> {
     final articles = _articles ?? const <Article>[];
     return Scaffold(
       backgroundColor: c.bg,
-      appBar: AppBar(
-        backgroundColor: c.bg,
-        surfaceTintColor: Colors.transparent,
-        title: Text('Fresh stories', style: AppText.title.copyWith(color: c.text)),
+      body: RefreshIndicator.adaptive(
+        onRefresh: _load,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : articles.isEmpty
+                ? _empty(c)
+                : _feed(context, c, articles),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : articles.isEmpty
-              ? _empty(c)
-              : _feed(context, articles),
     );
   }
 
-  /// The FEED tab's template verbatim: planned rows (singles + 2-up compact
-  /// pairs), the news-feed card cycle (Overlay hero first), video throttle,
-  /// band logic and fade-slide entrances.
-  Widget _feed(BuildContext context, List<Article> articles) {
+  /// CustomScrollView matching the Feed page layout: pinned AppBar + slivers.
+  Widget _feed(BuildContext context, NewsSignalColors c, List<Article> articles) {
     final videoOk = throttleVideoCards(articles);
     final rows = planFeedRows(articles);
-    return ListView.builder(
-      padding: const EdgeInsets.only(bottom: AppSpace.xl),
-      itemCount: rows.length,
-      itemBuilder: (context, i) {
-        final row = rows[i];
-        return FadeSlideIn(
-          key: ValueKey(row.first.id),
-          child: row.length == 2
-              ? feedPairRow(context, row)
-              : newsFeedCard(i, row.first,
-                  flushBelow: newsFeedFlushBelow(rows, i),
-                  videoOk: videoOk.contains(row.first.id)),
-        );
-      },
+
+    return CustomScrollView(
+      controller: _scroll,
+      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      slivers: [
+        SliverAppBar(
+          pinned: true,
+          floating: true,
+          backgroundColor: c.bg,
+          surfaceTintColor: Colors.transparent,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: c.text),
+            onPressed: () => context.pop(),
+          ),
+          title: Text('Fresh stories', style: AppText.title.copyWith(color: c.text)),
+        ),
+        SliverList.builder(
+          itemCount: rows.length,
+          itemBuilder: (context, i) {
+            final row = rows[i];
+            return FadeSlideIn(
+              key: ValueKey(row.first.id),
+              child: row.length == 2
+                  ? feedPairRow(context, row)
+                  : newsFeedCard(i, row.first,
+                      flushBelow: newsFeedFlushBelow(rows, i),
+                      videoOk: videoOk.contains(row.first.id)),
+            );
+          },
+        ),
+        const SliverToBoxAdapter(
+          child: SizedBox(height: AppSpace.xl),
+        ),
+      ],
     );
   }
 
   Widget _empty(NewsSignalColors c) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpace.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.history_toggle_off, size: 40, color: c.textFaint),
-            const SizedBox(height: AppSpace.md),
-            Text('These stories have left the fresh window.',
-                textAlign: TextAlign.center,
-                style: AppText.body.copyWith(color: c.textSecondary)),
-            const SizedBox(height: AppSpace.sm),
-            TextButton(
-              onPressed: () => context.go('/'),
-              child: const Text('Open the feed'),
-            ),
-          ],
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          pinned: true,
+          backgroundColor: c.bg,
+          surfaceTintColor: Colors.transparent,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: c.text),
+            onPressed: () => context.pop(),
+          ),
+          title: Text('Fresh stories', style: AppText.title.copyWith(color: c.text)),
         ),
-      ),
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpace.lg),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.history_toggle_off, size: 40, color: c.textFaint),
+                  const SizedBox(height: AppSpace.md),
+                  Text('These stories have left the fresh window.',
+                      textAlign: TextAlign.center,
+                      style: AppText.body.copyWith(color: c.textSecondary)),
+                  const SizedBox(height: AppSpace.sm),
+                  TextButton(
+                    onPressed: () => context.go('/'),
+                    child: const Text('Open the feed'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
