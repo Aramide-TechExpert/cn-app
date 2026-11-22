@@ -20,6 +20,8 @@ dependencies:
   firebase_messaging: ^15.2.0
   # Native in-app Google sign-in (id-token flow — no browser round-trip)
   google_sign_in: ^6.2.1
+  # Native Apple sign-in (system dialog on iOS)
+  sign_in_with_apple: ^6.1.0
   # /api/v1 client (channel 2)
   dio: ^5.7.0
   # Images with caching + monogram fallback

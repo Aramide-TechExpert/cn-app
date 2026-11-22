@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config.dart';
@@ -117,12 +118,19 @@ class AuthService {
     );
   }
 
-  /// Browser-based Apple OAuth sign-in. Available on iOS, macOS, and web.
-  /// Supabase handles the redirect and token verification.
+  /// Native Apple sign-in via iOS system dialog (identity credential flow).
+  /// No browser, no OAuth server round-trip — faster and more secure.
+  /// Falls back to email/password on platforms without native support.
   Future<void> signInWithApple() async {
-    await _client.auth.signInWithOAuth(
-      OAuthProvider.apple,
-      redirectTo: kAuthRedirect,
+    final credential = await SignInWithApple.getAppleIDCredential(
+      scopes: [
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+    );
+    await _client.auth.signInWithIdToken(
+      provider: OAuthProvider.apple,
+      idToken: credential.identityToken!,
     );
   }
 
