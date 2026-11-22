@@ -88,6 +88,7 @@ class _StoryPageState extends ConsumerState<StoryPage> {
         _more = page.items
             .where((m) => m.id != a?.id)
             .take(10)
+            .cast<Article>()
             .toList();
       });
     } catch (_) {}
@@ -115,7 +116,9 @@ class _StoryPageState extends ConsumerState<StoryPage> {
     final videoOk = throttleVideoCards([a, ..._more]);
     // First more-news card featured separately; rest follow feed rhythm.
     final firstMore = _more.isNotEmpty ? _more.first : null;
-    final restMore = _more.length > 1 ? _more.skip(1).toList() : const [];
+    final restMore = _more.length > 1
+        ? _more.skip(1).cast<Article>().toList()
+        : <Article>[];
     final restRows = planFeedRows(restMore);
 
     return CustomScrollView(
