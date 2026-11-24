@@ -22,6 +22,8 @@ dependencies:
   google_sign_in: ^6.2.1
   # Native Apple sign-in (system dialog on iOS)
   sign_in_with_apple: ^6.1.0
+  # SHA-256 nonce generation for Apple sign-in identity token verification
+  crypto: ^3.0.3
   # /api/v1 client (channel 2)
   dio: ^5.7.0
   # Images with caching + monogram fallback

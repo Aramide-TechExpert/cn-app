@@ -1,5 +1,8 @@
+import 'dart:convert' show utf8;
 import 'dart:io' show Platform;
+import 'dart:math' show Random;
 
+import 'package:crypto/crypto.dart' show sha256;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -120,19 +123,35 @@ class AuthService {
 
   /// Native Apple sign-in via iOS system dialog (identity credential flow).
   /// No browser, no OAuth server round-trip — faster and more secure.
-  /// Falls back to email/password on platforms without native support.
+  /// Apple requires a nonce: raw value passed to Supabase, SHA-256 hash
+  /// embedded in the identity token by Apple for server-side verification.
   Future<void> signInWithApple() async {
+    final rawNonce = _generateNonce();
+    final nonce = _sha256(rawNonce);
     final credential = await SignInWithApple.getAppleIDCredential(
       scopes: [
         AppleIDAuthorizationScopes.email,
         AppleIDAuthorizationScopes.fullName,
       ],
+      nonce: nonce,
     );
     await _client.auth.signInWithIdToken(
       provider: OAuthProvider.apple,
       idToken: credential.identityToken!,
+      nonce: rawNonce,
     );
   }
+
+  static String _generateNonce([int length = 32]) {
+    const chars =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+    final random = Random.secure();
+    return List.generate(length, (_) => chars[random.nextInt(chars.length)])
+        .join();
+  }
+
+  static String _sha256(String input) =>
+      sha256.convert(utf8.encode(input)).toString();
 
   Future<void> signOut() async {
     // Release the device push token FIRST (needs the live session to prove
