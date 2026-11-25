@@ -34,6 +34,9 @@ Future<void> main() async {
   // the compiled-in defaults — fire and forget; offline keeps defaults.
   // (Also re-fetched on every foreground resume — see app.dart.)
   final api = ApiClient();
+  // Cold start loads the feed fresh — seed the staleness clock so the first
+  // resume doesn't refetch needlessly (see refreshContentIfStale).
+  markContentFresh();
   unawaited(fetchAndApplyRemoteConfig(api));
   // Version telemetry for the Control panel's min-version gate.
   api.reportVersion(

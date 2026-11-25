@@ -19,6 +19,7 @@ import 'search_controller.dart';
 /// News Feed, Reel/Shorts, source picker, For You + What you missed,
 /// Clusters, Briefing, trending, topic pages, search.
 void _invalidateContent(void Function(ProviderOrFamily) invalidate) {
+  _lastContentRefresh = DateTime.now();
   invalidate(feedControllerProvider); // Home + Reel (stack feed)
   invalidate(newsFeedControllerProvider); // News Feed (filters reset too)
   invalidate(videoPoolProvider); // Shorts rail
@@ -36,6 +37,30 @@ void _invalidateContent(void Function(ProviderOrFamily) invalidate) {
 DateTime _lastRemoteFetch = DateTime.fromMillisecondsSinceEpoch(0);
 String _lastRemoteJson = '';
 String _lastUserMetaJson = '';
+
+/// When the whole app last refetched its content. Cold start loads fresh, so
+/// main() calls [markContentFresh]; thereafter every full refresh (config
+/// change, auth transition, resume-staleness) updates it via [_invalidateContent].
+DateTime _lastContentRefresh = DateTime.fromMillisecondsSinceEpoch(0);
+
+/// Mark content as freshly loaded (called at cold start — the feed loads with
+/// the app). Prevents the first resume from refetching needlessly.
+void markContentFresh() => _lastContentRefresh = DateTime.now();
+
+/// The Feed went stale for returning users: the backend purges articles on a
+/// 12h window, but the app holds its last-loaded snapshot, so a user coming
+/// back after hours/days saw stories that no longer exist (they 404 on tap)
+/// — "stale feeds that never purge out" (owner report 2026-11-25). On resume,
+/// if content hasn't refreshed within [maxAge], invalidate every surface so
+/// the whole app refetches. Time-gated so rapid app-switching never hammers
+/// egress (the backend is on a tight Supabase egress budget).
+void refreshContentIfStale(
+  void Function(ProviderOrFamily) invalidate, {
+  Duration maxAge = const Duration(minutes: 15),
+}) {
+  if (DateTime.now().difference(_lastContentRefresh) < maxAge) return;
+  _invalidateContent(invalidate);
+}
 
 /// Fetch + apply the Control-panel config (settings + classifier deltas).
 /// Called at cold start AND every time the app returns to the foreground

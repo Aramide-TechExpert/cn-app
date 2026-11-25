@@ -88,6 +88,11 @@ class _NewsSignalAppState extends ConsumerState<NewsSignalApp>
         invalidateOnChange: ref.invalidate,
         minInterval: const Duration(minutes: 5),
       );
+      // Even when the served config is unchanged, the feed itself goes stale
+      // while backgrounded (server purges on a 12h window) — refetch every
+      // surface if content hasn't refreshed in a while so returning users
+      // never see stories that no longer exist. Time-gated (egress-safe).
+      refreshContentIfStale(ref.invalidate);
     }
   }
 
