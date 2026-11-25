@@ -9,13 +9,15 @@ import '../../theme/tokens.dart';
 import '../../utils/interleave.dart' show throttleVideoCards;
 import '../feed/widgets/card_extras.dart' show FadeSlideIn;
 import '../feed/widgets/feed_pattern.dart';
+import '../shell/app_bottom_nav.dart' show LandingBottomNav;
 
 /// In-app landing for the ▶×3 digest push — the FULL group of stories the
 /// notification listed, rendered EXACTLY like the FEED tab (owner ruling
 /// 2026-10-27: the Feed page's thumbnail/card style, not Home's) via the
 /// shared newsFeedCard template: Overlay hero, 6-step cycle, 2-up pairs,
-/// fade-slide entrances. Lives INSIDE the Feed shell branch so the app
-/// footer menu shows (router.dart).
+/// fade-slide entrances. A TOP-LEVEL route (outside the shell) so it can
+/// never stack on the Feed branch; the footer tabs are drawn by
+/// [LandingBottomNav] (router.dart /digest).
 class DigestPage extends ConsumerStatefulWidget {
   const DigestPage({super.key, required this.ids});
 
@@ -75,6 +77,10 @@ class _DigestPageState extends ConsumerState<DigestPage> {
     final articles = _articles ?? const <Article>[];
     return Scaffold(
       backgroundColor: c.bg,
+      // Footer tabs on the landing (owner 2026-11-25) via the shared
+      // LandingBottomNav. DigestPage is a top-level route, so the Feed tab is
+      // never polluted.
+      bottomNavigationBar: const LandingBottomNav(),
       body: RefreshIndicator.adaptive(
         onRefresh: _load,
         child: _loading

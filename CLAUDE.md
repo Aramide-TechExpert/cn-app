@@ -32,14 +32,31 @@ stack — switching tabs and back shows it again. Any push landing that modifies
 **Rule:** iterate push landings ONLY on screens outside `DiscoverPage`. The
 `/story/:id` and `/digest` routes already handle this correctly.
 
-## Push notification landing (current — v5 / build 44+)
-- **Single push** → `/story/:id` → `StoryPage` (inside Feed shell branch, footer nav visible):
-  renders via `newsFeedCard(0, article)` = Feed Overlay hero, then Full Coverage row,
-  then featured first more-news card (full-width), then rest of more-news via
-  `planFeedRows` + `newsFeedCard` + `feedPairRow`
-- **Digest (multi-push)** → `/digest?ids=` → `DigestPage` (inside Feed shell branch,
-  stacks over `/discover` so footer nav stays): renders via `planFeedRows` +
-  `newsFeedCard` + `feedPairRow` — identical to the Feed tab
+## 🔒 Push notification landings — LOCKED templates (v6, owner spec 2026-11-25)
+This is the SINGLE source of truth (STATUS.md points here). Two fixed
+templates; never add bespoke variants, never move them back into a shell branch.
+
+**Routing:** BOTH landings are **top-level routes** (root navigator) — NOT
+inside any shell branch. A landing inside the Feed branch persists on that
+branch's stack and makes the Feed tab show the stale landing (broke the Feed
+tab in v4 AND build 46/48). The footer tabs are drawn by the shared
+`LandingBottomNav` (`lib/features/shell/app_bottom_nav.dart`), which renders the
+same five destinations as the shell and routes via `context.go` — so the footer
+shows on landings WITHOUT touching the Feed branch.
+
+- **Single push** → `/story/:id` → `StoryPage`, in order:
+  1. **Big hero** — the story as `newsFeedCard(0)`, the focal card (NO
+     "Continue reading" button — the hero is the focus)
+  2. **Full Coverage** row — only when the story belongs to a cluster
+  3. **"More News" slider** — a horizontal `CompactCard(width: 220)` rail,
+     exactly like the homepage "Trending now" section (first 8 of more-news)
+  4. **"More to read"** — the remainder via `planFeedRows` + `newsFeedCard` +
+     `feedPairRow` (normal dynamic Feed rhythm)
+- **Digest (multi-push)** → `/digest?ids=` → `DigestPage`: the full pushed group
+  via `planFeedRows` + `newsFeedCard` + `feedPairRow` — identical to the Feed tab.
+
+Both share the footer via `LandingBottomNav` and the destinations/routes in
+`kAppNavDestinations` / `kAppNavRoutes` (also used by `ScaffoldWithNav`).
 
 ## Feed template — single source of truth
 `lib/features/feed/widgets/feed_pattern.dart` contains ALL card logic:
@@ -79,10 +96,9 @@ lib/
 ## Router rules (router.dart)
 - **Shell branches** (footer visible): `/` Home, `/discover` Feed, `/stack` Reel,
   `/clusters` + `/cluster/:id`, `/briefing`
-- **Top-level routes** (no footer): `/story/:id`, `/sign-in`, `/search`, `/saved`,
+- **Top-level routes**: `/story/:id` + `/digest` (push landings — footer drawn by
+  `LandingBottomNav`, see locked spec above), `/sign-in`, `/search`, `/saved`,
   `/settings`, `/you`, `/interests`, `/watchlists`, `/alerts`, `/topic/:slug`, `/setup`
-- `/digest` lives INSIDE the Feed shell branch (stacks over `/discover`) — footer
-  stays visible per owner ruling 2026-10-27
 - Hard setup gate in `redirect`: signed-in users without `setup_complete=true`
   are always routed to `/setup`
 

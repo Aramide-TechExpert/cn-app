@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../theme/tokens.dart';
+import 'app_bottom_nav.dart';
 
 /// Bottom-tab shell host for the 5-tab IA. Driven by go_router's
 /// [StatefulNavigationShell] so each tab keeps its own navigation stack.
@@ -28,34 +29,9 @@ class ScaffoldWithNav extends StatelessWidget {
           initialLocation: i == navigationShell.currentIndex,
         ),
         backgroundColor: c.bgElevated,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.dynamic_feed_outlined),
-            selectedIcon: Icon(Icons.dynamic_feed),
-            label: 'Feed',
-          ),
-          // Center: the full-screen "reel/stack" swiper.
-          NavigationDestination(
-            icon: Icon(Icons.auto_stories_outlined),
-            selectedIcon: Icon(Icons.auto_stories),
-            label: 'Reel',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.account_tree_outlined),
-            selectedIcon: Icon(Icons.account_tree),
-            label: 'Clusters',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.newspaper_outlined),
-            selectedIcon: Icon(Icons.newspaper),
-            label: 'Briefing',
-          ),
-        ],
+        // Shared with the push-landing footer (app_bottom_nav.dart) so the two
+        // bars can never diverge.
+        destinations: kAppNavDestinations,
       ),
     );
   }

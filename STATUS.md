@@ -45,18 +45,19 @@
 - Light/dark theme, feed card rhythm, cluster detail, topic pages
 - Onboarding + preferences flow (region scopes, favourite sources)
 
-## Push notification landings (current — v5)
+## Push notification landings (v6 — LOCKED)
 
-**Single story** (`/story/:id` → `StoryPage`, top-level route outside shell):
-- Renders via `newsFeedCard(0, article)` = Feed Overlay hero (identical to Feed tab)
-- "Continue reading on [Source]" CTA below
-- Full Coverage row if story is part of a cluster
-- MORE NEWS section: `planFeedRows` + `newsFeedCard` vertical list (not a slider)
+**Single source of truth: CLAUDE.md → "Push notification landings — LOCKED
+templates".** Not restated here — the old split between this file and CLAUDE.md
+is exactly what let the landings drift. Summary only:
 
-**Digest / multi-story** (`/digest?ids=` → `DigestPage`, inside Feed shell branch):
-- Renders via `planFeedRows` + `newsFeedCard` + `feedPairRow`
-- Identical card rhythm to the Feed tab
-- Footer nav stays visible (lives inside Feed shell branch)
+**Single story** (`/story/:id` → `StoryPage`, top-level route, footer via `LandingBottomNav`):
+big hero (`newsFeedCard(0)`, no "Continue reading") → Full Coverage if clustered →
+"More News" horizontal `CompactCard` slider (homepage Trending style) → "More to
+read" remainder in dynamic Feed rhythm.
+
+**Digest** (`/digest?ids=` → `DigestPage`, top-level route, footer via `LandingBottomNav`):
+`planFeedRows` + `newsFeedCard` + `feedPairRow` — identical to the Feed tab.
 
 ## ⚠️ The Feed tab incident — permanent rule
 v4 attempt (commit `cbc4321`) routed push landings onto the real `DiscoverPage`.

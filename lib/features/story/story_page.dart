@@ -11,13 +11,20 @@ import '../../utils/interleave.dart' show throttleVideoCards;
 import '../../utils/link_out.dart';
 import '../../utils/source_regions.dart' show activeScopes;
 import '../feed/widgets/card_extras.dart' show FadeSlideIn;
+import '../feed/widgets/card_variants.dart' show CompactCard;
 import '../feed/widgets/feed_pattern.dart';
+import '../shell/app_bottom_nav.dart' show LandingBottomNav;
 
-/// Single-story push landing — renders the notified article as a Feed Overlay
-/// hero (identical card template to the Feed tab), then More News in the same
-/// Feed card rhythm. Lives as a TOP-LEVEL route (outside the shell) so it
-/// never interferes with the Feed tab stack (router.dart /story/:id).
-/// Layout matches the Feed page exactly: CustomScrollView + slivers + pinned AppBar.
+/// Single-story push landing — the LOCKED template (owner spec 2026-11-25):
+///   1. Big hero  — the notified story as `newsFeedCard(0)`, the focal card
+///      (no "Continue reading" button; the hero itself is the focus)
+///   2. Full Coverage row — only when the story belongs to a cluster
+///   3. "More News" slider — a horizontal `CompactCard` rail, exactly like the
+///      homepage "Trending now" section
+///   4. Rest of More News — the normal dynamic Feed card rhythm
+/// A TOP-LEVEL route (outside the shell) so it can never stack on the Feed
+/// branch and break the Feed tab; the footer tabs are drawn by
+/// [LandingBottomNav]. Single source of truth — do not add bespoke variants.
 class StoryPage extends ConsumerStatefulWidget {
   const StoryPage({super.key, required this.id, this.fallbackLink});
 
@@ -99,6 +106,11 @@ class _StoryPageState extends ConsumerState<StoryPage> {
     final c = context.colors;
     return Scaffold(
       backgroundColor: c.bg,
+      // Footer tabs on the landing (owner 2026-11-25) — drawn by the shared
+      // LandingBottomNav so it matches the real shell footer exactly and
+      // routes straight to the real tabs. The landing itself is a top-level
+      // route, so the Feed tab is never polluted.
+      bottomNavigationBar: const LandingBottomNav(),
       body: RefreshIndicator.adaptive(
         onRefresh: _load,
         child: _loading
@@ -110,14 +122,17 @@ class _StoryPageState extends ConsumerState<StoryPage> {
     );
   }
 
-  /// CustomScrollView matching the Feed page: pinned AppBar + hero + featured
-  /// first more-news card + feed-rhythm more-news.
+  /// The locked single-push template: big hero → Full Coverage (if clustered)
+  /// → horizontal "More News" slider (homepage Trending style) → dynamic
+  /// feed-rhythm cards for the remainder.
   Widget _story(BuildContext context, NewsSignalColors c, Article a) {
     final videoOk = throttleVideoCards([a, ..._more]);
-    // First more-news card featured separately; rest follow feed rhythm.
-    final firstMore = _more.isNotEmpty ? _more.first : null;
-    final restMore = _more.length > 1
-        ? _more.skip(1).cast<Article>().toList()
+    // First slice of More News becomes the horizontal slider; the rest falls
+    // through to the normal dynamic Feed rhythm below it.
+    const sliderCount = 8;
+    final sliderItems = _more.take(sliderCount).toList();
+    final restMore = _more.length > sliderCount
+        ? _more.skip(sliderCount).cast<Article>().toList()
         : <Article>[];
     final restRows = planFeedRows(restMore);
 
@@ -138,14 +153,14 @@ class _StoryPageState extends ConsumerState<StoryPage> {
         ),
         SliverList(
           delegate: SliverChildListDelegate([
-            // ── Main story — exact Feed Overlay hero (index 0) ─────────────────
+            // ── 1. Big hero — the pushed story as the focal card (index 0) ──────
             FadeSlideIn(
               child: newsFeedCard(0, a,
-                  flushBelow: firstMore != null || _cluster != null,
+                  flushBelow: sliderItems.isNotEmpty || _cluster != null,
                   videoOk: videoOk.contains(a.id)),
             ),
 
-            // ── Full coverage ───────────────────────────────────────────────────
+            // ── 2. Full coverage (only when clustered) ──────────────────────────
             if (_cluster != null) ...[
               const SizedBox(height: AppSpace.md),
               Padding(
@@ -154,31 +169,42 @@ class _StoryPageState extends ConsumerState<StoryPage> {
               ),
             ],
 
-            // ── Featured first more-news card (full-width) ──────────────────────
-            if (firstMore != null) ...[
-              const SizedBox(height: AppSpace.md),
+            // ── 3. "More News" horizontal slider (homepage Trending style) ──────
+            if (sliderItems.isNotEmpty) ...[
+              const SizedBox(height: AppSpace.lg),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                     AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
-                child: Text(
-                  'RELATED',
-                  style: AppText.caption.copyWith(
-                      color: c.brand,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.1),
-                ),
+                child: Text('More News',
+                    style: AppText.headline.copyWith(color: c.text)),
               ),
-              FadeSlideIn(
-                child: newsFeedCard(0, firstMore,
-                    flushBelow: restRows.isNotEmpty,
-                    videoOk: videoOk.contains(firstMore.id)),
+              SizedBox(
+                height: 248,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+                  itemCount: sliderItems.length,
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(width: AppSpace.md),
+                  itemBuilder: (_, i) =>
+                      CompactCard(article: sliderItems[i], width: 220),
+                ),
               ),
             ],
           ]),
         ),
 
-        // ── Rest of more news — Feed card rhythm ────────────────────────────────
-        if (restRows.isNotEmpty)
+        // ── 4. Remainder — normal dynamic Feed card rhythm ──────────────────────
+        if (restRows.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpace.lg, AppSpace.lg, AppSpace.lg, AppSpace.md),
+              child: Text('More to read',
+                  style: AppText.headline.copyWith(color: c.text)),
+            ),
+          ),
           SliverList.builder(
             itemCount: restRows.length,
             itemBuilder: (context, i) {
@@ -196,6 +222,7 @@ class _StoryPageState extends ConsumerState<StoryPage> {
               );
             },
           ),
+        ],
 
         // ── Bottom padding ──────────────────────────────────────────────────────
         const SliverToBoxAdapter(
