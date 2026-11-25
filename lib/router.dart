@@ -79,23 +79,6 @@ final router = GoRouter(
         StatefulShellBranch(
           routes: [
             GoRoute(path: '/discover', builder: (_, __) => const DiscoverPage()),
-            // Digest/Fresh-stories lands INSIDE the Feed branch so the app
-            // footer menu stays visible (owner 2026-10-27) — push() stacks it
-            // over /discover, so back pops to the Feed tab.
-            GoRoute(
-              path: '/digest',
-              builder: (_, s) =>
-                  DigestPage(ids: s.uri.queryParameters['ids'] ?? ''),
-            ),
-            // Single-story push landing also inside Feed branch so footer nav
-            // shows (owner request: include footer on single push landing).
-            GoRoute(
-              path: '/story/:id',
-              builder: (_, s) => StoryPage(
-                id: s.pathParameters['id']!,
-                fallbackLink: s.uri.queryParameters['link'],
-              ),
-            ),
           ],
         ),
         StatefulShellBranch(
@@ -127,6 +110,22 @@ final router = GoRouter(
           ],
         ),
       ],
+    ),
+    // Push landings are TOP-LEVEL routes (root navigator, full-screen) — NOT
+    // inside the Feed shell branch. A landing pushed onto the Feed branch
+    // persists on that branch's stack, so tapping the Feed tab re-shows the
+    // stale/hung landing instead of the feed (broke the Feed tab in v4 AND in
+    // build 46/48 — owner report 2026-11-25). Each has its own back arrow.
+    GoRoute(
+      path: '/story/:id',
+      builder: (_, s) => StoryPage(
+        id: s.pathParameters['id']!,
+        fallbackLink: s.uri.queryParameters['link'],
+      ),
+    ),
+    GoRoute(
+      path: '/digest',
+      builder: (_, s) => DigestPage(ids: s.uri.queryParameters['ids'] ?? ''),
     ),
     GoRoute(path: '/sign-in', builder: (_, __) => const SignInPage()),
     GoRoute(path: '/search', builder: (_, __) => const SearchPage()),
