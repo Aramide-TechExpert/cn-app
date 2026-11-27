@@ -13,23 +13,64 @@ import 'card_extras.dart';
 import 'inline_video.dart';
 import 'signal_badges.dart';
 
-// ── shared image cover (network image or monogram fallback), square corners ──
+// ── shared image cover (network image or branded fallback), square corners ──
+// The fallback is a DELIBERATE branded placeholder — a source-tinted gradient
+// with the publisher monogram + name — not a bare colour box. It shows both
+// when an article has no image AND when the thumbnail URL fails to load (some
+// publishers, e.g. Bloomberg / Fox, hotlink-protect their CDN images so they
+// 403 in-app). Making it look intentional keeps the feed/landing templates
+// coherent regardless of which sources' images load. Proper fix (a server-side
+// image proxy) is deferred — it would add Supabase/Vercel egress, which is the
+// metric currently over budget (2026-11-27).
+Widget _brandedCover(BuildContext context, Article a) {
+  final hue = hueFromString(a.source).toDouble();
+  final top = HSLColor.fromAHSL(1, hue, 0.45, 0.42).toColor();
+  final bottom = HSLColor.fromAHSL(1, hue, 0.5, 0.28).toColor();
+  return DecoratedBox(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [top, bottom],
+      ),
+    ),
+    child: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(initialOf(a.source),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 38,
+                  fontWeight: FontWeight.w800,
+                  height: 1.0)),
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Text(a.source,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3)),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 Widget _cover(BuildContext context, Article a, {BoxFit fit = BoxFit.cover}) {
   final c = context.colors;
-  final hue = hueFromString(a.source).toDouble();
-  final mono = Container(
-    color: HSLColor.fromAHSL(1, hue, 0.5, 0.4).toColor(),
-    alignment: Alignment.center,
-    child: Text(initialOf(a.source),
-        style: const TextStyle(
-            color: Colors.white, fontSize: 40, fontWeight: FontWeight.w800)),
-  );
-  if (!a.hasImage) return mono;
+  if (!a.hasImage) return _brandedCover(context, a);
   return CachedNetworkImage(
     imageUrl: a.image,
     fit: fit,
     placeholder: (_, __) => Container(color: c.bgInset),
-    errorWidget: (_, __, ___) => mono,
+    errorWidget: (_, __, ___) => _brandedCover(context, a),
   );
 }
 

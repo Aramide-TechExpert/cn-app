@@ -51,13 +51,17 @@
 templates".** Not restated here — the old split between this file and CLAUDE.md
 is exactly what let the landings drift. Summary only:
 
-**Single story** (`/story/:id` → `StoryPage`, top-level route, footer via `LandingBottomNav`):
-big hero (`newsFeedCard(0)`, no "Continue reading") → Full Coverage if clustered →
-"More News" horizontal `CompactCard` slider (homepage Trending style) → "More to
-read" remainder in dynamic Feed rhythm.
+**Single story** (`/story/:id` → `StoryPage`, top-level route): shared
+`landingHeader` ("Top Story" + source) → big hero (`newsFeedCard(0)`, no
+"Continue reading") → Full Coverage if clustered → "More News" horizontal
+`CompactCard` slider (homepage Trending style) → "More to read" as **2-up compact
+pairs** (no trailing big card). Footer via `LandingBottomNav`.
 
-**Digest** (`/digest?ids=` → `DigestPage`, top-level route, footer via `LandingBottomNav`):
-`planFeedRows` + `newsFeedCard` + `feedPairRow` — identical to the Feed tab.
+**Digest** (`/digest?ids=` → `DigestPage`, top-level route): shared
+`landingHeader` ("N stories" + "Fresh Stories") → `planFeedRows` + `newsFeedCard`
++ `feedPairRow` — identical to the Feed tab. Footer via `LandingBottomNav`.
+
+Locked by `test/push_landing_template_test.dart` (CI fails on drift).
 
 ## ⚠️ The Feed tab incident — permanent rule
 v4 attempt (commit `cbc4321`) routed push landings onto the real `DiscoverPage`.

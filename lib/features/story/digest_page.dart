@@ -10,6 +10,7 @@ import '../../utils/interleave.dart' show throttleVideoCards;
 import '../feed/widgets/card_extras.dart' show FadeSlideIn;
 import '../feed/widgets/feed_pattern.dart';
 import '../shell/app_bottom_nav.dart' show LandingBottomNav;
+import 'landing_header.dart';
 
 /// In-app landing for the ▶×3 digest push — the FULL group of stories the
 /// notification listed, rendered EXACTLY like the FEED tab (owner ruling
@@ -101,17 +102,9 @@ class _DigestPageState extends ConsumerState<DigestPage> {
       controller: _scroll,
       physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       slivers: [
-        SliverAppBar(
-          pinned: true,
-          floating: true,
-          backgroundColor: c.bg,
-          surfaceTintColor: Colors.transparent,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: c.text),
-            onPressed: () => context.pop(),
-          ),
-          title: Text('Fresh stories', style: AppText.title.copyWith(color: c.text)),
-        ),
+        landingHeader(context,
+            eyebrow: '${articles.length} ${articles.length == 1 ? 'story' : 'stories'}',
+            title: 'Fresh Stories'),
         SliverList.builder(
           itemCount: rows.length,
           itemBuilder: (context, i) {
@@ -136,16 +129,7 @@ class _DigestPageState extends ConsumerState<DigestPage> {
   Widget _empty(NewsSignalColors c) {
     return CustomScrollView(
       slivers: [
-        SliverAppBar(
-          pinned: true,
-          backgroundColor: c.bg,
-          surfaceTintColor: Colors.transparent,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: c.text),
-            onPressed: () => context.pop(),
-          ),
-          title: Text('Fresh stories', style: AppText.title.copyWith(color: c.text)),
-        ),
+        landingHeader(context, eyebrow: 'Fresh', title: 'Fresh Stories'),
         SliverFillRemaining(
           hasScrollBody: false,
           child: Center(

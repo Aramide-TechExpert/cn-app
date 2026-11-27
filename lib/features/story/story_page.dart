@@ -14,14 +14,18 @@ import '../feed/widgets/card_extras.dart' show FadeSlideIn;
 import '../feed/widgets/card_variants.dart' show CompactCard;
 import '../feed/widgets/feed_pattern.dart';
 import '../shell/app_bottom_nav.dart' show LandingBottomNav;
+import 'landing_header.dart';
 
-/// Single-story push landing — the LOCKED template (owner spec 2026-11-25):
+/// Single-story push landing — the LOCKED template (owner spec 2026-11-27):
+///   0. Header   — shared [landingHeader] ("TOP STORY" eyebrow + source), so
+///      the screen reads as "occupied" like the Home/Feed tabs
 ///   1. Big hero  — the notified story as `newsFeedCard(0)`, the focal card
 ///      (no "Continue reading" button; the hero itself is the focus)
 ///   2. Full Coverage row — only when the story belongs to a cluster
 ///   3. "More News" slider — a horizontal `CompactCard` rail, exactly like the
 ///      homepage "Trending now" section
-///   4. Rest of More News — the normal dynamic Feed card rhythm
+///   4. Rest of More News — 2-up compact pairs (`feedPairRow`), the small
+///      side-by-side cards from the Feed page (NO trailing big cover card)
 /// A TOP-LEVEL route (outside the shell) so it can never stack on the Feed
 /// branch and break the Feed tab; the footer tabs are drawn by
 /// [LandingBottomNav]. Single source of truth — do not add bespoke variants.
@@ -127,30 +131,26 @@ class _StoryPageState extends ConsumerState<StoryPage> {
   /// feed-rhythm cards for the remainder.
   Widget _story(BuildContext context, NewsSignalColors c, Article a) {
     final videoOk = throttleVideoCards([a, ..._more]);
-    // First slice of More News becomes the horizontal slider; the rest falls
-    // through to the normal dynamic Feed rhythm below it.
+    // First slice of More News becomes the horizontal slider; the rest renders
+    // as 2-up compact pairs (the Feed page's small side-by-side cards) — never
+    // a trailing big cover card (owner spec 2026-11-27).
     const sliderCount = 8;
     final sliderItems = _more.take(sliderCount).toList();
     final restMore = _more.length > sliderCount
         ? _more.skip(sliderCount).cast<Article>().toList()
         : <Article>[];
-    final restRows = planFeedRows(restMore);
+    // Chunk the remainder into pairs so each row is two small cards.
+    final restPairs = <List<Article>>[];
+    for (var k = 0; k < restMore.length; k += 2) {
+      restPairs.add(restMore.sublist(
+          k, k + 2 > restMore.length ? restMore.length : k + 2));
+    }
 
     return CustomScrollView(
       controller: _scroll,
       physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       slivers: [
-        SliverAppBar(
-          pinned: true,
-          floating: true,
-          backgroundColor: c.bg,
-          surfaceTintColor: Colors.transparent,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: c.text),
-            onPressed: () => context.pop(),
-          ),
-          title: Text(a.source, style: AppText.title.copyWith(color: c.text)),
-        ),
+        landingHeader(context, eyebrow: 'Top Story', title: a.source),
         SliverList(
           delegate: SliverChildListDelegate([
             // ── 1. Big hero — the pushed story as the focal card (index 0) ──────
@@ -195,8 +195,10 @@ class _StoryPageState extends ConsumerState<StoryPage> {
           ]),
         ),
 
-        // ── 4. Remainder — normal dynamic Feed card rhythm ──────────────────────
-        if (restRows.isNotEmpty) ...[
+        // ── 4. Remainder — 2-up compact pairs (small Feed-page cards) ───────────
+        // No trailing big cover card: each row is two small cards side by side
+        // (owner spec 2026-11-27). A lone odd item sits as a single compact card.
+        if (restPairs.isNotEmpty) ...[
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -206,18 +208,20 @@ class _StoryPageState extends ConsumerState<StoryPage> {
             ),
           ),
           SliverList.builder(
-            itemCount: restRows.length,
+            itemCount: restPairs.length,
             itemBuilder: (context, i) {
-              final row = restRows[i];
+              final row = restPairs[i];
               return FadeSlideIn(
                 key: ValueKey(row.first.id),
                 child: row.length == 2
                     ? feedPairRow(context, row)
-                    : newsFeedCard(
-                        i + 1, // start at 1 → Wide card, then Feed cycle
-                        row.first,
-                        flushBelow: newsFeedFlushBelow(restRows, i),
-                        videoOk: videoOk.contains(row.first.id),
+                    : Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                            AppSpace.lg, AppSpace.md, AppSpace.lg, AppSpace.md),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: CompactCard(article: row.first, width: 220),
+                        ),
                       ),
               );
             },
@@ -235,16 +239,7 @@ class _StoryPageState extends ConsumerState<StoryPage> {
   Widget _missing(NewsSignalColors c) {
     return CustomScrollView(
       slivers: [
-        SliverAppBar(
-          pinned: true,
-          backgroundColor: c.bg,
-          surfaceTintColor: Colors.transparent,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: c.text),
-            onPressed: () => context.pop(),
-          ),
-          title: Text('Story', style: AppText.title.copyWith(color: c.text)),
-        ),
+        landingHeader(context, eyebrow: 'Top Story', title: 'Story'),
         SliverFillRemaining(
           hasScrollBody: false,
           child: Center(

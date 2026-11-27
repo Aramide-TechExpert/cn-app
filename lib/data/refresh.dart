@@ -34,6 +34,21 @@ void _invalidateContent(void Function(ProviderOrFamily) invalidate) {
   invalidate(searchResultsProvider);
 }
 
+/// The FEED surfaces only — the content that actually goes stale and 404s when
+/// a user returns after hours/days (the backend purges on a 12h window). Used
+/// by the resume-staleness path: a plain resume does NOT change preferences or
+/// gates, so there's no reason to refetch Clusters / Briefing / stats / widgets
+/// / trending / search / every open topic page. Invalidating those 9 extra
+/// surfaces on every stale resume was pure Supabase egress for no user benefit
+/// (egress-budget incident 2026-11-27). The full [_invalidateContent] still
+/// runs when config/preferences/auth actually change.
+void _invalidateFeeds(void Function(ProviderOrFamily) invalidate) {
+  _lastContentRefresh = DateTime.now();
+  invalidate(feedControllerProvider); // Home + Reel (stack feed)
+  invalidate(newsFeedControllerProvider); // News Feed (the stale-404 surface)
+  invalidate(videoPoolProvider); // Shorts rail
+}
+
 DateTime _lastRemoteFetch = DateTime.fromMillisecondsSinceEpoch(0);
 String _lastRemoteJson = '';
 String _lastUserMetaJson = '';
@@ -56,10 +71,12 @@ void markContentFresh() => _lastContentRefresh = DateTime.now();
 /// egress (the backend is on a tight Supabase egress budget).
 void refreshContentIfStale(
   void Function(ProviderOrFamily) invalidate, {
-  Duration maxAge = const Duration(minutes: 15),
+  Duration maxAge = const Duration(minutes: 20),
 }) {
   if (DateTime.now().difference(_lastContentRefresh) < maxAge) return;
-  _invalidateContent(invalidate);
+  // Feed-only: a resume doesn't change gates, so refetch just the surfaces
+  // that go stale/404, not the whole app (egress-budget incident 2026-11-27).
+  _invalidateFeeds(invalidate);
 }
 
 /// Fetch + apply the Control-panel config (settings + classifier deltas).

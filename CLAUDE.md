@@ -44,19 +44,34 @@ tab in v4 AND build 46/48). The footer tabs are drawn by the shared
 same five destinations as the shell and routes via `context.go` — so the footer
 shows on landings WITHOUT touching the Feed branch.
 
+**Header (both):** the shared `landingHeader(...)` (`lib/features/story/
+landing_header.dart`) — a brand-coloured eyebrow over a bold title + search
+action, so each landing reads as "occupied" like the Home/Feed tabs, not a bare
+back button. Never hand-roll a `SliverAppBar` on a landing.
+
 - **Single push** → `/story/:id` → `StoryPage`, in order:
+  0. **Header** — `landingHeader(eyebrow: 'Top Story', title: <source>)`
   1. **Big hero** — the story as `newsFeedCard(0)`, the focal card (NO
      "Continue reading" button — the hero is the focus)
   2. **Full Coverage** row — only when the story belongs to a cluster
   3. **"More News" slider** — a horizontal `CompactCard(width: 220)` rail,
      exactly like the homepage "Trending now" section (first 8 of more-news)
-  4. **"More to read"** — the remainder via `planFeedRows` + `newsFeedCard` +
-     `feedPairRow` (normal dynamic Feed rhythm)
-- **Digest (multi-push)** → `/digest?ids=` → `DigestPage`: the full pushed group
-  via `planFeedRows` + `newsFeedCard` + `feedPairRow` — identical to the Feed tab.
+  4. **"More to read"** — the remainder as **2-up compact pairs** (`feedPairRow`,
+     the small side-by-side Feed-page cards). NO trailing big cover card
+     (owner spec 2026-11-27). A lone odd item → a single `CompactCard`.
+- **Digest (multi-push)** → `/digest?ids=` → `DigestPage`:
+  0. **Header** — `landingHeader(eyebrow: '<n> stories', title: 'Fresh Stories')`
+  1. the full pushed group via `planFeedRows` + `newsFeedCard` + `feedPairRow`
+     — identical to the Feed tab.
 
 Both share the footer via `LandingBottomNav` and the destinations/routes in
-`kAppNavDestinations` / `kAppNavRoutes` (also used by `ScaffoldWithNav`).
+`kAppNavDestinations` / `kAppNavRoutes` (also used by `ScaffoldWithNav`), and the
+header via `landingHeader`.
+
+**Enforcement:** `test/push_landing_template_test.dart` asserts these invariants
+at the source level (shared chrome, hero, slider, pairs tail, no `DiscoverPage`
+import, top-level routing). CI fails if a landing drifts from this spec — keep
+the test and this section in lockstep.
 
 ## Feed template — single source of truth
 `lib/features/feed/widgets/feed_pattern.dart` contains ALL card logic:
